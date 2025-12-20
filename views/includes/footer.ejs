@@ -1,0 +1,35 @@
+<link rel="stylesheet" href="/css/style.css">
+<footer>
+    <div class="f-info">
+        <div class="copyright">
+            <div style="padding-left:1rem;padding-right: 0.5rem;"> &copy; 2025 Wanderlivinn, Inc.</div>
+        
+        
+        <div class="f-info-links">
+            <a href="/privacy">Privacy</a>
+            <a href="/terms">Terms</a>
+            <a href="/terms">Tripnest.com</a>
+        </div>
+        </div>
+        
+
+        <div class="f-info-socials">
+            <i class="fa-brands fa-square-facebook" ></i>
+            <i class="fa-brands fa-square-instagram"></i>
+            <i class="fa-brands fa-linkedin" data-links="lnkd.in/dhirajb"></i>
+        </div>
+    </div>
+</footer>
+
+
+
+<script>
+    const icons = document.querySelectorAll(".f-info-socials i");
+
+    icons.forEach(icon => {
+        icon.addEventListener("click", () => {
+            const url = icon.dataset.link;
+            window.open(url, "_blank"); 
+        });
+    });
+</script>  
