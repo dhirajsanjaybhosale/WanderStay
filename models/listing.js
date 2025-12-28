@@ -1,81 +1,92 @@
 const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 const Review = require("./review.js");
-const user = require("./user.js")
 
 const listingSchema = new Schema({
-  title: { 
+  title: {
     type: String,
-    // optional, but recommended
+    required: true,
   },
-  description: { 
+
+  description: {
     type: String,
-   
+    required: true,
   },
+
   image: {
-  url: String,
-  filename: String,
-},
-
-
-  price:  Number,
-    
-
-  location: { 
-    type: String,
-   
-  },
-  country: { 
-    type: String,
-    
-  },
-   // Category 
-  category: {
-        type: String,
-        enum: [
-            'Beach',
-            'City',
-            'Mountain',
-            'Lake',
-            'Ski',
-            'Desert',
-            'Cabin',
-            'Villa',
-        ],
-        required: true,
+    url: {
+      type: String,
+      required: true,
     },
-  reviews :[
+    filename: {
+      type: String,
+      required: true,
+    },
+  },
+
+  price: {
+    type: Number,
+    required: true,
+  },
+
+  location: {
+    type: String,
+    required: true,
+  },
+
+  country: {
+    type: String,
+    required: true,
+  },
+
+  category: {
+    type: String,
+    enum: [
+      "Beach",
+      "City",
+      "Mountain",
+      "Lake",
+      "Ski",
+      "Desert",
+      "Cabin",
+      "Villa",
+    ],
+    required: true,
+  },
+
+  geometry: {
+    type: {
+      type: String,
+      enum: ["Point"],
+      required: true,
+    },
+    coordinates: {
+      type: [Number],
+      required: true,
+    },
+  },
+
+  reviews: [
     {
-      type:Schema.Types.ObjectId,
-      ref:"Review",
+      type: Schema.Types.ObjectId,
+      ref: "Review",
     },
   ],
-  owner:{
-    type:Schema.Types.ObjectId,
-    ref:"User",
+
+  owner: {
+    type: Schema.Types.ObjectId,
+    ref: "User",
   },
-  geometry:{
-    type:{
-      type:String,
-      enum:["Point"],
-      required:true,
-    },
-    coordinates:{
-      type:[Number],
-      required:true,
-    }
-  },
-  
 });
 
+/* Geospatial index for maps */
+listingSchema.index({ geometry: "2dsphere" });
 
-
-listingSchema.post("findOneAndDelete",async (listing) =>{
+/* Cascade delete reviews */
+listingSchema.post("findOneAndDelete", async function (listing) {
   if (listing) {
-    await Review.deleteMany({_id: {$in: listing.reviews}})
+    await Review.deleteMany({ _id: { $in: listing.reviews } });
   }
 });
 
-
-const Listing = mongoose.models.Listing || mongoose.model("Listing", listingSchema);
-module.exports = Listing;
+module.exports = mongoose.model("Listing", listingSchema);

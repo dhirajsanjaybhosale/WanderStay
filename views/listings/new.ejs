@@ -1,84 +1,151 @@
-<%layout("/layouts/boilerplate.ejs")%>
+<% layout("/layouts/boilerplate.ejs") %>
 <div class="row mt-3">
   <div class="col-8 offset-2">
-    <br /><br />
-  <h3>Create a New Listing</h3>
-  
-    <form method="POST" action="/listings" novalidate class="needs-validation"
-     enctype="multipart/form-data">
+    <h3>Create a New Listing</h3>
+    <form action="/listings" method="POST" class="needs-validation" novalidate enctype="multipart/form-data" >
+      
       <div class="mb-3">
         <label for="title" class="form-label">Title</label>
-        <input name="listing[title]"  placeholder="Add a catchy title" type="text" class="form-control" required />
-        <div class="valid-feedback">Title looks good!</div>
-     
+        <input name="listing[title]" type="text" placeholder="Add a catchy title" class="form-control" required>
+        <div class="invalid-feedback">Please enter a valid title</div>
       </div>
+
       <div class="mb-3">
         <label for="description" class="form-label">Description</label>
         <textarea name="listing[description]" class="form-control" required></textarea>
-        <div class="invalid-feedback">Please enter the short Description</div>
+        <div class="invalid-feedback">Please enter a valid description</div>
       </div>
-      
+
       <div class="mb-3">
-        <label for="image" class="form-label">Upload Listing Image</label>
-        <input
-        name="listing[image]"
-        type="file"
-        class="form-control"
-      />
+        <label for="image" class="form-label">Upload Image</label>
+        <input name="listing[image]" type="file" class="form-control">
       </div>
 
-
-    <div class="row">
-       <div class="mb-3 col-md-4">
-      <label for="price" class="form-label"> Price</label>
-      <input name="listing[price]" placeholder="1200"  class="form-control" required />
-      <div class="invalid-feedback">Price should be valid</div>
-     </div>
-     <div class="mb-3 col-md-8">
-      <label for="country" class="form-label"> Country</label>
-       <input name="listing[country]" placeholder="India" type="text" class="form-control" required />
-       <div class="invalid-feedback">Country name should be valid</div>
-     </div>
-    </div>
-
-
-    <div class="mb-3">
-          <label for="category" class="form-label">Category</label>
-          <div class="input-group">
-            <span class="input-group-text"><i class="fa-solid fa-tags"></i></span>
-            <select name="listing[category]" id="category" class="form-select" required>
-              <option value="" disabled selected>Select category</option>
-              <option value="Beach">Beach</option>
-              <option value="City">City</option>
-              <option value="Mountain">Mountain</option>
-              <option value="Lake">Lake</option>
-              <option value="Ski">Ski</option>
-              <option value="Desert">Desert</option>
-              <option value="Cabin">Cabin</option>
-              <option value="Villa">Villa</option>
-            </select>
-          </div>
-          <div class="form-text">Choose the type of place</div>
-          <div class="invalid-feedback">Please select a category</div>
+      <div class="row">
+        <div class="mb-3 col-md-4">
+          <label for="price" class="form-label">Price</label>
+          <input name="listing[price]" type="number" placeholder="1200" class="form-control" required>
+          <div class="invalid-feedback">Please enter a valid price</div>
         </div>
 
-
-
-    
-     <div class="mb-3">
-       <label for="location" class="form-label">Location</label>
-      <input
-        name="listing[location]"
-        placeholder="pune,karvenagar"
-        type="text"
-        class="form-control"
-        required
-      />
-      <div class="invalid-feedback">Please enter a valid location</div>
+        <div class="mb-3 col-md-8">
+          <label for="country" class="form-label">Country</label>
+          <input name="listing[country]" type="text" placeholder="India" class="form-control" required>
+          <div class="invalid-feedback">Please enter a valid country</div>
+        </div>
       </div>
-      
-      <button class="btn btn-dark add-btn mt-3">Add</button>
-      
+
+      <div class="mb-3">
+        <label for="category" class="form-label">Category</label>
+        <select name="listing[category]" class="form-select" required>
+          <option value="" disabled selected>Select category</option>
+          <option value="Beach">Beach</option>
+          <option value="City">City</option>
+          <option value="Mountain">Mountain</option>
+          <option value="Lake">Lake</option>
+          <option value="Ski">Ski</option>
+          <option value="Desert">Desert</option>
+          <option value="Cabin">Cabin</option>
+          <option value="Villa">Villa</option>
+        </select>
+        <div class="invalid-feedback">Please select a category</div>
+      </div>
+
+      <div class="mb-3">
+        <label for="location" class="form-label">Location</label>
+        <input name="listing[location]" type="text" placeholder="City, State" class="form-control" required>
+        <div class="invalid-feedback">Please enter a valid location</div>
+      </div>
+
+      <button class="btn btn-dark mt-3">Add Listing</button>
     </form>
-  </div>    
+  </div>
 </div>
+
+
+
+
+
+
+
+
+
+
+
+<style>
+  /* ================= CREATE LISTING ================= */
+h3 {
+  text-align: center;
+  font-weight: 600;
+  margin-bottom: 20px;
+}
+
+/* Form container */
+.col-8.offset-2 {
+  background: #fff;
+  padding: 24px;
+  border-radius: 12px;
+}
+
+/* Inputs */
+.form-control,
+.form-select {
+  border-radius: 8px;
+}
+
+/* Button */
+button.btn-dark {
+  width: 100%;
+  padding: 10px;
+  border-radius: 8px;
+}
+
+/* ================= TABLET (≤ 992px) ================= */
+@media (max-width: 992px) {
+  .col-8.offset-2 {
+    width: 100%;
+    margin-left: 0;
+    padding: 20px;
+  }
+
+  h3 {
+    font-size: 1.4rem;
+  }
+}
+
+/* ================= MOBILE (≤ 768px) ================= */
+@media (max-width: 768px) {
+  .row {
+    margin: 0;
+  }
+
+  .col-8.offset-2 {
+    padding: 16px;
+  }
+
+  h3 {
+    font-size: 1.25rem;
+  }
+
+  label {
+    font-size: 0.9rem;
+  }
+
+  .form-control,
+  .form-select {
+    font-size: 0.9rem;
+  }
+}
+
+/* ================= SMALL PHONES (≤ 480px) ================= */
+@media (max-width: 480px) {
+  h3 {
+    font-size: 1.1rem;
+  }
+
+  button.btn-dark {
+    font-size: 0.95rem;
+  }
+}
+
+</style>

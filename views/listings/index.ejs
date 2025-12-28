@@ -27,50 +27,7 @@
        <a class="filter <%= currentCategory==='Mountain' ? 'active' : '' %>" href="/listings?category=Mountain">
             <i class="fa-solid fa-mountain"></i> Mountain
        </a>
-      <!-- <div class="filter">
-       <div> <i class="fa-solid fa-fire"></i></div>
-        <p>Trending</p>
-      </div>
-      <div class="filter">
-       <div> <i class="fa-solid fa-bed"></i></div>
-        <p>Rooms</p>
-      </div>
-      <div class="filter">
-       <div> <i class="fa-solid fa-mountain-city"></i></div>
-        <p>Iconic Cities</p>
-      </div>
-      <div class="filter">
-       <div><i class="fa-solid fa-mountain"></i></div>
-        <p>Mountains</p>
-      </div>
-      <div class="filter">
-       <div> <i class="fa-brands fa-fort-awesome"></i></div>
-        <p>Castles</p>
-      </div>
-      <div class="filter">
-       <div> <i class="fa-solid fa-person-swimming"></i></div>
-        <p>Amazing pools</p>
-      </div>
-      <div class="filter">
-       <div><i class="fa-solid fa-campground"></i></div>
-        <p>Camping</p>
-      </div>
-      <div class="filter">
-       <div> <i class="fa-solid fa-cow"></i></div>
-        <p>Farms</p>
-      </div>
-      <div class="filter">
-       <div> <i class="fa-solid fa-snowflake"></i></div>
-        <p>Arctic</p>
-      </div>
-      <div class="filter">
-       <div> <i class="fa-solid fa-igloo"></i></div>
-        <p>Domes</p>
-      </div>
-      <div class="filter">
-       <div> <i class="fa-solid fa-ship"></i></div>
-        <p>Boats</p>
-      </div> -->
+      
 
       <div class="tax-toggle" >
         <div class="form-check-reverse form-switch">
@@ -122,3 +79,149 @@
     }
   });
 </script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<style>
+  /* ================= FILTER BAR ================= */
+#filters {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  overflow-x: auto;
+  padding: 12px 5px;
+  margin-bottom: 10px;
+  scrollbar-width: none;
+}
+
+#filters::-webkit-scrollbar {
+  display: none;
+}
+
+.filter {
+  text-align: center;
+  color: #555;
+  font-size: 14px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+}
+
+.filter i {
+  display: block;
+  font-size: 18px;
+  margin-bottom: 4px;
+}
+
+.filter:hover {
+  background-color: #f2f2f2;
+}
+
+.filter.active {
+  color: #000;
+  border-bottom: 2px solid #000;
+}
+
+/* Tax toggle */
+.tax-toggle {
+  margin-left: auto;
+  white-space: nowrap;
+}
+
+/* ================= LISTING CARDS ================= */
+.listing-card img {
+  object-fit: cover;
+  border-radius: 12px 12px 0 0;
+}
+
+.listing-card {
+  border-radius: 12px;
+  transition: transform 0.2s ease;
+}
+
+.listing-card:hover {
+  transform: scale(1.02);
+}
+
+/* ================= TABLET (≤ 992px) ================= */
+@media (max-width: 992px) {
+  #filters {
+    gap: 14px;
+    padding: 10px 5px;
+  }
+
+  .filter {
+    font-size: 13px;
+  }
+
+  .filter i {
+    font-size: 16px;
+  }
+
+  .tax-toggle label {
+    font-size: 13px;
+  }
+}
+
+/* ================= MOBILE (≤ 768px) ================= */
+@media (max-width: 768px) {
+  #filters {
+    padding: 8px 5px;
+  }
+
+  .filter {
+    font-size: 12px;
+    padding: 6px 10px;
+  }
+
+  .filter i {
+    font-size: 15px;
+  }
+
+  .tax-toggle {
+    display: none; /* Hide tax toggle on small screens */
+  }
+
+  .card-text b {
+    font-size: 14px;
+  }
+
+  .card-text {
+    font-size: 13px;
+  }
+}
+
+/* ================= SMALL PHONES (≤ 480px) ================= */
+@media (max-width: 480px) {
+  .filter {
+    font-size: 11px;
+  }
+
+  .filter i {
+    font-size: 14px;
+  }
+
+  .listing-card {
+    border-radius: 10px;
+  }
+}
+
+</style>

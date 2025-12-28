@@ -115,3 +115,126 @@
 </script>
 
 <script src="/js/map.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+<style>
+  /* ================= SHOW PAGE ================= */
+.show-card {
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.show-img {
+  height: 380px;
+  object-fit: cover;
+}
+
+/* Title */
+h3 {
+  font-weight: 600;
+  margin-bottom: 15px;
+}
+
+/* Buttons container */
+.btns {
+  display: flex;
+  gap: 12px;
+  margin: 15px 0;
+}
+
+/* Review cards */
+.starability-result {
+  margin-bottom: 8px;
+}
+
+/* Map */
+#map {
+  height: 350px;
+  width: 100%;
+  border-radius: 14px;
+}
+
+/* ================= TABLET (≤ 992px) ================= */
+@media (max-width: 992px) {
+  .col-8.offset-3,
+  .card.col-6.offset-3 {
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .show-img {
+    height: 320px;
+  }
+
+  .btns {
+    justify-content: space-between;
+  }
+
+  .edit-btn {
+    width: 100%;
+  }
+}
+
+/* ================= MOBILE (≤ 768px) ================= */
+@media (max-width: 768px) {
+  .row {
+    margin: 0;
+  }
+
+  h3 {
+    font-size: 1.3rem;
+    text-align: center;
+  }
+
+  .show-img {
+    height: 260px;
+  }
+
+  .btns {
+    flex-direction: column;
+  }
+
+  .btns a,
+  .btns button {
+    width: 100%;
+  }
+
+  .card.col-5 {
+    width: 100%;
+    margin-left: 0;
+  }
+
+  #map {
+    height: 280px;
+  }
+}
+
+/* ================= SMALL PHONES (≤ 480px) ================= */
+@media (max-width: 480px) {
+  h3 {
+    font-size: 1.15rem;
+  }
+
+  .show-img {
+    height: 220px;
+  }
+
+  .card-body p {
+    font-size: 0.9rem;
+  }
+
+  #map {
+    height: 240px;
+  }
+}
+
+</style>
