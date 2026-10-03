@@ -1,33 +1,49 @@
-<%layout("/layouts/boilerplate.ejs")%>
-<div class="row mt-3">
-  <h1 class="col-6 offset-3">Login</h1>
-  <div class="col-6 offset-3">
+<% layout("/layouts/boilerplate.ejs") %>
+
+<div class="auth-container">
+  <div class="auth-card">
+    <div class="auth-header">
+      <div class="brand-icon mx-auto mb-3">
+        <i class="fa-solid fa-lock"></i>
+      </div>
+      <h2>Welcome Back</h2>
+      <p>Log in to manage your bookings, wishlist, and listings</p>
+    </div>
+
     <form action="/login" method="POST" novalidate class="needs-validation">
       <div class="mb-3">
-        <label for="username" class="form-label">Username</label>
+        <label for="username" class="form-label">Username or Email</label>
         <input
           name="username"
           id="username"
           type="text"
           class="form-control"
+          placeholder="Enter your username or email"
           required
         />
-        
+        <div class="invalid-feedback">Please enter your username or email.</div>
       </div>
 
-      
-      <div class="mb-3">
+      <div class="mb-4">
         <label for="password" class="form-label">Password</label>
         <input
           name="password"
           id="password"
           type="password"
           class="form-control"
+          placeholder="••••••••"
           required
         />
+        <div class="invalid-feedback">Please enter your password.</div>
       </div>
 
-      <button type="submit" class="btn btn-success">Login</button>
+      <button type="submit" class="btn btn-primary btn-lg w-100 rounded-pill mb-3">
+        <i class="fa-solid fa-arrow-right-to-bracket me-1"></i> Log In
+      </button>
     </form>
+
+    <div class="text-center text-muted small mt-3">
+      Don't have an account? <a href="/signup" class="text-primary fw-bold text-decoration-none">Sign up</a>
+    </div>
   </div>
 </div>

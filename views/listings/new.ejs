@@ -1,151 +1,135 @@
 <% layout("/layouts/boilerplate.ejs") %>
-<div class="row mt-3">
-  <div class="col-8 offset-2">
-    <h3>Create a New Listing</h3>
-    <form action="/listings" method="POST" class="needs-validation" novalidate enctype="multipart/form-data" >
-      
-      <div class="mb-3">
-        <label for="title" class="form-label">Title</label>
-        <input name="listing[title]" type="text" placeholder="Add a catchy title" class="form-control" required>
-        <div class="invalid-feedback">Please enter a valid title</div>
+
+<div class="container-max py-4">
+<div class="row justify-content-center my-4">
+  <div class="col-lg-8 col-md-10">
+    <div class="card border rounded-4 p-4 p-md-5 bg-white shadow-sm">
+      <div class="text-center mb-4">
+        <div class="brand-icon mx-auto mb-2" style="width: 48px; height: 48px; font-size: 1.3rem;">
+          <i class="fa-solid fa-house-chimney-medical"></i>
+        </div>
+        <h2 class="fw-bold mb-1">Create a New Listing</h2>
+        <p class="text-muted small">Share your property with thousands of travelers worldwide</p>
       </div>
 
-      <div class="mb-3">
-        <label for="description" class="form-label">Description</label>
-        <textarea name="listing[description]" class="form-control" required></textarea>
-        <div class="invalid-feedback">Please enter a valid description</div>
-      </div>
-
-      <div class="mb-3">
-        <label for="image" class="form-label">Upload Image</label>
-        <input name="listing[image]" type="file" class="form-control">
-      </div>
-
-      <div class="row">
-        <div class="mb-3 col-md-4">
-          <label for="price" class="form-label">Price</label>
-          <input name="listing[price]" type="number" placeholder="1200" class="form-control" required>
-          <div class="invalid-feedback">Please enter a valid price</div>
+      <form action="/listings" method="POST" class="needs-validation" novalidate enctype="multipart/form-data">
+        
+        <!-- Title -->
+        <div class="mb-3">
+          <label for="title" class="form-label">Property Title</label>
+          <input 
+            name="listing[title]" 
+            id="title" 
+            type="text" 
+            placeholder="e.g. Luxurious Beachfront Villa with Private Pool" 
+            class="form-control" 
+            required 
+          />
+          <div class="invalid-feedback">Please provide an attractive property title.</div>
         </div>
 
-        <div class="mb-3 col-md-8">
-          <label for="country" class="form-label">Country</label>
-          <input name="listing[country]" type="text" placeholder="India" class="form-control" required>
-          <div class="invalid-feedback">Please enter a valid country</div>
+        <!-- Description -->
+        <div class="mb-3">
+          <label for="description" class="form-label">Description</label>
+          <textarea 
+            name="listing[description]" 
+            id="description" 
+            rows="4" 
+            placeholder="Describe what makes your space special, nearby attractions, amenities, and guest experience..." 
+            class="form-control" 
+            required
+          ></textarea>
+          <div class="invalid-feedback">Please enter a description for your listing.</div>
         </div>
-      </div>
 
-      <div class="mb-3">
-        <label for="category" class="form-label">Category</label>
-        <select name="listing[category]" class="form-select" required>
-          <option value="" disabled selected>Select category</option>
-          <option value="Beach">Beach</option>
-          <option value="City">City</option>
-          <option value="Mountain">Mountain</option>
-          <option value="Lake">Lake</option>
-          <option value="Ski">Ski</option>
-          <option value="Desert">Desert</option>
-          <option value="Cabin">Cabin</option>
-          <option value="Villa">Villa</option>
-        </select>
-        <div class="invalid-feedback">Please select a category</div>
-      </div>
+        <!-- Image Upload -->
+        <div class="mb-3">
+          <label for="image" class="form-label">Property Photos</label>
+          <input 
+            name="listing[image]" 
+            id="image" 
+            type="file" 
+            class="form-control" 
+            accept="image/*"
+            multiple
+          />
+          <div class="form-text">Upload high quality photos (JPEG, PNG). You can select multiple images.</div>
+        </div>
 
-      <div class="mb-3">
-        <label for="location" class="form-label">Location</label>
-        <input name="listing[location]" type="text" placeholder="City, State" class="form-control" required>
-        <div class="invalid-feedback">Please enter a valid location</div>
-      </div>
+        <!-- Price & Category -->
+        <div class="row g-3 mb-3">
+          <div class="col-md-6">
+            <label for="price" class="form-label">Price per Night (₹ INR)</label>
+            <div class="input-group">
+              <span class="input-group-text bg-light fw-bold">&#8377;</span>
+              <input 
+                name="listing[price]" 
+                id="price" 
+                type="number" 
+                min="100" 
+                placeholder="2500" 
+                class="form-control" 
+                required 
+              />
+            </div>
+            <div class="invalid-feedback">Please enter a valid price.</div>
+          </div>
 
-      <button class="btn btn-dark mt-3">Add Listing</button>
-    </form>
+          <div class="col-md-6">
+            <label for="category" class="form-label">Property Category</label>
+            <select name="listing[category]" id="category" class="form-select" required>
+              <option value="" disabled selected>Select category...</option>
+              <option value="Beach">🏖 Beachfront</option>
+              <option value="City">🏙 City Apartment</option>
+              <option value="Mountain">🏔 Mountain Retreat</option>
+              <option value="Lake">🌊 Lakehouse</option>
+              <option value="Ski">⛷️ Ski Resort</option>
+              <option value="Desert">🏜️ Desert Oasis</option>
+              <option value="Cabin">🏡 Cozy Cabin</option>
+              <option value="Villa">💎 Luxury Villa</option>
+            </select>
+            <div class="invalid-feedback">Please select a category.</div>
+          </div>
+        </div>
+
+        <!-- Location & Country -->
+        <div class="row g-3 mb-4">
+          <div class="col-md-7">
+            <label for="location" class="form-label">Location / City</label>
+            <input 
+              name="listing[location]" 
+              id="location" 
+              type="text" 
+              placeholder="e.g. Candolim, Goa" 
+              class="form-control" 
+              required 
+            />
+            <div class="invalid-feedback">Please specify the location.</div>
+          </div>
+
+          <div class="col-md-5">
+            <label for="country" class="form-label">Country</label>
+            <input 
+              name="listing[country]" 
+              id="country" 
+              type="text" 
+              placeholder="e.g. India" 
+              class="form-control" 
+              required 
+            />
+            <div class="invalid-feedback">Please specify the country.</div>
+          </div>
+        </div>
+
+        <!-- Submit Button -->
+        <div class="d-flex gap-2">
+          <button type="submit" class="btn btn-primary btn-lg flex-grow-1 rounded-pill">
+            <i class="fa-solid fa-plus me-1"></i> Publish Listing
+          </button>
+          <a href="/listings" class="btn btn-outline-dark btn-lg rounded-pill px-4">Cancel</a>
+        </div>
+      </form>
+    </div>
   </div>
 </div>
-
-
-
-
-
-
-
-
-
-
-
-<style>
-  /* ================= CREATE LISTING ================= */
-h3 {
-  text-align: center;
-  font-weight: 600;
-  margin-bottom: 20px;
-}
-
-/* Form container */
-.col-8.offset-2 {
-  background: #fff;
-  padding: 24px;
-  border-radius: 12px;
-}
-
-/* Inputs */
-.form-control,
-.form-select {
-  border-radius: 8px;
-}
-
-/* Button */
-button.btn-dark {
-  width: 100%;
-  padding: 10px;
-  border-radius: 8px;
-}
-
-/* ================= TABLET (≤ 992px) ================= */
-@media (max-width: 992px) {
-  .col-8.offset-2 {
-    width: 100%;
-    margin-left: 0;
-    padding: 20px;
-  }
-
-  h3 {
-    font-size: 1.4rem;
-  }
-}
-
-/* ================= MOBILE (≤ 768px) ================= */
-@media (max-width: 768px) {
-  .row {
-    margin: 0;
-  }
-
-  .col-8.offset-2 {
-    padding: 16px;
-  }
-
-  h3 {
-    font-size: 1.25rem;
-  }
-
-  label {
-    font-size: 0.9rem;
-  }
-
-  .form-control,
-  .form-select {
-    font-size: 0.9rem;
-  }
-}
-
-/* ================= SMALL PHONES (≤ 480px) ================= */
-@media (max-width: 480px) {
-  h3 {
-    font-size: 1.1rem;
-  }
-
-  button.btn-dark {
-    font-size: 0.95rem;
-  }
-}
-
-</style>
+</div>

@@ -1,0 +1,69 @@
+<% layout('/layouts/boilerplate.ejs') %>
+
+<div class="container-max my-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h2 class="fw-bold mb-1">My Wishlist</h2>
+      <p class="text-muted mb-0">Your saved dream stays and vacation properties</p>
+    </div>
+    <a href="/listings" class="btn btn-outline-dark rounded-pill">Explore Stays</a>
+  </div>
+
+  <% if (!wishlist || wishlist.length === 0) { %>
+    <div class="text-center py-5 my-5 bg-white border rounded-4 shadow-sm p-4">
+      <div class="brand-icon mx-auto mb-3" style="width: 64px; height: 64px; font-size: 1.8rem; background: var(--primary-light); color: var(--primary);">
+        <i class="fa-regular fa-heart"></i>
+      </div>
+      <h4 class="fw-bold">Your wishlist is empty</h4>
+      <p class="text-muted mb-4">As you search, tap the heart icon on any stay to save your favorite properties here.</p>
+      <a href="/listings" class="btn btn-primary rounded-pill px-4">Start Exploring</a>
+    </div>
+  <% } else { %>
+    <div class="listings-grid-container">
+      <% wishlist.forEach(listing => { %>
+        <% if (listing) { %>
+          <div class="listing-card-wrapper">
+            <div class="listing-card-media">
+              <a href="/listings/<%= listing._id %>">
+                <img 
+                  src="<%= (listing.image && listing.image.url) ? listing.image.url : (listing.photos && listing.photos[0] && (listing.photos[0].url || listing.photos[0])) || 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80' %>" 
+                  alt="<%= listing.title %>" 
+                  loading="lazy"
+                />
+              </a>
+
+              <!-- Remove Wishlist Button -->
+              <form action="/wishlist/<%= listing._id %>/toggle" method="POST" class="d-inline">
+                <button type="submit" class="listing-wishlist-toggle is-wishlisted" title="Remove from wishlist">
+                  <i class="fa-solid fa-heart text-danger"></i>
+                </button>
+              </form>
+
+              <span class="listing-category-badge"><%= listing.category %></span>
+            </div>
+
+            <a href="/listings/<%= listing._id %>" class="text-decoration-none text-reset listing-card-body">
+              <div class="listing-card-header">
+                <div class="listing-card-location"><%= listing.location %>, <%= listing.country %></div>
+                <div class="listing-rating-badge">
+                  <i class="fa-solid fa-star"></i>
+                  <span><%= listing.averageRating ? listing.averageRating.toFixed(1) : '4.8' %></span>
+                </div>
+              </div>
+              
+              <div class="listing-card-title"><%= listing.title %></div>
+
+              <div class="listing-card-footer">
+                <div>
+                  <span class="listing-price-tag">&#8377; <%= Number(listing.price).toLocaleString("en-IN") %></span>
+                  <span class="listing-price-period">/ night</span>
+                </div>
+                <span class="text-primary fw-semibold small">View property &rarr;</span>
+              </div>
+            </a>
+          </div>
+        <% } %>
+      <% }) %>
+    </div>
+  <% } %>
+</div>

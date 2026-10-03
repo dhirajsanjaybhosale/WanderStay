@@ -1,0 +1,13 @@
+<div class="dest-card">
+  <a class="dest-link" href="/listings?q=<%= encodeURIComponent(dest.name) %>">
+    <div class="dest-media" style="background-image:url('<%= dest.image %>')" role="img" aria-label="<%= dest.name %>"></div>
+    <div class="dest-body p-3">
+      <div class="d-flex justify-content-between align-items-start">
+        <h4 class="mb-1"><%= dest.name %></h4>
+        <% if(dest.trending){ %><span class="verified-badge">Trending</span><% } %>
+      </div>
+      <div class="small text-muted"><%= dest.attractions.join(', ') %></div>
+      <div class="mt-2"><strong>Avg: <%= dest.avgCost %></strong></div>
+    </div>
+  </a>
+</div>

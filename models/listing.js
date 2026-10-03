@@ -23,7 +23,16 @@ const listingSchema = new Schema({
       required: true,
     },
   },
-
+  photos: [
+    {
+      url: String,
+      filename: String,
+    }
+  ],
+  isAvailable: {
+    type: Boolean,
+    default: true,
+  },
   price: {
     type: Number,
     required: true,
@@ -52,6 +61,16 @@ const listingSchema = new Schema({
       "Villa",
     ],
     required: true,
+  },
+
+  averageRating: {
+    type: Number,
+    default: 0,
+  },
+
+  createdAt: {
+    type: Date,
+    default: Date.now,
   },
 
   geometry: {

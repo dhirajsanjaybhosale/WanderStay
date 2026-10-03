@@ -1,0 +1,167 @@
+<% layout('/layouts/boilerplate.ejs') %>
+
+<div class="container-max my-4">
+  <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+    <div>
+      <h2 class="dashboard-title mb-1">Host Dashboard</h2>
+      <p class="text-muted mb-0">Overview of your listings, reservations, and overall earnings</p>
+    </div>
+    <a href="/listings/new" class="btn btn-primary rounded-pill px-4">
+      <i class="fa-solid fa-plus me-1"></i> Add New Listing
+    </a>
+  </div>
+
+  <!-- Metric Cards Grid -->
+  <div class="row g-3 mb-4">
+    <div class="col-md-4">
+      <div class="stat-card-widget">
+        <div class="stat-icon-box">
+          <i class="fa-solid fa-house-chimney"></i>
+        </div>
+        <div>
+          <div class="stat-number"><%= listings.length %></div>
+          <div class="stat-title">Total Listings</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="stat-card-widget">
+        <div class="stat-icon-box">
+          <i class="fa-solid fa-calendar-check"></i>
+        </div>
+        <div>
+          <div class="stat-number"><%= hostBookings.length %></div>
+          <div class="stat-title">Total Bookings</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="stat-card-widget">
+        <div class="stat-icon-box" style="background: #DCFCE7; color: #166534;">
+          <i class="fa-solid fa-indian-rupee-sign"></i>
+        </div>
+        <div>
+          <div class="stat-number">&#8377; <%= Number(totalEarnings || 0).toLocaleString("en-IN") %></div>
+          <div class="stat-title">Total Earnings</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Listings Management Table -->
+  <div class="card border rounded-4 shadow-sm bg-white p-4 mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h4 class="fw-bold mb-0">Your Properties</h4>
+      <span class="badge bg-light text-dark border px-3 py-2 rounded-pill"><%= listings.length %> Properties</span>
+    </div>
+
+    <% if (listings.length === 0) { %>
+      <div class="text-center py-4 text-muted">
+        <p>You haven't added any listings yet.</p>
+        <a href="/listings/new" class="btn btn-outline-primary btn-sm rounded-pill">Create Your First Listing</a>
+      </div>
+    <% } else { %>
+      <div class="table-responsive">
+        <table class="table-custom">
+          <thead>
+            <tr>
+              <th>Property</th>
+              <th>Category</th>
+              <th>Price/Night</th>
+              <th>Rating</th>
+              <th class="text-end">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% listings.forEach(function(item) { %>
+              <tr>
+                <td>
+                  <div class="d-flex align-items-center gap-3">
+                    <img 
+                      src="<%= (item.image && item.image.url) ? item.image.url : (item.photos && item.photos[0] && (item.photos[0].url || item.photos[0])) || 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=120&q=80' %>" 
+                      alt="<%= item.title %>" 
+                      style="width: 54px; height: 44px; object-fit: cover; border-radius: 8px;"
+                    />
+                    <div>
+                      <a href="/listings/<%= item._id %>" class="fw-bold text-decoration-none text-reset"><%= item.title %></a>
+                      <div class="small text-muted"><%= item.location %>, <%= item.country %></div>
+                    </div>
+                  </div>
+                </td>
+                <td><span class="badge bg-light text-dark border"><%= item.category %></span></td>
+                <td class="fw-bold">&#8377; <%= Number(item.price).toLocaleString("en-IN") %></td>
+                <td>
+                  <i class="fa-solid fa-star text-warning me-1"></i>
+                  <strong><%= item.averageRating ? item.averageRating.toFixed(1) : 'New' %></strong>
+                </td>
+                <td class="text-end">
+                  <div class="d-inline-flex gap-2">
+                    <a href="/listings/<%= item._id %>/edit" class="btn btn-outline-dark btn-sm rounded-pill">
+                      <i class="fa-solid fa-pen-to-square"></i>
+                    </a>
+                    <form action="/listings/<%= item._id %>?_method=DELETE" method="POST" onsubmit="return confirm('Delete this property?');">
+                      <button type="submit" class="btn btn-outline-danger btn-sm rounded-pill">
+                        <i class="fa-solid fa-trash-can"></i>
+                      </button>
+                    </form>
+                  </div>
+                </td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    <% } %>
+  </div>
+
+  <!-- Recent Bookings on Your Properties -->
+  <div class="card border rounded-4 shadow-sm bg-white p-4">
+    <h4 class="fw-bold mb-3">Recent Reservations</h4>
+    <% if (!hostBookings || hostBookings.length === 0) { %>
+      <p class="text-muted">No reservations received yet for your properties.</p>
+    <% } else { %>
+      <div class="table-responsive">
+        <table class="table-custom">
+          <thead>
+            <tr>
+              <th>Property</th>
+              <th>Guest</th>
+              <th>Dates</th>
+              <th>Total Earnings</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% hostBookings.forEach(function(b) { %>
+              <tr>
+                <td>
+                  <% if (b.listing) { %>
+                    <a href="/listings/<%= b.listing._id %>" class="fw-bold"><%= b.listing.title %></a>
+                  <% } else { %>
+                    <span class="text-muted">Listing removed</span>
+                  <% } %>
+                </td>
+                <td>
+                  <div class="fw-semibold"><%= b.guest && b.guest.username ? b.guest.username : 'Traveler' %></div>
+                  <div class="small text-muted"><%= b.guest && b.guest.email ? b.guest.email : '' %></div>
+                </td>
+                <td>
+                  <div class="small"><%= new Date(b.checkIn).toLocaleDateString() %> — <%= new Date(b.checkOut).toLocaleDateString() %></div>
+                  <div class="small text-muted"><%= b.nights %> nights</div>
+                </td>
+                <td class="fw-bold text-primary">&#8377; <%= Number(b.totalPrice).toLocaleString("en-IN") %></td>
+                <td>
+                  <span class="badge badge-status <%= b.status === 'confirmed' ? 'badge-confirmed' : 'badge-cancelled' %>">
+                    <%= b.status %>
+                  </span>
+                </td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    <% } %>
+  </div>
+</div>

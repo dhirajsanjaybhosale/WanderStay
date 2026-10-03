@@ -1,35 +1,72 @@
-<link rel="stylesheet" href="/css/style.css">
-<footer>
-    <div class="f-info">
-        <div class="copyright">
-            <div style="padding-left:1rem;padding-right: 0.5rem;"> &copy; 2025 Wanderlivinn, Inc.</div>
-        
-        
-        <div class="f-info-links">
-            <a href="/privacy">Privacy</a>
-            <a href="/terms">Terms</a>
-            <a href="/terms">Tripnest.com</a>
+<footer class="site-footer">
+  <div class="container-max">
+    <div class="row g-4 pb-4">
+      <!-- Brand & Tagline -->
+      <div class="col-lg-4 col-md-6">
+        <div class="footer-brand">
+          <div class="brand-icon" style="width: 32px; height: 32px; font-size: 1rem;">
+            <i class="fa-solid fa-mountain-sun"></i>
+          </div>
+          <span>WanderStay</span>
         </div>
+        <p class="text-secondary small mb-3">
+          <strong>Wander Far. Stay Better.</strong> Discover unique villas, mountain cabins, beachfront homes, and unforgettable travel experiences worldwide.
+        </p>
+        <div class="d-flex gap-3">
+          <a href="#" class="fs-5" aria-label="Facebook"><i class="fa-brands fa-facebook"></i></a>
+          <a href="#" class="fs-5" aria-label="Instagram"><i class="fa-brands fa-instagram"></i></a>
+          <a href="#" class="fs-5" aria-label="Twitter"><i class="fa-brands fa-x-twitter"></i></a>
+          <a href="#" class="fs-5" aria-label="LinkedIn"><i class="fa-brands fa-linkedin"></i></a>
         </div>
-        
+      </div>
 
-        <div class="f-info-socials">
-            <i class="fa-brands fa-square-facebook" ></i>
-            <i class="fa-brands fa-square-instagram"></i>
-            <i class="fa-brands fa-linkedin" data-link="https://www.linkedin.com/in/dhiraj-bhosale-797363353?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=android_app"></i>
-        </div>
+      <!-- Quick Links -->
+      <div class="col-lg-2 col-md-6 col-6">
+        <h6 class="fw-bold text-white mb-3">Explore</h6>
+        <ul class="list-unstyled d-flex flex-column gap-2 small">
+          <li><a href="/listings">All Stays</a></li>
+          <li><a href="/listings?category=Beach">Beachfront</a></li>
+          <li><a href="/listings?category=Mountain">Mountain Cabins</a></li>
+          <li><a href="/listings?category=Villa">Luxury Villas</a></li>
+          <li><a href="/ai-planner">AI Itinerary Planner</a></li>
+        </ul>
+      </div>
+
+      <!-- Hosting -->
+      <div class="col-lg-2 col-md-6 col-6">
+        <h6 class="fw-bold text-white mb-3">Hosting</h6>
+        <ul class="list-unstyled d-flex flex-column gap-2 small">
+          <li><a href="/listings/new">Host your home</a></li>
+          <li><a href="/dashboard">Host Dashboard</a></li>
+          <li><a href="/trips">Group Trip Planning</a></li>
+          <li><a href="/help">Community Guidelines</a></li>
+        </ul>
+      </div>
+
+      <!-- Support & Newsletter -->
+      <div class="col-lg-4 col-md-6">
+        <h6 class="fw-bold text-white mb-3">Stay Updated</h6>
+        <p class="text-secondary small mb-3">Subscribe to receive exclusive travel discounts and curated destination guides.</p>
+        <form class="d-flex gap-2" onsubmit="event.preventDefault(); alert('Thank you for subscribing to WanderStay!');">
+          <input type="email" class="form-control form-control-sm rounded-pill" placeholder="Enter your email" required aria-label="Email address" />
+          <button type="submit" class="btn btn-primary btn-sm rounded-pill px-3">Join</button>
+        </form>
+      </div>
     </div>
+
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-center pt-4 border-top border-secondary border-opacity-25 small text-secondary">
+      <div class="mb-2 mb-md-0">
+        &copy; <%= new Date().getFullYear() %> WanderStay, Inc. • All rights reserved.
+      </div>
+      <div class="d-flex gap-3">
+        <a href="#">Privacy</a>
+        <span>•</span>
+        <a href="#">Terms</a>
+        <span>•</span>
+        <a href="#">Sitemap</a>
+        <span>•</span>
+        <a href="#">Company Details</a>
+      </div>
+    </div>
+  </div>
 </footer>
-
-
-
-<script>
-    const icons = document.querySelectorAll(".f-info-socials i");
-
-    icons.forEach(icon => {
-        icon.addEventListener("click", () => {
-            const url = icon.dataset.link;
-            window.open(url, "_blank"); 
-        });
-    });
-</script>  

@@ -1,8 +1,70 @@
-<%layout("/layouts/boilerplate.ejs")%>
-<div class="row mt-3">
-  <h1 class="col-6 offset-3">SignUp on Wanderlust</h1>
-  <div class="col-6 offset-3">
+<% layout("/layouts/boilerplate.ejs") %>
+
+<div class="auth-container">
+  <div class="auth-card">
+    <div class="auth-header">
+      <div class="brand-icon mx-auto mb-3">
+        <i class="fa-solid fa-user-plus"></i>
+      </div>
+      <h2>Join WanderStay</h2>
+      <p>Discover unique places, plan trips, and become a host</p>
+    </div>
+
     <form action="/signup" method="POST" novalidate class="needs-validation">
+      <!-- Role Picker -->
+      <div class="mb-3">
+        <label class="form-label small fw-bold text-muted text-uppercase mb-2">Account Type</label>
+        <div class="row g-2">
+          <div class="col-6">
+            <input type="radio" class="btn-check" name="role" id="roleGuest" value="guest" <%= (typeof selectedRole !== 'undefined' && selectedRole === 'host') ? '' : 'checked' %> autocomplete="off">
+            <label class="btn btn-outline-secondary w-100 p-3 text-start rounded-3 h-100 d-flex flex-column justify-content-between" for="roleGuest">
+              <div>
+                <div class="d-flex align-items-center gap-2 mb-1">
+                  <i class="fa-solid fa-compass text-primary"></i>
+                  <span class="fw-bold text-dark">Traveler</span>
+                </div>
+                <div class="small text-muted" style="font-size: 0.76rem;">Book stays & explore places</div>
+              </div>
+            </label>
+          </div>
+          <div class="col-6">
+            <input type="radio" class="btn-check" name="role" id="roleHost" value="host" <%= (typeof selectedRole !== 'undefined' && selectedRole === 'host') ? 'checked' : '' %> autocomplete="off">
+            <label class="btn btn-outline-secondary w-100 p-3 text-start rounded-3 h-100 d-flex flex-column justify-content-between" for="roleHost">
+              <div>
+                <div class="d-flex align-items-center gap-2 mb-1">
+                  <i class="fa-solid fa-house-chimney-user text-primary"></i>
+                  <span class="fw-bold text-dark">Host</span>
+                </div>
+                <div class="small text-muted" style="font-size: 0.76rem;">List homes & host guests</div>
+              </div>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div class="row g-2 mb-3">
+        <div class="col-6">
+          <label for="firstName" class="form-label">First Name</label>
+          <input
+            name="firstName"
+            id="firstName"
+            type="text"
+            class="form-control"
+            placeholder="First name"
+          />
+        </div>
+        <div class="col-6">
+          <label for="lastName" class="form-label">Last Name</label>
+          <input
+            name="lastName"
+            id="lastName"
+            type="text"
+            class="form-control"
+            placeholder="Last name"
+          />
+        </div>
+      </div>
+
       <div class="mb-3">
         <label for="username" class="form-label">Username</label>
         <input
@@ -10,34 +72,46 @@
           id="username"
           type="text"
           class="form-control"
+          placeholder="Choose a username"
           required
         />
-        <div class="valid-feedback">Looks good!</div>
+        <div class="invalid-feedback">Please choose a username.</div>
       </div>
 
       <div class="mb-3">
-        <label for="email" class="form-label">Email</label>
+        <label for="email" class="form-label">Email Address</label>
         <input
           name="email"
           id="email"
           type="email"
           class="form-control"
+          placeholder="name@example.com"
           required
         />
+        <div class="invalid-feedback">Please enter a valid email address.</div>
       </div>
 
-      <div class="mb-3">
+      <div class="mb-4">
         <label for="password" class="form-label">Password</label>
         <input
           name="password"
           id="password"
           type="password"
           class="form-control"
+          placeholder="At least 6 characters"
+          minlength="6"
           required
         />
+        <div class="invalid-feedback">Password must be at least 6 characters.</div>
       </div>
 
-      <button type="submit" class="btn btn-success">SignUp</button>
+      <button type="submit" class="btn btn-primary btn-lg w-100 rounded-pill mb-3">
+        <i class="fa-solid fa-check me-1"></i> Create Account
+      </button>
     </form>
+
+    <div class="text-center text-muted small mt-3">
+      Already have an account? <a href="/login" class="text-primary fw-bold text-decoration-none">Log in</a>
+    </div>
   </div>
 </div>

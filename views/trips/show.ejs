@@ -1,0 +1,171 @@
+<% layout('/layouts/boilerplate.ejs') %>
+
+<div class="container-max my-4">
+  <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+    <div>
+      <span class="badge bg-primary-subtle text-primary border rounded-pill px-3 py-1 mb-2">
+        <i class="fa-solid fa-location-dot me-1"></i><%= trip.destination %>
+      </span>
+      <h2 class="fw-bold mb-1"><%= trip.title %></h2>
+      <div class="small text-muted">Created by <%= trip.owner && trip.owner.username ? trip.owner.username : 'Organizer' %></div>
+    </div>
+    <div class="d-flex gap-2">
+      <a class="btn btn-outline-dark rounded-pill px-4" href="/trips">
+        <i class="fa-solid fa-arrow-left me-1"></i> Back to Trips
+      </a>
+    </div>
+  </div>
+
+  <div class="row g-4">
+    <!-- Left Column: Members & Add Expense -->
+    <div class="col-lg-5">
+      <!-- Members Card -->
+      <div class="card border rounded-4 p-4 bg-white shadow-sm mb-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h5 class="fw-bold mb-0"><i class="fa-solid fa-users text-primary me-2"></i>Trip Members</h5>
+          <span class="badge bg-light text-dark border px-2 py-1"><%= (trip.members && trip.members.length) || 1 %></span>
+        </div>
+
+        <ul class="list-unstyled mb-3 d-flex flex-column gap-2">
+          <% for (let m of (trip.members || [])) { %>
+            <li class="d-flex justify-content-between align-items-center p-2 rounded-3 bg-light">
+              <div class="d-flex align-items-center gap-2">
+                <img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=60&q=80" alt="avatar" class="avatar-img" />
+                <div class="fw-semibold"><%= m.username || m.email %></div>
+              </div>
+              <div class="small text-muted"><%= m.email ? m.email : '' %></div>
+            </li>
+          <% } %>
+        </ul>
+
+        <!-- Invite Member Form -->
+        <form action="/trips/<%= trip._id %>/members" method="POST">
+          <label class="form-label small fw-bold">Invite Friend</label>
+          <div class="input-group">
+            <input name="usernameOrEmail" placeholder="username or email" class="form-control" required />
+            <button class="btn btn-primary">Add</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Add Expense Card -->
+      <div class="card border rounded-4 p-4 bg-white shadow-sm">
+        <h5 class="fw-bold mb-3"><i class="fa-solid fa-receipt text-primary me-2"></i>Add Group Expense</h5>
+        <form action="/trips/<%= trip._id %>/expenses" method="POST">
+          <div class="mb-3">
+            <label class="form-label">Expense Description</label>
+            <input name="description" placeholder="e.g. Dinner, Beach Cab, Groceries" class="form-control" required />
+          </div>
+
+          <div class="row g-2 mb-3">
+            <div class="col-6">
+              <label class="form-label">Amount (₹)</label>
+              <input name="amount" type="number" step="0.01" min="1" placeholder="1500" class="form-control" required />
+            </div>
+            <div class="col-6">
+              <label class="form-label">Paid By</label>
+              <select name="payer" class="form-select">
+                <% for (let m of (trip.members || [])) { %>
+                  <option value="<%= m._id %>"><%= m.username || m.email %></option>
+                <% } %>
+              </select>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Split Among</label>
+            <select multiple name="participants" class="form-select" size="3">
+              <% for (let m of (trip.members || [])) { %>
+                <option value="<%= m._id %>" selected><%= m.username || m.email %></option>
+              <% } %>
+            </select>
+            <div class="form-text small">Hold Ctrl / Cmd to select specific participants.</div>
+          </div>
+
+          <button type="submit" class="btn btn-primary w-100 rounded-pill">
+            <i class="fa-solid fa-plus me-1"></i> Record Expense
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Right Column: Expenses, Balances & Splitwise Settlements -->
+    <div class="col-lg-7">
+      <!-- Expenses List -->
+      <div class="card border rounded-4 p-4 bg-white shadow-sm mb-4">
+        <h5 class="fw-bold mb-3"><i class="fa-solid fa-list-check text-primary me-2"></i>Recorded Expenses</h5>
+        <% if (expenses && expenses.length) { %>
+          <div class="table-responsive">
+            <table class="table-custom">
+              <thead>
+                <tr>
+                  <th>Description</th>
+                  <th>Paid By</th>
+                  <th class="text-end">Amount</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% for (let e of expenses) { %>
+                  <tr>
+                    <td><strong><%= e.description %></strong></td>
+                    <td>
+                      <span class="badge bg-light text-dark border">
+                        <%= e.payer && e.payer.username ? e.payer.username : 'Member' %>
+                      </span>
+                    </td>
+                    <td class="text-end fw-bold text-primary">&#8377; <%= Number(e.amount).toLocaleString("en-IN") %></td>
+                  </tr>
+                <% } %>
+              </tbody>
+            </table>
+          </div>
+        <% } else { %>
+          <p class="text-muted mb-0">No expenses recorded yet. Add an expense to start splitting!</p>
+        <% } %>
+      </div>
+
+      <!-- Balances & Settlements Card -->
+      <div class="card border rounded-4 p-4 bg-white shadow-sm mb-4">
+        <h5 class="fw-bold mb-3"><i class="fa-solid fa-scale-balanced text-primary me-2"></i>Net Balances</h5>
+        
+        <div class="row g-2 mb-4">
+          <% for (let name in balances) { %>
+            <div class="col-md-6">
+              <div class="p-3 rounded-3 border <%= balances[name] >= 0 ? 'bg-success-subtle text-success' : 'bg-danger-subtle text-danger' %>">
+                <div class="d-flex justify-content-between align-items-center">
+                  <strong><%= name %></strong>
+                  <span class="fw-bold"><%= balances[name] >= 0 ? '+' : '' %>&#8377; <%= balances[name] %></span>
+                </div>
+              </div>
+            </div>
+          <% } %>
+        </div>
+
+        <h6 class="fw-bold mb-2">Suggested Settlements</h6>
+        <% if (settlements && settlements.length) { %>
+          <ul class="list-unstyled mb-0 d-flex flex-column gap-2">
+            <% for (let s of settlements) { %>
+              <li class="p-3 bg-light rounded-3 border d-flex justify-content-between align-items-center">
+                <div>
+                  <strong><%= s.from %></strong> pays <strong><%= s.to %></strong>
+                </div>
+                <div class="fw-bold text-primary">&#8377; <%= Number(s.amount).toLocaleString("en-IN") %></div>
+              </li>
+            <% } %>
+          </ul>
+        <% } else { %>
+          <p class="text-muted mb-0 small">All balances are settled.</p>
+        <% } %>
+      </div>
+
+      <!-- Voting Activity Card -->
+      <div class="card border rounded-4 p-4 bg-white shadow-sm">
+        <h5 class="fw-bold mb-3"><i class="fa-solid fa-square-poll-vertical text-primary me-2"></i>Trip Polls & Ideas</h5>
+        <form action="/trips/<%= trip._id %>/vote" method="POST" class="d-flex gap-2">
+          <input name="option" class="form-control" placeholder="Suggest an activity (e.g. Scuba Diving, Sunset Cruise)" required />
+          <button class="btn btn-outline-primary text-nowrap rounded-pill px-3">Vote / Suggest</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>

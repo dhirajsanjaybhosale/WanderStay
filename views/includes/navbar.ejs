@@ -1,169 +1,142 @@
-<link rel="stylesheet" href="/css/style.css">
-<nav class="navbar navbar-expand-md bg-body-light border-bottom sticky-top">
-  <div class="container-fluid">
-    <a class="navbar-brand" href="/listings"><i class="fa-regular fa-compass"></i></a>
-    <button 
-        class="navbar-toggler" 
-        type="button"
-        data-bs-toggle="collapse"
-        data-bs-target="#navbarNavAltMarkup" >
-      <span class="navbar-toggler-icon"></span>
-    </button>
-    <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
-      <div class="navbar-nav">
-        <a class="nav-link" href="/listings">Explore</a>
+<nav class="site-navbar navbar navbar-expand-lg" role="navigation" aria-label="Main navigation">
+  <div class="container-max d-flex align-items-center justify-content-between">
+    <!-- Brand Logo -->
+    <a class="navbar-brand-wrapper text-decoration-none" href="/" aria-label="WanderStay Homepage">
+      <div class="brand-icon-lux">
+        <i class="fa-solid fa-mountain-sun"></i>
       </div>
+      <span class="brand-title-lux">Wander<span class="brand-accent">Stay</span></span>
+    </a>
 
-
-
-      <style>
-  .search-btn {
-    background-color: #fe424d;
-    color: white;
-    border-radius: 2rem;
-    padding: 0 1rem 0 1rem;
-  }
-
-  .search-btn:hover {
-    background-color: #fe424d;
-    color: white;
-  }
-  .search-btn i {
-    display: inline;
-  }
-  .search-inp {
-    border-radius: 2rem;
-    padding: 0.5rem 3rem 0.5rem 3rem;
-    font-size: 1rem;
-  }
- </style>
-
-      <div class="navbar-nav ms-auto">
-        <form class="d-flex" role="search">
-        <input class="form-control me-2 search-inp" type="search" placeholder="Search destinations" />
-        <button class="btn search-btn" type="submit" src="listings/search">
-          <i class="fa-solid fa-magnifying-glass"></i>Search
-        </button>
+    <!-- Center Search Bar (Desktop) -->
+    <form class="nav-search-bar d-none d-lg-flex" action="/listings" method="GET" role="search">
+      <input 
+        type="search" 
+        name="q" 
+        placeholder="Anywhere • Any week • Add guests" 
+        value="<%= typeof searchQuery !== 'undefined' ? searchQuery : '' %>"
+        aria-label="Search stays"
+      />
+      <button class="nav-search-btn" type="submit" aria-label="Submit search">
+        <i class="fa-solid fa-magnifying-glass"></i>
+      </button>
     </form>
-      </div>
 
-      <div class="navbar-nav ms-auto">
-        <a class="nav-link" href="/listings/new">LivinnHost</a>
-        <% if(!CurrUser) { %>
-        <a class="nav-link "  href="/signup"><b>Sign up</b></a>
-        <a class="nav-link" href="/login"><b>Log in</b></a>
-        <%} %>
-        <% if(CurrUser) { %>
-        <a class="nav-link" href="/logout"><b>Log out</b></a>
-         <%} %>
-       
+    <!-- Mobile Toggler -->
+    <button 
+      class="navbar-toggler border-0 d-lg-none" 
+      type="button" 
+      data-bs-toggle="collapse" 
+      data-bs-target="#navCollapseContent" 
+      aria-controls="navCollapseContent" 
+      aria-expanded="false" 
+      aria-label="Toggle navigation"
+    >
+      <i class="fa-solid fa-bars fs-4"></i>
+    </button>
+
+    <!-- Navigation Items -->
+    <div class="collapse navbar-collapse flex-grow-0" id="navCollapseContent">
+      <div class="nav-links-wrapper flex-column flex-lg-row mt-3 mt-lg-0">
+        <!-- Search bar on mobile collapse -->
+        <form class="nav-search-bar w-100 d-flex d-lg-none mb-3" action="/listings" method="GET">
+          <input 
+            type="search" 
+            name="q" 
+            placeholder="Search destinations..." 
+            value="<%= typeof searchQuery !== 'undefined' ? searchQuery : '' %>"
+          />
+          <button class="nav-search-btn" type="submit">
+            <i class="fa-solid fa-magnifying-glass"></i>
+          </button>
+        </form>
+
+        <a class="nav-link-item" href="/listings">Explore</a>
+        <a class="nav-link-item" href="/ai-planner"><i class="fa-solid fa-wand-magic-sparkles text-primary me-1"></i>AI Planner</a>
+        <a class="nav-link-item" href="/trips">Trips</a>
+
+        <% const user = (typeof currUser !== 'undefined' && currUser) ? currUser : ((typeof CurrUser !== 'undefined' && CurrUser) ? CurrUser : null); %>
+        <% if (user) { %>
+          <a class="nav-link-item" href="/wishlist">Wishlist</a>
+          <% if (user.role === 'host') { %>
+            <a class="nav-link-item" href="/dashboard/host"><i class="fa-solid fa-house-chimney text-primary me-1"></i>Host Panel</a>
+          <% } else if (user.role === 'admin') { %>
+            <a class="nav-link-item" href="/dashboard/admin"><i class="fa-solid fa-shield-halved text-primary me-1"></i>Admin</a>
+          <% } else { %>
+            <a class="nav-link-item" href="/become-host">Become a Host</a>
+          <% } %>
+
+          <!-- User Menu Dropdown -->
+          <div class="dropdown">
+            <button 
+              class="nav-user-pill dropdown-toggle" 
+              type="button" 
+              id="userMenuBtn" 
+              data-bs-toggle="dropdown" 
+              aria-expanded="false"
+            >
+              <i class="fa-solid fa-bars me-1 text-muted"></i>
+              <div class="nav-avatar-wrapper" id="navAvatarWrapper">
+                <% 
+                  const hasCustomAvatar = user.avatar && !user.avatar.includes('photo-1535713875002-d1d0cf377fde');
+                  const userInitials = (user.firstName ? (user.firstName[0] + (user.lastName ? user.lastName[0] : '')).toUpperCase() : (user.username ? user.username.slice(0, 2).toUpperCase() : 'WS'));
+                %>
+                <img 
+                  id="navbarUserAvatarImg"
+                  src="<%= user.avatar || '' %>" 
+                  alt="<%= user.username %> avatar" 
+                  class="avatar-img <%= !hasCustomAvatar ? 'd-none' : '' %>"
+                />
+                <div id="navbarUserAvatarInitials" class="avatar-initials-badge <%= hasCustomAvatar ? 'd-none' : '' %>">
+                  <%= userInitials %>
+                </div>
+              </div>
+              <span class="d-none d-xl-inline fw-semibold"><%= user.username %></span>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 rounded-4 p-2 mt-2" aria-labelledby="userMenuBtn">
+              <li>
+                <div class="px-3 py-2 border-bottom mb-1">
+                  <div class="d-flex align-items-center justify-content-between">
+                    <span class="fw-bold"><%= user.fullName || user.username %></span>
+                    <% if (user.role === 'host') { %>
+                      <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill">Host</span>
+                    <% } else if (user.role === 'admin') { %>
+                      <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill">Admin</span>
+                    <% } else { %>
+                      <span class="badge bg-light text-secondary border rounded-pill">Traveler</span>
+                    <% } %>
+                  </div>
+                  <div class="small text-muted"><%= user.email %></div>
+                </div>
+              </li>
+              <li><a class="dropdown-item rounded-3 fw-semibold text-primary" href="/profile"><i class="fa-solid fa-circle-user me-2"></i>Profile</a></li>
+              <li><a class="dropdown-item rounded-3" href="/dashboard"><i class="fa-solid fa-gauge me-2 text-muted"></i>Dashboard</a></li>
+              <% if (user.role === 'host') { %>
+                <li><a class="dropdown-item rounded-3" href="/dashboard/host"><i class="fa-solid fa-house-chimney-user me-2 text-success"></i>Host Dashboard</a></li>
+                <li><a class="dropdown-item rounded-3" href="/listings/new"><i class="fa-solid fa-circle-plus me-2 text-primary"></i>Add Property</a></li>
+              <% } else if (user.role === 'admin') { %>
+                <li><a class="dropdown-item rounded-3" href="/dashboard/admin"><i class="fa-solid fa-shield-halved me-2 text-primary"></i>Admin Dashboard</a></li>
+              <% } else { %>
+                <li><a class="dropdown-item rounded-3" href="/become-host"><i class="fa-solid fa-house-chimney-medical me-2 text-primary"></i>Become a Host</a></li>
+              <% } %>
+              <li><a class="dropdown-item rounded-3" href="/bookings/history"><i class="fa-solid fa-suitcase me-2 text-muted"></i>My Bookings</a></li>
+              <li><a class="dropdown-item rounded-3" href="/wishlist"><i class="fa-regular fa-heart me-2 text-muted"></i>Wishlist</a></li>
+              <li><a class="dropdown-item rounded-3" href="/profile#security"><i class="fa-solid fa-gear me-2 text-muted"></i>Settings</a></li>
+              <li><hr class="dropdown-divider"></li>
+              <li><a class="dropdown-item rounded-3 text-danger" href="/logout"><i class="fa-solid fa-arrow-right-from-bracket me-2"></i>Log out</a></li>
+            </ul>
+          </div>
+        <% } else { %>
+          <a class="nav-link-item d-none d-md-inline" href="/signup?role=host">Become a Host</a>
+          <a class="btn btn-outline-dark btn-sm rounded-pill px-3" href="/login">Log in</a>
+          <a class="btn btn-primary btn-sm rounded-pill px-3" href="/signup">Sign up</a>
+        <% } %>
+
+        <!-- Dark Mode Toggle -->
+        <button id="theme-toggle" class="theme-toggle-btn ms-lg-2" title="Toggle dark theme" aria-label="Toggle theme">
+          <i class="fa-solid fa-moon"></i>
+        </button>
       </div>
     </div>
   </div>
 </nav>
-
-
-
-
-
-
-
-
-
-
-
-
-<style>
-  /* ================= NAVBAR ================= */
-.navbar {
-  background-color: #fff;
-  z-index: 1000;
-}
-
-.navbar-brand i {
-  font-size: 1.6rem;
-  color: #fe424d;
-}
-
-.nav-link {
-  font-weight: 500;
-  color: #222 !important;
-}
-
-.nav-link:hover {
-  color: #fe424d !important;
-}
-
-/* ================= SEARCH BAR ================= */
-.search-inp {
-  border-radius: 2rem;
-  padding: 0.5rem 3rem;
-  font-size: 0.95rem;
-  min-width: 220px;
-}
-
-.search-btn {
-  background-color: #fe424d;
-  color: #fff;
-  border-radius: 2rem;
-  padding: 0 1.2rem;
-  font-weight: 500;
-}
-
-.search-btn:hover {
-  background-color: #fe424d;
-  color: #fff;
-}
-
-/* ================= DESKTOP ================= */
-@media (min-width: 992px) {
-  .navbar-nav.ms-auto form {
-    margin-right: 1.5rem;
-  }
-}
-
-/* ================= TABLET (≤ 992px) ================= */
-@media (max-width: 992px) {
-  .search-inp {
-    min-width: 180px;
-  }
-}
-
-/* ================= MOBILE (≤ 768px) ================= */
-@media (max-width: 768px) {
-  .navbar-collapse {
-    background: #fff;
-    padding: 12px;
-    border-radius: 12px;
-  }
-
-  .navbar-nav {
-    gap: 8px;
-  }
-
-  .search-inp {
-    width: 100%;
-    margin-bottom: 8px;
-  }
-
-  .search-btn {
-    width: 100%;
-  }
-
-  .navbar-nav.ms-auto {
-    align-items: flex-start;
-  }
-}
-
-/* ================= SMALL PHONES (≤ 480px) ================= */
-@media (max-width: 480px) {
-  .navbar-brand i {
-    font-size: 1.4rem;
-  }
-
-  .nav-link {
-    font-size: 0.9rem;
-  }
-}
-
-</style>

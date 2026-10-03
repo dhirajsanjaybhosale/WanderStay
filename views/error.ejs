@@ -1,9 +1,24 @@
-<%layout("/layouts/boilerplate")%>
+<% layout("/layouts/boilerplate.ejs") %>
 
-<div class="row mt-3">
-    <div class="alert alert-danger col-6 offset-3" role="alert">
-        
-           <h4 class="alert-heading"> <%= err.message %></h4>
-          
-    </div> 
+<div class="row justify-content-center my-5">
+  <div class="col-lg-6 col-md-8 text-center">
+    <div class="card border-0 rounded-4 p-5 bg-white shadow-sm">
+      <div class="brand-icon mx-auto mb-3" style="width: 72px; height: 72px; font-size: 2rem; background: var(--primary-light); color: var(--primary);">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+      </div>
+      <h2 class="fw-bold mb-2">Oops! Something went wrong</h2>
+      <p class="text-muted mb-4">
+        <%= (err && err.message) ? err.message : "The page you're looking for doesn't exist or an unexpected error occurred." %>
+      </p>
+      
+      <div class="d-flex justify-content-center gap-2">
+        <a href="/listings" class="btn btn-primary rounded-pill px-4">
+          <i class="fa-solid fa-house me-1"></i> Return Home
+        </a>
+        <button onclick="history.back()" class="btn btn-outline-dark rounded-pill px-4">
+          Go Back
+        </button>
+      </div>
+    </div>
+  </div>
 </div>

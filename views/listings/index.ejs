@@ -1,227 +1,137 @@
-<%layout("/layouts/boilerplate.ejs")%> 
-    <div id="filters">
-      <a class="filter <%= !currentCategory ? 'active' : '' %>" href="/listings">
-         <i class="fa-solid fa-border-all"></i> All
-      </a>
-      <a class="filter <%= currentCategory==='Villa' ? 'active' : '' %>" href="/listings?category=Villa">
-          <i class="fa-solid fa-crown"></i> Villa
-      </a>
-       <a class="filter <%= currentCategory==='Desert' ? 'active' : '' %>" href="/listings?category=Desert">
-          <i class="fa-solid fa-sun"></i> Desert
-       </a>
-       <a class="filter <%= currentCategory==='Cabin' ? 'active' : '' %>" href="/listings?category=Cabin">
-          <i class="fa-solid fa-house-chimney"></i> Cabin
-       </a>
-       <a class="filter <%= currentCategory==='Lake' ? 'active' : '' %>" href="/listings?category=Lake">
-          <i class="fa-solid fa-water"></i> Lake
-       </a>
-       <a class="filter <%= currentCategory==='Ski' ? 'active' : '' %>" href="/listings?category=Ski">
-           <i class="fa-solid fa-person-skiing"></i> Ski
-       </a>
-        <a class="filter <%= currentCategory==='Beach' ? 'active' : '' %>" href="/listings?category=Beach">
-          <i class="fa-solid fa-umbrella-beach"></i> Beach
-        </a>
-        <a class="filter <%= currentCategory==='City' ? 'active' : '' %>" href="/listings?category=City">
-             <i class="fa-solid fa-city"></i> City
-       </a>
-       <a class="filter <%= currentCategory==='Mountain' ? 'active' : '' %>" href="/listings?category=Mountain">
-            <i class="fa-solid fa-mountain"></i> Mountain
-       </a>
-      
+<% layout("/layouts/boilerplate.ejs") %>
 
-      <div class="tax-toggle" >
-        <div class="form-check-reverse form-switch">
-            <input class="form-check-input" type="checkbox" role="switch" id="switchCheckDefault">
-            <label class="form-check-label" for="switchCheckDefault">Display total after taxes </label>
-        </div>
-      </div>
-    </div>
-
-<div id="listing-index">
-  <div class="row row-cols-lg-3 row-cols-md-2 row-cols-sm-1 mt-3 g-4">
-    <% for(let listing of allListings) { %>
-      <div class="col">
-        <a href="/listings/<%= listing._id %>" class="listing-link text-decoration-none">
-          <div class="card listing-card h-100 shadow-sm">
-            <div class="ratio ratio-4x3">
-              <img src="<%= listing.image.url %>" class="card-img-top" alt="listing_image">
-            </div>
-            <div class="card-body">
-              <p class="card-text mb-1">
-                <b><%= listing.title %></b>
-              </p>
-              <p class="card-text text-muted mb-0">
-                &#8377; <%= listing.price.toLocaleString("en-IN") %> /night
-                <i class="tax-info">&nbsp; &nbsp;+18% GST</i>
-              </p>
-            </div>
-          </div>
-        </a>
-      </div>
-    <% } %>
+<div class="container-max py-4">
+<!-- Category Filter Bar -->
+<section class="category-scroll-wrapper mt-2 reveal-on-scroll">
+  <div class="category-chips-bar">
+    <a href="/listings" class="category-chip-item <%= !currentCategory ? 'active' : '' %> text-decoration-none">
+      <i class="fa-solid fa-compass"></i>
+      <span>All Stays</span>
+    </a>
+    <a href="/listings?category=Beach" class="category-chip-item <%= currentCategory === 'Beach' ? 'active' : '' %> text-decoration-none">
+      <i class="fa-solid fa-umbrella-beach"></i>
+      <span>Beach</span>
+    </a>
+    <a href="/listings?category=Mountain" class="category-chip-item <%= currentCategory === 'Mountain' ? 'active' : '' %> text-decoration-none">
+      <i class="fa-solid fa-mountain"></i>
+      <span>Mountain</span>
+    </a>
+    <a href="/listings?category=Cabin" class="category-chip-item <%= currentCategory === 'Cabin' ? 'active' : '' %> text-decoration-none">
+      <i class="fa-solid fa-campground"></i>
+      <span>Cabins</span>
+    </a>
+    <a href="/listings?category=City" class="category-chip-item <%= currentCategory === 'City' ? 'active' : '' %> text-decoration-none">
+      <i class="fa-solid fa-city"></i>
+      <span>City</span>
+    </a>
+    <a href="/listings?category=Villa" class="category-chip-item <%= currentCategory === 'Villa' ? 'active' : '' %> text-decoration-none">
+      <i class="fa-solid fa-house-chimney-window"></i>
+      <span>Villa</span>
+    </a>
+    <a href="/listings?category=Lake" class="category-chip-item <%= currentCategory === 'Lake' ? 'active' : '' %> text-decoration-none">
+      <i class="fa-solid fa-water"></i>
+      <span>Lake</span>
+    </a>
+    <a href="/listings?category=Ski" class="category-chip-item <%= currentCategory === 'Ski' ? 'active' : '' %> text-decoration-none">
+      <i class="fa-solid fa-person-skiing"></i>
+      <span>Ski</span>
+    </a>
+    <a href="/listings?category=Desert" class="category-chip-item <%= currentCategory === 'Desert' ? 'active' : '' %> text-decoration-none">
+      <i class="fa-solid fa-sun"></i>
+      <span>Desert</span>
+    </a>
   </div>
+</section>
+
+<!-- Filter & Search Summary Bar with Glassmorphic Styling -->
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4 p-3 glass-panel listings-summary-bar reveal-on-scroll">
+  <div>
+    <% if (searchQuery) { %>
+      <div class="fw-semibold">
+        Results for <span class="text-primary">"<%= searchQuery %>"</span>
+        <a href="/listings" class="small text-muted ms-2 text-decoration-underline">Clear</a>
+      </div>
+    <% } else if (currentCategory) { %>
+      <div class="fw-semibold">
+        Showing <span class="text-primary"><%= currentCategory %></span> accommodations
+        <a href="/listings" class="small text-muted ms-2 text-decoration-underline">Show all</a>
+      </div>
+    <% } else { %>
+      <div class="fw-semibold">All Accommodations</div>
+    <% } %>
+    <div class="text-muted small"><strong><%= allListings.length %></strong> <%= allListings.length === 1 ? 'place' : 'places' %> to stay</div>
+  </div>
+
+  <!-- Sort Controls -->
+  <form action="/listings" method="GET" class="d-flex align-items-center gap-2">
+    <% if (currentCategory) { %><input type="hidden" name="category" value="<%= currentCategory %>"><% } %>
+    <% if (searchQuery) { %><input type="hidden" name="q" value="<%= searchQuery %>"><% } %>
+    
+    <label for="sortBy" class="small text-muted text-nowrap fw-bold">Sort by:</label>
+    <select name="sortBy" id="sortBy" class="form-select form-select-sm rounded-pill" onchange="this.form.submit()">
+      <option value="" <%= !sortBy ? 'selected' : '' %>>Recommended</option>
+      <option value="priceAsc" <%= sortBy === 'priceAsc' ? 'selected' : '' %>>Price: Low to High</option>
+      <option value="priceDesc" <%= sortBy === 'priceDesc' ? 'selected' : '' %>>Price: High to Low</option>
+      <option value="rating" <%= sortBy === 'rating' ? 'selected' : '' %>>Top Rated</option>
+    </select>
+  </form>
 </div>
-  
 
+<!-- Empty State -->
+<% if (allListings.length === 0) { %>
+  <div class="text-center py-5 my-5 glass-card p-4 reveal-on-scroll">
+    <div class="brand-icon mx-auto mb-3" style="width: 64px; height: 64px; font-size: 1.8rem;">
+      <i class="fa-solid fa-magnifying-glass"></i>
+    </div>
+    <h4 class="fw-bold">No exact matches found</h4>
+    <p class="text-muted mb-4">Try adjusting your search terms, changing filters, or browsing other categories.</p>
+    <a href="/listings" class="btn btn-primary rounded-pill px-4">View All Properties</a>
+  </div>
+<% } %>
 
+<!-- Listings Grid with Stagger Reveal -->
+<div class="listings-grid-container reveal-stagger">
+  <% for(let listing of allListings) { %>
+    <div class="listing-card-wrapper">
+      <div class="listing-card-media">
+        <a href="/listings/<%= listing._id %>">
+          <img 
+            src="<%= (listing.image && listing.image.url) ? listing.image.url : (listing.photos && listing.photos[0] && (listing.photos[0].url || listing.photos[0])) || 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80' %>" 
+            alt="<%= listing.title %>" 
+            loading="lazy"
+          />
+        </a>
 
-<script>
-    let taxSwitch = document.getElementById("switchCheckDefault");
-    taxSwitch.addEventListener("click",() => {
-    let taxInfo = document.getElementsByClassName("tax-info");
-    for(let info of taxInfo) {
-      if(info.style.display != "inline") {
-        info.style.display = "inline";
-      } else {
-        info.style.display = "none";
-      }
+        <!-- Wishlist toggle -->
+        <form action="/wishlist/<%= listing._id %>/toggle" method="POST" class="d-inline">
+          <button type="submit" class="listing-wishlist-toggle" aria-label="Save listing">
+            <i class="fa-regular fa-heart"></i>
+          </button>
+        </form>
 
-    }
-  });
-</script>
+        <span class="listing-category-badge"><%= listing.category %></span>
+      </div>
 
+      <a href="/listings/<%= listing._id %>" class="text-decoration-none text-reset listing-card-body">
+        <div class="listing-card-header">
+          <div class="listing-card-location"><%= listing.location %>, <%= listing.country %></div>
+          <div class="listing-rating-badge">
+            <i class="fa-solid fa-star"></i>
+            <span><%= listing.averageRating ? listing.averageRating.toFixed(1) : 'New' %></span>
+          </div>
+        </div>
+        
+        <div class="listing-card-title"><%= listing.title %></div>
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<style>
-  /* ================= FILTER BAR ================= */
-#filters {
-  display: flex;
-  align-items: center;
-  gap: 18px;
-  overflow-x: auto;
-  padding: 12px 5px;
-  margin-bottom: 10px;
-  scrollbar-width: none;
-}
-
-#filters::-webkit-scrollbar {
-  display: none;
-}
-
-.filter {
-  text-align: center;
-  color: #555;
-  font-size: 14px;
-  padding: 8px 12px;
-  border-radius: 12px;
-  white-space: nowrap;
-  transition: all 0.2s ease;
-}
-
-.filter i {
-  display: block;
-  font-size: 18px;
-  margin-bottom: 4px;
-}
-
-.filter:hover {
-  background-color: #f2f2f2;
-}
-
-.filter.active {
-  color: #000;
-  border-bottom: 2px solid #000;
-}
-
-/* Tax toggle */
-.tax-toggle {
-  margin-left: auto;
-  white-space: nowrap;
-}
-
-/* ================= LISTING CARDS ================= */
-.listing-card img {
-  object-fit: cover;
-  border-radius: 12px 12px 0 0;
-}
-
-.listing-card {
-  border-radius: 12px;
-  transition: transform 0.2s ease;
-}
-
-.listing-card:hover {
-  transform: scale(1.02);
-}
-
-/* ================= TABLET (≤ 992px) ================= */
-@media (max-width: 992px) {
-  #filters {
-    gap: 14px;
-    padding: 10px 5px;
-  }
-
-  .filter {
-    font-size: 13px;
-  }
-
-  .filter i {
-    font-size: 16px;
-  }
-
-  .tax-toggle label {
-    font-size: 13px;
-  }
-}
-
-/* ================= MOBILE (≤ 768px) ================= */
-@media (max-width: 768px) {
-  #filters {
-    padding: 8px 5px;
-  }
-
-  .filter {
-    font-size: 12px;
-    padding: 6px 10px;
-  }
-
-  .filter i {
-    font-size: 15px;
-  }
-
-  .tax-toggle {
-    display: none; /* Hide tax toggle on small screens */
-  }
-
-  .card-text b {
-    font-size: 14px;
-  }
-
-  .card-text {
-    font-size: 13px;
-  }
-}
-
-/* ================= SMALL PHONES (≤ 480px) ================= */
-@media (max-width: 480px) {
-  .filter {
-    font-size: 11px;
-  }
-
-  .filter i {
-    font-size: 14px;
-  }
-
-  .listing-card {
-    border-radius: 10px;
-  }
-}
-
-</style>
+        <div class="listing-card-footer">
+          <div>
+            <span class="listing-price-tag">&#8377; <%= Number(listing.price).toLocaleString("en-IN") %></span>
+            <span class="listing-price-period">/ night</span>
+          </div>
+          <span class="text-primary fw-semibold small">View details &rarr;</span>
+        </div>
+      </a>
+    </div>
+  <% } %>
+</div>
+</div>

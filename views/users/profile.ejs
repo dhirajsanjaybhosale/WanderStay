@@ -1,0 +1,879 @@
+<% layout("/layouts/boilerplate.ejs") %>
+
+<div class="container-max py-4 profile-container-page">
+  <!-- Breadcrumb -->
+  <nav aria-label="breadcrumb" class="mb-3 reveal-on-scroll">
+    <ol class="breadcrumb glass-breadcrumb px-3 py-2 rounded-pill d-inline-flex">
+      <li class="breadcrumb-item"><a href="/" class="text-decoration-none"><i class="fa-solid fa-house me-1"></i>Home</a></li>
+      <li class="breadcrumb-item"><a href="/listings" class="text-decoration-none">Explore</a></li>
+      <li class="breadcrumb-item active" aria-current="page">My Profile</li>
+    </ol>
+  </nav>
+
+  <!-- Profile Hero Header Card -->
+  <div class="profile-hero-card glass-panel mb-4 position-relative overflow-hidden reveal-on-scroll">
+    <!-- Atmospheric Travel Banner Backdrop -->
+    <div class="profile-hero-backdrop"></div>
+    
+    <div class="profile-hero-content position-relative p-4 p-md-5 d-flex flex-column flex-md-row align-items-center align-items-md-end gap-4">
+      <!-- Profile Avatar Container with Hover & Camera Trigger -->
+      <div class="profile-avatar-wrapper position-relative">
+        <div class="profile-avatar-circle" id="profileAvatarDisplay" title="Click to change profile photo">
+          <% 
+            const hasAvatar = user.avatar && !user.avatar.includes('photo-1535713875002-d1d0cf377fde');
+            const initials = user.initials || 'WS';
+          %>
+          <img 
+            id="profileAvatarImg" 
+            src="<%= user.avatar || '' %>" 
+            alt="<%= user.username %> photo" 
+            class="profile-avatar-img <%= !hasAvatar ? 'd-none' : '' %>"
+          />
+          <div id="profileAvatarInitials" class="profile-avatar-initials <%= hasAvatar ? 'd-none' : '' %>">
+            <%= initials %>
+          </div>
+
+          <!-- Camera Hover Overlay -->
+          <div class="profile-avatar-overlay">
+            <i class="fa-solid fa-camera mb-1 fs-5"></i>
+            <span class="avatar-overlay-text">Change Photo</span>
+          </div>
+        </div>
+
+        <!-- Camera Action Pill Button -->
+        <button 
+          type="button" 
+          class="profile-photo-edit-btn" 
+          id="triggerPhotoUploadBtn"
+          title="Change profile photo"
+          aria-label="Change profile photo"
+        >
+          <i class="fa-solid fa-camera"></i>
+        </button>
+
+        <!-- Hidden File Input -->
+        <input 
+          type="file" 
+          id="avatarFileInput" 
+          name="avatar" 
+          accept="image/jpeg,image/png,image/jpg,image/webp" 
+          class="d-none"
+        />
+      </div>
+
+      <!-- User Identification & Badges -->
+      <div class="profile-hero-info flex-grow-1 text-center text-md-start">
+        <div class="d-flex flex-wrap align-items-center justify-content-center justify-content-md-start gap-2 mb-2">
+          <h1 class="profile-user-fullname mb-0"><%= user.fullName || user.username %></h1>
+          <% if (user.role === 'host') { %>
+            <span class="badge-role-lux role-host"><i class="fa-solid fa-award me-1"></i>Verified Host</span>
+          <% } else if (user.role === 'admin') { %>
+            <span class="badge-role-lux role-admin"><i class="fa-solid fa-shield-halved me-1"></i>Administrator</span>
+          <% } else { %>
+            <span class="badge-role-lux role-traveler"><i class="fa-solid fa-compass me-1"></i>Global Traveler</span>
+          <% } %>
+        </div>
+
+        <div class="profile-meta-pills d-flex flex-wrap align-items-center justify-content-center justify-content-md-start gap-3 text-muted small">
+          <span class="profile-meta-item"><i class="fa-solid fa-at me-1 text-primary"></i><%= user.username %></span>
+          <span class="profile-meta-item"><i class="fa-regular fa-envelope me-1 text-primary"></i><%= user.email %></span>
+          <span class="profile-meta-item"><i class="fa-regular fa-calendar-check me-1 text-primary"></i>Member since <%= user.memberSince %></span>
+          <% if (user.city || user.country) { %>
+            <span class="profile-meta-item"><i class="fa-solid fa-location-dot me-1 text-primary"></i><%= [user.city, user.country].filter(Boolean).join(', ') %></span>
+          <% } %>
+        </div>
+      </div>
+
+      <!-- Quick Action Buttons -->
+      <div class="profile-hero-actions d-flex gap-2">
+        <button type="button" class="btn btn-outline-dark btn-sm rounded-pill px-3" id="toggleEditProfileBtnTop">
+          <i class="fa-solid fa-user-pen me-1"></i>Edit Profile
+        </button>
+        <% if (user.role === 'host') { %>
+          <a href="/listings/new" class="btn btn-primary btn-sm rounded-pill px-3 shadow-sm">
+            <i class="fa-solid fa-plus me-1"></i>Add Listing
+          </a>
+        <% } else { %>
+          <a href="/become-host" class="btn btn-primary btn-sm rounded-pill px-3 shadow-sm">
+            <i class="fa-solid fa-house-chimney me-1"></i>Become a Host
+          </a>
+        <% } %>
+      </div>
+    </div>
+  </div>
+
+  <!-- Photo Upload Preview Modal / Alert Area -->
+  <div id="photoPreviewModal" class="photo-preview-modal d-none">
+    <div class="photo-preview-dialog glass-card p-4">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="fw-bold mb-0"><i class="fa-solid fa-crop-simple text-primary me-2"></i>Preview New Photo</h5>
+        <button type="button" class="btn-close" id="cancelPhotoPreviewBtnTop" aria-label="Close"></button>
+      </div>
+
+      <div class="preview-crop-area text-center my-3">
+        <img id="imagePreviewTarget" src="" alt="Selected Preview" class="preview-avatar-circle" />
+        <div id="previewFileInfo" class="small text-muted mt-2"></div>
+      </div>
+
+      <div class="alert alert-danger py-2 px-3 small d-none" id="photoUploadErrorAlert"></div>
+
+      <div class="d-flex justify-content-end gap-2 mt-4">
+        <button type="button" class="btn btn-light rounded-pill px-4" id="cancelPhotoPreviewBtn">Cancel</button>
+        <button type="button" class="btn btn-primary rounded-pill px-4" id="savePhotoUploadBtn">
+          <span class="spinner-border spinner-border-sm me-1 d-none" id="savePhotoSpinner" role="status" aria-hidden="true"></span>
+          <i class="fa-solid fa-cloud-arrow-up me-1" id="savePhotoIcon"></i>Save Photo
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Two-Column Main Layout -->
+  <div class="row g-4">
+    <!-- LEFT COLUMN: Profile Sidebar -->
+    <div class="col-lg-4 col-xl-3">
+      <!-- Profile Navigation Card -->
+      <div class="profile-sidebar-card glass-card p-3 mb-4 sticky-lg-top" style="top: 85px; z-index: 10;">
+        <div class="sidebar-section-title px-2 py-1 mb-2 text-uppercase fw-bold text-muted" style="font-size: 0.75rem; letter-spacing: 0.08em;">
+          Navigation
+        </div>
+        <ul class="nav flex-column profile-nav-pills gap-1">
+          <li class="nav-item">
+            <a class="nav-link profile-nav-link active" href="#personal-details" id="navLinkDetails">
+              <i class="fa-regular fa-id-card me-2"></i>Personal Details
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link profile-nav-link" href="#account-info" id="navLinkAccount">
+              <i class="fa-solid fa-shield-halved me-2"></i>Account Information
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link profile-nav-link" href="#security" id="navLinkSecurity">
+              <i class="fa-solid fa-lock me-2"></i>Login & Security
+            </a>
+          </li>
+          <li class="nav-item my-2 border-top"></li>
+          <li class="nav-item">
+            <a class="nav-link profile-nav-link" href="/trips">
+              <i class="fa-solid fa-plane-departure me-2"></i>My Trips
+              <span class="badge bg-light text-dark rounded-pill ms-auto"><%= stats.bookings %></span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link profile-nav-link" href="/wishlist">
+              <i class="fa-regular fa-heart me-2"></i>Wishlist
+              <span class="badge bg-light text-dark rounded-pill ms-auto"><%= stats.wishlist %></span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link profile-nav-link" href="/bookings/history">
+              <i class="fa-solid fa-suitcase me-2"></i>Bookings History
+            </a>
+          </li>
+          <% if (user.role === 'host') { %>
+            <li class="nav-item">
+              <a class="nav-link profile-nav-link text-success" href="/dashboard/host">
+                <i class="fa-solid fa-house-chimney-user me-2"></i>Host Dashboard
+                <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill ms-auto"><%= stats.properties %> Stays</span>
+              </a>
+            </li>
+          <% } else if (user.role === 'admin') { %>
+            <li class="nav-item">
+              <a class="nav-link profile-nav-link text-primary" href="/dashboard/admin">
+                <i class="fa-solid fa-gauge-high me-2"></i>Admin Panel
+              </a>
+            </li>
+          <% } else { %>
+            <li class="nav-item">
+              <a class="nav-link profile-nav-link" href="/become-host">
+                <i class="fa-solid fa-house-flag me-2"></i>Host with Us
+              </a>
+            </li>
+          <% } %>
+          <li class="nav-item my-2 border-top"></li>
+          <li class="nav-item">
+            <a class="nav-link profile-nav-link text-danger" href="/logout">
+              <i class="fa-solid fa-arrow-right-from-bracket me-2"></i>Log out
+            </a>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Quick Profile Stats Widget -->
+      <div class="glass-card p-3 mb-4">
+        <h6 class="fw-bold mb-3 d-flex align-items-center">
+          <i class="fa-solid fa-chart-pie text-primary me-2"></i>Travel Activity
+        </h6>
+        <div class="row g-2 text-center">
+          <div class="col-4">
+            <div class="p-2 rounded-3 bg-body-tertiary">
+              <div class="fs-5 fw-bold text-primary"><%= stats.bookings %></div>
+              <div class="small text-muted" style="font-size: 0.72rem;">Trips</div>
+            </div>
+          </div>
+          <div class="col-4">
+            <div class="p-2 rounded-3 bg-body-tertiary">
+              <div class="fs-5 fw-bold text-danger"><%= stats.wishlist %></div>
+              <div class="small text-muted" style="font-size: 0.72rem;">Saved</div>
+            </div>
+          </div>
+          <div class="col-4">
+            <div class="p-2 rounded-3 bg-body-tertiary">
+              <div class="fs-5 fw-bold text-success"><%= stats.properties %></div>
+              <div class="small text-muted" style="font-size: 0.72rem;">Listings</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT COLUMN: Main Profile Content -->
+    <div class="col-lg-8 col-xl-9">
+      <!-- PERSONAL DETAILS CARD -->
+      <section id="personal-details" class="profile-content-section mb-4">
+        <div class="glass-card p-4 p-md-5">
+          <!-- Card Header -->
+          <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4 pb-3 border-bottom">
+            <div>
+              <h3 class="fw-bold mb-1 d-flex align-items-center gap-2">
+                <i class="fa-solid fa-address-card text-primary"></i>Personal Details
+              </h3>
+              <p class="text-muted small mb-0">Manage your personal information and contact details</p>
+            </div>
+            <button type="button" class="btn btn-outline-primary rounded-pill px-4 btn-sm" id="editProfileToggleBtn">
+              <i class="fa-solid fa-pen-to-square me-1"></i><span id="editBtnLabel">Edit Profile</span>
+            </button>
+          </div>
+
+          <!-- READ-ONLY VIEW -->
+          <div id="personalDetailsView" class="personal-details-view">
+            <div class="row g-4">
+              <div class="col-md-6">
+                <div class="profile-field-item">
+                  <span class="profile-field-label"><i class="fa-regular fa-user me-1 text-muted"></i>Full Name</span>
+                  <div class="profile-field-value"><%= user.fullName || 'Not provided' %></div>
+                </div>
+              </div>
+
+              <div class="col-md-6">
+                <div class="profile-field-item">
+                  <span class="profile-field-label"><i class="fa-regular fa-envelope me-1 text-muted"></i>Email Address</span>
+                  <div class="profile-field-value d-flex align-items-center gap-2">
+                    <%= user.email %>
+                    <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill small" style="font-size: 0.65rem;">Verified</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="col-md-6">
+                <div class="profile-field-item">
+                  <span class="profile-field-label"><i class="fa-solid fa-phone me-1 text-muted"></i>Phone Number</span>
+                  <div class="profile-field-value"><%= user.phone || 'Not provided' %></div>
+                </div>
+              </div>
+
+              <div class="col-md-6">
+                <div class="profile-field-item">
+                  <span class="profile-field-label"><i class="fa-regular fa-calendar me-1 text-muted"></i>Date of Birth</span>
+                  <div class="profile-field-value">
+                    <% if (user.dateOfBirth) { %>
+                      <%= new Intl.DateTimeFormat('en-US', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(user.dateOfBirth)) %>
+                    <% } else { %>
+                      <span class="text-muted">Not specified</span>
+                    <% } %>
+                  </div>
+                </div>
+              </div>
+
+              <div class="col-md-6">
+                <div class="profile-field-item">
+                  <span class="profile-field-label"><i class="fa-solid fa-venus-mars me-1 text-muted"></i>Gender</span>
+                  <div class="profile-field-value text-capitalize"><%= user.gender || 'Not specified' %></div>
+                </div>
+              </div>
+
+              <div class="col-md-6">
+                <div class="profile-field-item">
+                  <span class="profile-field-label"><i class="fa-solid fa-earth-americas me-1 text-muted"></i>Country</span>
+                  <div class="profile-field-value"><%= user.country || 'Not specified' %></div>
+                </div>
+              </div>
+
+              <div class="col-md-6">
+                <div class="profile-field-item">
+                  <span class="profile-field-label"><i class="fa-solid fa-city me-1 text-muted"></i>City</span>
+                  <div class="profile-field-value"><%= user.city || 'Not specified' %></div>
+                </div>
+              </div>
+
+              <div class="col-12">
+                <div class="profile-field-item">
+                  <span class="profile-field-label"><i class="fa-regular fa-comment-dots me-1 text-muted"></i>Bio</span>
+                  <div class="profile-field-value bio-text-block">
+                    <%= user.bio ? user.bio : 'Tell other travelers and hosts about yourself, favorite destinations, and travel passions...' %>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- EDIT FORM (Hidden by default, toggled via JavaScript) -->
+          <form 
+            id="personalDetailsEditForm" 
+            action="/profile" 
+            method="POST" 
+            class="personal-details-form d-none mt-2" 
+            novalidate
+          >
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label for="firstName" class="form-label">First Name</label>
+                <div class="input-group">
+                  <span class="input-group-text bg-body-tertiary border-end-0"><i class="fa-regular fa-user text-muted"></i></span>
+                  <input 
+                    type="text" 
+                    class="form-control border-start-0" 
+                    id="firstName" 
+                    name="firstName" 
+                    value="<%= user.firstName || '' %>" 
+                    placeholder="Enter first name"
+                    maxlength="50"
+                  />
+                </div>
+              </div>
+
+              <div class="col-md-6">
+                <label for="lastName" class="form-label">Last Name</label>
+                <div class="input-group">
+                  <span class="input-group-text bg-body-tertiary border-end-0"><i class="fa-regular fa-user text-muted"></i></span>
+                  <input 
+                    type="text" 
+                    class="form-control border-start-0" 
+                    id="lastName" 
+                    name="lastName" 
+                    value="<%= user.lastName || '' %>" 
+                    placeholder="Enter last name"
+                    maxlength="50"
+                  />
+                </div>
+              </div>
+
+              <div class="col-md-6">
+                <label for="emailDisplay" class="form-label">Email Address</label>
+                <div class="input-group">
+                  <span class="input-group-text bg-body-tertiary border-end-0"><i class="fa-regular fa-envelope text-muted"></i></span>
+                  <input 
+                    type="email" 
+                    class="form-control border-start-0 bg-body-secondary" 
+                    id="emailDisplay" 
+                    value="<%= user.email %>" 
+                    disabled 
+                    readonly
+                  />
+                </div>
+                <div class="form-text small text-muted">Primary account email used for authentication and bookings.</div>
+              </div>
+
+              <div class="col-md-6">
+                <label for="phone" class="form-label">Phone Number</label>
+                <div class="input-group">
+                  <span class="input-group-text bg-body-tertiary border-end-0"><i class="fa-solid fa-phone text-muted"></i></span>
+                  <input 
+                    type="tel" 
+                    class="form-control border-start-0" 
+                    id="phone" 
+                    name="phone" 
+                    value="<%= user.phone || '' %>" 
+                    placeholder="+91 98765 43210"
+                    pattern="[0-9+ \-()]{7,20}"
+                  />
+                </div>
+              </div>
+
+              <div class="col-md-4">
+                <label for="dateOfBirth" class="form-label">Date of Birth</label>
+                <div class="input-group">
+                  <span class="input-group-text bg-body-tertiary border-end-0"><i class="fa-regular fa-calendar text-muted"></i></span>
+                  <input 
+                    type="date" 
+                    class="form-control border-start-0" 
+                    id="dateOfBirth" 
+                    name="dateOfBirth" 
+                    value="<%= user.dateOfBirth ? new Date(user.dateOfBirth).toISOString().split('T')[0] : '' %>"
+                  />
+                </div>
+              </div>
+
+              <div class="col-md-4">
+                <label for="gender" class="form-label">Gender</label>
+                <div class="input-group">
+                  <span class="input-group-text bg-body-tertiary border-end-0"><i class="fa-solid fa-venus-mars text-muted"></i></span>
+                  <select class="form-select border-start-0" id="gender" name="gender">
+                    <option value="" <%= !user.gender ? 'selected' : '' %>>Prefer not to say</option>
+                    <option value="male" <%= user.gender === 'male' ? 'selected' : '' %>>Male</option>
+                    <option value="female" <%= user.gender === 'female' ? 'selected' : '' %>>Female</option>
+                    <option value="non-binary" <%= user.gender === 'non-binary' ? 'selected' : '' %>>Non-binary</option>
+                    <option value="other" <%= user.gender === 'other' ? 'selected' : '' %>>Other</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="col-md-4">
+                <label for="city" class="form-label">City</label>
+                <div class="input-group">
+                  <span class="input-group-text bg-body-tertiary border-end-0"><i class="fa-solid fa-city text-muted"></i></span>
+                  <input 
+                    type="text" 
+                    class="form-control border-start-0" 
+                    id="city" 
+                    name="city" 
+                    value="<%= user.city || '' %>" 
+                    placeholder="e.g. Pune, Mumbai, London"
+                  />
+                </div>
+              </div>
+
+              <div class="col-md-6">
+                <label for="country" class="form-label">Country</label>
+                <div class="input-group">
+                  <span class="input-group-text bg-body-tertiary border-end-0"><i class="fa-solid fa-earth-americas text-muted"></i></span>
+                  <input 
+                    type="text" 
+                    class="form-control border-start-0" 
+                    id="country" 
+                    name="country" 
+                    value="<%= user.country || '' %>" 
+                    placeholder="e.g. India, France, USA"
+                  />
+                </div>
+              </div>
+
+              <div class="col-12">
+                <label for="bio" class="form-label">Bio / About You</label>
+                <textarea 
+                  class="form-control" 
+                  id="bio" 
+                  name="bio" 
+                  rows="3" 
+                  placeholder="Tell us about yourself, your favorite travel styles, and what you love most about exploring..."
+                  maxlength="500"
+                ><%= user.bio || '' %></textarea>
+                <div class="d-flex justify-content-between form-text small text-muted">
+                  <span>Introduce yourself to hosts and guests on WanderStay.</span>
+                  <span id="bioCharCounter"><%= (user.bio || '').length %>/500</span>
+                </div>
+              </div>
+
+              <div class="col-12 d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
+                <button type="button" class="btn btn-outline-secondary rounded-pill px-4" id="cancelEditProfileBtn">Cancel</button>
+                <button type="submit" class="btn btn-primary rounded-pill px-4">
+                  <i class="fa-solid fa-check me-1"></i>Save Changes
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <!-- ACCOUNT INFORMATION CARD -->
+      <section id="account-info" class="profile-content-section mb-4">
+        <div class="glass-card p-4 p-md-5">
+          <div class="mb-4 pb-3 border-bottom">
+            <h3 class="fw-bold mb-1 d-flex align-items-center gap-2">
+              <i class="fa-solid fa-shield-cat text-primary"></i>Account Information
+            </h3>
+            <p class="text-muted small mb-0">Overview of your WanderStay membership details and verification status</p>
+          </div>
+
+          <div class="row g-4">
+            <div class="col-md-6">
+              <div class="account-spec-box p-3 rounded-4 bg-body-tertiary">
+                <div class="small text-muted fw-bold mb-1">ACCOUNT TYPE</div>
+                <div class="d-flex align-items-center justify-content-between">
+                  <span class="fs-5 fw-bold text-capitalize"><%= user.role %> Account</span>
+                  <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill">Active</span>
+                </div>
+                <div class="small text-muted mt-2">
+                  <% if (user.role === 'host') { %>
+                    You have full hosting privileges and can manage properties.
+                  <% } else if (user.role === 'admin') { %>
+                    You have system administrator access to all listings and users.
+                  <% } else { %>
+                    You can book stays, plan AI itineraries, and create wishlists.
+                  <% } %>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-md-6">
+              <div class="account-spec-box p-3 rounded-4 bg-body-tertiary">
+                <div class="small text-muted fw-bold mb-1">MEMBER SINCE</div>
+                <div class="fs-5 fw-bold"><%= user.memberSince %></div>
+                <div class="small text-muted mt-2">
+                  <i class="fa-solid fa-circle-check text-success me-1"></i>Account registered and confirmed
+                </div>
+              </div>
+            </div>
+
+            <div class="col-md-6">
+              <div class="account-spec-box p-3 rounded-4 bg-body-tertiary">
+                <div class="small text-muted fw-bold mb-1">VERIFICATION STATUS</div>
+                <div class="d-flex align-items-center gap-2">
+                  <i class="fa-solid fa-certificate text-primary fs-5"></i>
+                  <span class="fs-6 fw-bold">Verified WanderStay Member</span>
+                </div>
+                <div class="small text-muted mt-2">Email verified: <%= user.email %></div>
+              </div>
+            </div>
+
+            <div class="col-md-6">
+              <div class="account-spec-box p-3 rounded-4 bg-body-tertiary">
+                <div class="small text-muted fw-bold mb-1">SECURITY HEALTH</div>
+                <div class="d-flex align-items-center gap-2">
+                  <i class="fa-solid fa-lock text-success fs-5"></i>
+                  <span class="fs-6 fw-bold">Password Protected</span>
+                </div>
+                <div class="small text-muted mt-2">Encrypted with industry-standard bcrypt hashing.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECURITY & PASSWORD CARD -->
+      <section id="security" class="profile-content-section mb-4">
+        <div class="glass-card p-4 p-md-5">
+          <div class="mb-4 pb-3 border-bottom">
+            <h3 class="fw-bold mb-1 d-flex align-items-center gap-2">
+              <i class="fa-solid fa-key text-primary"></i>Login & Security
+            </h3>
+            <p class="text-muted small mb-0">Update your account password securely</p>
+          </div>
+
+          <form action="/profile/password" method="POST" id="changePasswordForm" class="needs-validation">
+            <div class="row g-3">
+              <div class="col-md-12">
+                <label for="currentPassword" class="form-label">Current Password</label>
+                <div class="input-group">
+                  <span class="input-group-text bg-body-tertiary border-end-0"><i class="fa-solid fa-lock text-muted"></i></span>
+                  <input 
+                    type="password" 
+                    class="form-control border-start-0" 
+                    id="currentPassword" 
+                    name="currentPassword" 
+                    placeholder="Enter current password" 
+                    required 
+                  />
+                  <button class="btn btn-outline-secondary toggle-pwd-btn" type="button" data-target="currentPassword">
+                    <i class="fa-regular fa-eye"></i>
+                  </button>
+                </div>
+              </div>
+
+              <div class="col-md-6">
+                <label for="newPassword" class="form-label">New Password</label>
+                <div class="input-group">
+                  <span class="input-group-text bg-body-tertiary border-end-0"><i class="fa-solid fa-key text-muted"></i></span>
+                  <input 
+                    type="password" 
+                    class="form-control border-start-0" 
+                    id="newPassword" 
+                    name="newPassword" 
+                    placeholder="Min 6 characters" 
+                    required 
+                    minlength="6"
+                  />
+                  <button class="btn btn-outline-secondary toggle-pwd-btn" type="button" data-target="newPassword">
+                    <i class="fa-regular fa-eye"></i>
+                  </button>
+                </div>
+              </div>
+
+              <div class="col-md-6">
+                <label for="confirmPassword" class="form-label">Confirm New Password</label>
+                <div class="input-group">
+                  <span class="input-group-text bg-body-tertiary border-end-0"><i class="fa-solid fa-check-double text-muted"></i></span>
+                  <input 
+                    type="password" 
+                    class="form-control border-start-0" 
+                    id="confirmPassword" 
+                    name="confirmPassword" 
+                    placeholder="Confirm new password" 
+                    required 
+                    minlength="6"
+                  />
+                  <button class="btn btn-outline-secondary toggle-pwd-btn" type="button" data-target="confirmPassword">
+                    <i class="fa-regular fa-eye"></i>
+                  </button>
+                </div>
+              </div>
+
+              <div class="col-12 mt-3">
+                <div class="password-match-hint small text-muted" id="passwordMatchHint"></div>
+              </div>
+
+              <div class="col-12 d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
+                <button type="submit" class="btn btn-primary rounded-pill px-4" id="submitPasswordBtn">
+                  <i class="fa-solid fa-shield-halved me-1"></i>Update Password
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+
+<!-- Profile Client Logic for Avatar Preview, AJAX Upload, and Form Toggling -->
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  // Elements
+  const triggerBtn = document.getElementById("triggerPhotoUploadBtn");
+  const avatarCircle = document.getElementById("profileAvatarDisplay");
+  const fileInput = document.getElementById("avatarFileInput");
+  const previewModal = document.getElementById("photoPreviewModal");
+  const previewTarget = document.getElementById("imagePreviewTarget");
+  const previewFileInfo = document.getElementById("previewFileInfo");
+  const cancelPreviewBtn = document.getElementById("cancelPhotoPreviewBtn");
+  const cancelPreviewBtnTop = document.getElementById("cancelPhotoPreviewBtnTop");
+  const savePhotoBtn = document.getElementById("savePhotoUploadBtn");
+  const savePhotoSpinner = document.getElementById("savePhotoSpinner");
+  const savePhotoIcon = document.getElementById("savePhotoIcon");
+  const photoUploadErrorAlert = document.getElementById("photoUploadErrorAlert");
+
+  const editToggleBtn = document.getElementById("editProfileToggleBtn");
+  const editToggleBtnTop = document.getElementById("toggleEditProfileBtnTop");
+  const cancelEditBtn = document.getElementById("cancelEditProfileBtn");
+  const detailsView = document.getElementById("personalDetailsView");
+  const detailsForm = document.getElementById("personalDetailsEditForm");
+  const editBtnLabel = document.getElementById("editBtnLabel");
+  const bioInput = document.getElementById("bio");
+  const bioCounter = document.getElementById("bioCharCounter");
+
+  // File Picker Trigger
+  const openFilePicker = () => {
+    if (fileInput) fileInput.click();
+  };
+  if (triggerBtn) triggerBtn.addEventListener("click", openFilePicker);
+  if (avatarCircle) avatarCircle.addEventListener("click", openFilePicker);
+
+  // File Input Change -> Show Preview
+  let selectedFile = null;
+  if (fileInput) {
+    fileInput.addEventListener("change", (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+
+      // Validation
+      const allowedTypes = ["image/jpeg", "image/png", "image/jpg", "image/webp"];
+      if (!allowedTypes.includes(file.type)) {
+        alert("Please select a valid image file (JPG, PNG, or WEBP).");
+        fileInput.value = "";
+        return;
+      }
+
+      if (file.size > 5 * 1024 * 1024) {
+        alert("Image file size must be less than 5MB.");
+        fileInput.value = "";
+        return;
+      }
+
+      selectedFile = file;
+
+      // Preview using FileReader
+      const reader = new FileReader();
+      reader.onload = (loadEvt) => {
+        previewTarget.src = loadEvt.target.result;
+        previewFileInfo.textContent = `${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
+        photoUploadErrorAlert.classList.add("d-none");
+        photoUploadErrorAlert.textContent = "";
+        previewModal.classList.remove("d-none");
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  // Cancel Preview
+  const closePreview = () => {
+    previewModal.classList.add("d-none");
+    previewTarget.src = "";
+    if (fileInput) fileInput.value = "";
+    selectedFile = null;
+  };
+  if (cancelPreviewBtn) cancelPreviewBtn.addEventListener("click", closePreview);
+  if (cancelPreviewBtnTop) cancelPreviewBtnTop.addEventListener("click", closePreview);
+
+  // Save Photo via AJAX Upload
+  if (savePhotoBtn) {
+    savePhotoBtn.addEventListener("click", async () => {
+      if (!selectedFile) return;
+
+      const formData = new FormData();
+      formData.append("avatar", selectedFile);
+
+      savePhotoBtn.disabled = true;
+      savePhotoSpinner.classList.remove("d-none");
+      savePhotoIcon.classList.add("d-none");
+      photoUploadErrorAlert.classList.add("d-none");
+
+      try {
+        const response = await fetch("/profile/photo", {
+          method: "POST",
+          headers: {
+            "Accept": "application/json"
+          },
+          body: formData
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.success) {
+          const newAvatarUrl = data.avatarUrl;
+
+          // 1. Update Profile Page Avatar Image
+          const profileImg = document.getElementById("profileAvatarImg");
+          const profileInitials = document.getElementById("profileAvatarInitials");
+          if (profileImg) {
+            profileImg.src = newAvatarUrl;
+            profileImg.classList.remove("d-none");
+          }
+          if (profileInitials) {
+            profileInitials.classList.add("d-none");
+          }
+
+          // 2. Update Navbar Avatar Image
+          const navAvatarImg = document.getElementById("navbarUserAvatarImg");
+          const navAvatarInitials = document.getElementById("navbarUserAvatarInitials");
+          if (navAvatarImg) {
+            navAvatarImg.src = newAvatarUrl;
+            navAvatarImg.classList.remove("d-none");
+          }
+          if (navAvatarInitials) {
+            navAvatarInitials.classList.add("d-none");
+          }
+
+          // Close modal
+          closePreview();
+
+          // Show floating flash confirmation
+          showProfileNotification("✓ Profile photo updated successfully", "success");
+        } else {
+          photoUploadErrorAlert.textContent = data.message || "Failed to update profile photo.";
+          photoUploadErrorAlert.classList.remove("d-none");
+        }
+      } catch (err) {
+        console.error("Upload error:", err);
+        photoUploadErrorAlert.textContent = "Network error. Please try again.";
+        photoUploadErrorAlert.classList.remove("d-none");
+      } finally {
+        savePhotoBtn.disabled = false;
+        savePhotoSpinner.classList.add("d-none");
+        savePhotoIcon.classList.remove("d-none");
+      }
+    });
+  }
+
+  // Floating notification helper
+  function showProfileNotification(message, type = "success") {
+    const banner = document.createElement("div");
+    banner.className = `alert alert-${type} shadow-lg rounded-pill px-4 py-2 position-fixed top-0 start-50 translate-middle-x mt-4 text-center z-index-toast animate-toast`;
+    banner.style.zIndex = "9999";
+    banner.innerHTML = `<i class="fa-solid fa-check-circle me-2"></i>${message}`;
+    document.body.appendChild(banner);
+    setTimeout(() => {
+      banner.style.transition = "opacity 0.5s ease";
+      banner.style.opacity = "0";
+      setTimeout(() => banner.remove(), 500);
+    }, 4000);
+  }
+
+  // Edit Profile Toggling
+  const toggleEditMode = (forceState) => {
+    const isEditing = detailsForm.classList.contains("d-none");
+    const willEdit = forceState !== undefined ? forceState : isEditing;
+
+    if (willEdit) {
+      detailsView.classList.add("d-none");
+      detailsForm.classList.remove("d-none");
+      if (editBtnLabel) editBtnLabel.textContent = "Cancel Edit";
+      if (editToggleBtn) {
+        editToggleBtn.classList.remove("btn-outline-primary");
+        editToggleBtn.classList.add("btn-outline-secondary");
+      }
+    } else {
+      detailsForm.classList.add("d-none");
+      detailsView.classList.remove("d-none");
+      if (editBtnLabel) editBtnLabel.textContent = "Edit Profile";
+      if (editToggleBtn) {
+        editToggleBtn.classList.add("btn-outline-primary");
+        editToggleBtn.classList.remove("btn-outline-secondary");
+      }
+    }
+  };
+
+  if (editToggleBtn) editToggleBtn.addEventListener("click", () => toggleEditMode());
+  if (editToggleBtnTop) editToggleBtnTop.addEventListener("click", () => toggleEditMode(true));
+  if (cancelEditBtn) cancelEditBtn.addEventListener("click", () => toggleEditMode(false));
+
+  // Bio character counter
+  if (bioInput && bioCounter) {
+    bioInput.addEventListener("input", () => {
+      bioCounter.textContent = `${bioInput.value.length}/500`;
+    });
+  }
+
+  // Password Visibility Toggle
+  document.querySelectorAll(".toggle-pwd-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const targetId = btn.getAttribute("data-target");
+      const input = document.getElementById(targetId);
+      const icon = btn.querySelector("i");
+      if (input) {
+        if (input.type === "password") {
+          input.type = "text";
+          icon.classList.remove("fa-eye");
+          icon.classList.add("fa-eye-slash");
+        } else {
+          input.type = "password";
+          icon.classList.remove("fa-eye-slash");
+          icon.classList.add("fa-eye");
+        }
+      }
+    });
+  });
+
+  // Password Confirmation Live Match Checker
+  const newPwdInput = document.getElementById("newPassword");
+  const confirmPwdInput = document.getElementById("confirmPassword");
+  const matchHint = document.getElementById("passwordMatchHint");
+
+  const checkPasswordMatch = () => {
+    if (!newPwdInput || !confirmPwdInput || !matchHint) return;
+    const v1 = newPwdInput.value;
+    const v2 = confirmPwdInput.value;
+    if (!v2) {
+      matchHint.textContent = "";
+      return;
+    }
+    if (v1 === v2) {
+      matchHint.innerHTML = `<span class="text-success"><i class="fa-solid fa-check me-1"></i>Passwords match!</span>`;
+    } else {
+      matchHint.innerHTML = `<span class="text-danger"><i class="fa-solid fa-circle-exclamation me-1"></i>Passwords do not match</span>`;
+    }
+  };
+
+  if (newPwdInput) newPwdInput.addEventListener("input", checkPasswordMatch);
+  if (confirmPwdInput) confirmPwdInput.addEventListener("input", checkPasswordMatch);
+
+  // Check URL Hash on load
+  if (window.location.hash) {
+    const targetSection = document.querySelector(window.location.hash);
+    if (targetSection) {
+      setTimeout(() => {
+        targetSection.scrollIntoView({ behavior: "smooth" });
+      }, 200);
+    }
+  }
+});
+</script>

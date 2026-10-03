@@ -1,7 +1,7 @@
 const Listing = require("./models/listing");
 const Review = require("./models/review");
 const ExpressError= require("./utils/ExpressError.js");
-const { listingSchema, reviewSchema } = require("./schema.js");
+const { listingSchema, reviewSchema, bookingSchema } = require("./schema.js");
 
 
 
@@ -24,7 +24,7 @@ module.exports.saveRedirectUrl = (req,res,next) =>{
 module.exports.isOwner= async(req,res,next) =>{
   let { id } = req.params;
   let listing = await Listing.findById(id);
-  if(!listing.owner.equals(res.locals.CurrUser._id)){
+  if(!req.user || !listing.owner.equals(req.user._id)){
     req.flash("error","You don't have permission to edit");
     return res.redirect(`/listings/${id}`);
   }
@@ -56,9 +56,35 @@ module.exports.validateReview = (req, res, next) => {
 module.exports.isReviewAuthor= async(req,res,next) =>{
   let { id,reviewId } = req.params;
   let review = await Review.findById(reviewId);
-  if(!review.author.equals(res.locals.CurrUser._id)){
+  if(!req.user || !review.author.equals(req.user._id)){
     req.flash("error","You are not author of this review ");
     return res.redirect(`/listings/${id}`);
+  }
+  next();
+};
+
+module.exports.validateBooking = (req, res, next) => {
+  const { error } = bookingSchema.validate(req.body);
+  if (error) {
+    const errMsg = error.details.map(el => el.message).join(",");
+    throw new ExpressError(400, errMsg);
+  } else {
+    next();
+  }
+};
+
+module.exports.isHost = (req, res, next) => {
+  if (!req.user || req.user.role !== 'host') {
+    req.flash('error', 'Host access only.');
+    return res.redirect('/listings');
+  }
+  next();
+};
+
+module.exports.isAdmin = (req, res, next) => {
+  if (!req.user || req.user.role !== 'admin') {
+    req.flash('error', 'Admin access only.');
+    return res.redirect('/listings');
   }
   next();
 };

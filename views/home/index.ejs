@@ -1,0 +1,442 @@
+<% layout('/layouts/boilerplate.ejs') %>
+
+<!-- ==========================================================================
+     1. FULL-SCREEN CINEMATIC HERO (MULTI-LAYER 3D DEPTH & PARALLAX)
+     ========================================================================== -->
+<section class="hero-cinematic-wrapper" id="heroSection">
+  <!-- Layer 1: High-Resolution Travel Imagery Slideshow with Ken Burns Effect -->
+  <div class="hero-slides-layer" id="heroSlidesContainer" aria-hidden="true">
+    <div class="hero-slide active" style="background-image: url('https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=2400&q=90');" data-index="0" data-location="Amalfi Coast, Italy" data-category="Beach"></div>
+    <div class="hero-slide" style="background-image: url('https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=2400&q=90');" data-index="1" data-location="Swiss Alps, Switzerland" data-category="Mountain"></div>
+    <div class="hero-slide" style="background-image: url('https://images.unsplash.com/photo-1613490493576-7fde63acd811?auto=format&fit=crop&w=2400&q=90');" data-index="2" data-location="Santorini, Greece" data-category="Villa"></div>
+    <div class="hero-slide" style="background-image: url('https://images.unsplash.com/photo-1448375240586-882707db888b?auto=format&fit=crop&w=2400&q=90');" data-index="3" data-location="Redwoods, California" data-category="Cabin"></div>
+    <div class="hero-slide" style="background-image: url('https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&w=2400&q=90');" data-index="4" data-location="Paris, France" data-category="City"></div>
+    <div class="hero-slide" style="background-image: url('https://images.unsplash.com/photo-1509316975850-ff9c5deb0cd9?auto=format&fit=crop&w=2400&q=90');" data-index="5" data-location="Dubai Dunes, UAE" data-category="Desert"></div>
+  </div>
+
+  <!-- Layer 2: Multi-Stop Luxury Vignette & Dark Gradient -->
+  <div class="hero-vignette-layer" aria-hidden="true"></div>
+
+  <!-- Layer 3: Warm Sunset Radiance & Atmospheric Ambient Glow -->
+  <div class="hero-ambient-glow" aria-hidden="true"></div>
+
+  <!-- Layer 4: Interactive Floating Atmospheric Light Particles -->
+  <canvas id="heroParticlesCanvas" class="hero-particles-canvas" aria-hidden="true"></canvas>
+
+  <!-- Layer 5: Soft Drifting Light Orbs for Deep Optical Depth -->
+  <div class="hero-light-orbs" aria-hidden="true">
+    <div class="hero-orb orb-primary"></div>
+    <div class="hero-orb orb-amber"></div>
+  </div>
+
+  <!-- Layer 6: Interactive Foreground Layer (Parallax Depth) -->
+  <div class="hero-foreground-content" id="heroForeground">
+    <div class="container-max">
+      <div class="hero-content-inner">
+        <!-- Floating Tagline Badge -->
+        <div class="hero-badge-pill" data-depth="0.04">
+          <i class="fa-solid fa-sparkles text-warning me-2"></i>
+          <span>Wander Far. Stay Somewhere Extraordinary.</span>
+        </div>
+
+        <!-- Interactive Destination Category Switcher -->
+        <div class="hero-scene-pills d-none d-md-flex" id="heroDestPills" data-depth="0.06" aria-label="Switch background destination">
+          <button type="button" class="hero-scene-btn active" data-slide="0"><i class="fa-solid fa-umbrella-beach me-1"></i> Beaches</button>
+          <button type="button" class="hero-scene-btn" data-slide="1"><i class="fa-solid fa-mountain me-1"></i> Mountains</button>
+          <button type="button" class="hero-scene-btn" data-slide="2"><i class="fa-solid fa-house-chimney-window me-1"></i> Luxury</button>
+          <button type="button" class="hero-scene-btn" data-slide="3"><i class="fa-solid fa-tree me-1"></i> Forests</button>
+          <button type="button" class="hero-scene-btn" data-slide="4"><i class="fa-solid fa-city me-1"></i> Cities</button>
+          <button type="button" class="hero-scene-btn" data-slide="5"><i class="fa-solid fa-sun me-1"></i> Desert</button>
+        </div>
+
+        <!-- Cinematic Headline -->
+        <h1 class="hero-main-title" data-depth="0.08">
+          Find Somewhere<br>
+          <span class="hero-title-serif">Worth Wandering To.</span>
+        </h1>
+
+        <!-- Cinematic Subtitle -->
+        <p class="hero-subtitle-text" data-depth="0.06">
+          Discover handpicked luxury villas, alpine chalets, private islands, and unforgettable stays across 45+ countries.
+        </p>
+
+        <!-- Large Floating Glassmorphic Search Panel -->
+        <div class="hero-search-wrapper" id="heroSearchWrapper" data-depth="0.10">
+          <form action="/listings" method="GET" class="hero-search-panel" role="search">
+            <!-- Where -->
+            <div class="search-cell search-cell-where">
+              <div class="search-cell-icon">
+                <i class="fa-solid fa-location-dot"></i>
+              </div>
+              <div class="search-cell-content">
+                <label for="search-where" class="search-cell-label">Where</label>
+                <input 
+                  id="search-where" 
+                  type="text" 
+                  name="q" 
+                  placeholder="Search destinations (e.g. Bali, Paris, Malibu)" 
+                  autocomplete="off" 
+                />
+              </div>
+            </div>
+
+            <div class="search-divider"></div>
+
+            <!-- Check In -->
+            <div class="search-cell search-cell-date d-none d-md-flex">
+              <div class="search-cell-icon">
+                <i class="fa-regular fa-calendar"></i>
+              </div>
+              <div class="search-cell-content">
+                <label for="search-checkin" class="search-cell-label">Check in</label>
+                <input id="search-checkin" type="date" />
+              </div>
+            </div>
+
+            <div class="search-divider d-none d-md-block"></div>
+
+            <!-- Check Out -->
+            <div class="search-cell search-cell-date d-none d-md-flex">
+              <div class="search-cell-icon">
+                <i class="fa-regular fa-calendar-check"></i>
+              </div>
+              <div class="search-cell-content">
+                <label for="search-checkout" class="search-cell-label">Check out</label>
+                <input id="search-checkout" type="date" />
+              </div>
+            </div>
+
+            <div class="search-divider d-none d-sm-block"></div>
+
+            <!-- Experience / Category -->
+            <div class="search-cell search-cell-category d-none d-sm-flex">
+              <div class="search-cell-icon">
+                <i class="fa-solid fa-compass"></i>
+              </div>
+              <div class="search-cell-content">
+                <label for="search-category" class="search-cell-label">Experience</label>
+                <select id="search-category" name="category">
+                  <option value="">Any experience</option>
+                  <option value="Beach">Beachfront</option>
+                  <option value="Mountain">Alpine Mountains</option>
+                  <option value="Cabin">Secluded Cabins</option>
+                  <option value="City">Metropolitan Cities</option>
+                  <option value="Villa">Luxury Villas</option>
+                  <option value="Lake">Lakefront Retreats</option>
+                  <option value="Ski">Ski Resorts</option>
+                  <option value="Desert">Desert Sanctuaries</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Search Action Button -->
+            <div class="search-action">
+              <button type="submit" class="hero-search-submit-btn" aria-label="Search stays">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <span class="d-none d-lg-inline ms-2">Search Stays</span>
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Hero Bottom Bar: Live Location Tag & Scroll Indicator -->
+  <div class="hero-bottom-bar">
+    <div class="container-max d-flex align-items-center justify-content-between">
+      <div class="hero-location-badge">
+        <i class="fa-solid fa-location-dot text-primary me-2 pulse-slow"></i>
+        <span id="heroLocationName">Amalfi Coast, Italy</span>
+      </div>
+
+      <a href="#explore-section" class="hero-scroll-cue" aria-label="Scroll to discover">
+        <span class="small me-2 d-none d-sm-inline">Scroll to Explore</span>
+        <div class="mouse-icon">
+          <div class="mouse-wheel"></div>
+        </div>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ==========================================================================
+     2. CATEGORY FILTER NAVIGATION
+     ========================================================================== -->
+<div class="container-max" id="explore-section">
+  <section class="category-scroll-wrapper reveal-on-scroll">
+    <div class="category-chips-bar">
+      <a href="/listings" class="category-chip-item active text-decoration-none">
+        <i class="fa-solid fa-fire"></i>
+        <span>Trending</span>
+      </a>
+      <a href="/listings?category=Beach" class="category-chip-item text-decoration-none">
+        <i class="fa-solid fa-umbrella-beach"></i>
+        <span>Beach</span>
+      </a>
+      <a href="/listings?category=Mountain" class="category-chip-item text-decoration-none">
+        <i class="fa-solid fa-mountain"></i>
+        <span>Mountains</span>
+      </a>
+      <a href="/listings?category=Cabin" class="category-chip-item text-decoration-none">
+        <i class="fa-solid fa-campground"></i>
+        <span>Cabins</span>
+      </a>
+      <a href="/listings?category=City" class="category-chip-item text-decoration-none">
+        <i class="fa-solid fa-city"></i>
+        <span>Iconic Cities</span>
+      </a>
+      <a href="/listings?category=Villa" class="category-chip-item text-decoration-none">
+        <i class="fa-solid fa-house-chimney-window"></i>
+        <span>Luxury Villas</span>
+      </a>
+      <a href="/listings?category=Lake" class="category-chip-item text-decoration-none">
+        <i class="fa-solid fa-water"></i>
+        <span>Lakefront</span>
+      </a>
+      <a href="/listings?category=Ski" class="category-chip-item text-decoration-none">
+        <i class="fa-solid fa-person-skiing"></i>
+        <span>Ski-in/out</span>
+      </a>
+      <a href="/listings?category=Desert" class="category-chip-item text-decoration-none">
+        <i class="fa-solid fa-sun"></i>
+        <span>Desert</span>
+      </a>
+    </div>
+  </section>
+</div>
+
+<!-- ==========================================================================
+     3. CINEMATIC DESTINATIONS SECTION ("Explore the World")
+     ========================================================================== -->
+<div class="container-max my-5">
+  <section class="cinematic-section reveal-on-scroll">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-end mb-4 gap-2">
+      <div>
+        <div class="section-kicker">CURATED COLLECTIONS</div>
+        <h2 class="section-display-title mb-1">Explore the World</h2>
+        <p class="text-muted mb-0">From snow-covered peaks to sun-drenched coastlines, discover spaces designed for wonder.</p>
+      </div>
+      <a href="/listings" class="section-link-btn text-decoration-none">
+        <span>See all destinations</span>
+        <i class="fa-solid fa-arrow-right ms-2"></i>
+      </a>
+    </div>
+
+    <div class="cinematic-dest-grid reveal-stagger">
+      <% (destinations || []).forEach(function(dest) { %>
+        <a href="/listings?q=<%= encodeURIComponent(dest.name) %>" class="dest-cinematic-card text-decoration-none">
+          <div class="dest-card-media" style="background-image: url('<%= dest.image %>');"></div>
+          <div class="dest-card-glass-overlay">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+              <span class="dest-card-tag"><%= dest.category || 'Getaway' %></span>
+              <% if (dest.trending) { %>
+                <span class="badge bg-danger rounded-pill px-3 py-1"><i class="fa-solid fa-fire me-1"></i>Trending</span>
+              <% } %>
+            </div>
+            <div class="dest-card-title-group">
+              <h3 class="dest-card-name mb-1"><%= dest.name %></h3>
+              <div class="dest-card-meta">
+                <span><%= dest.count || '120+ stays' %></span>
+                <span>•</span>
+                <span>Avg <%= dest.avgCost %> / night</span>
+              </div>
+            </div>
+          </div>
+        </a>
+      <% }) %>
+    </div>
+  </section>
+</div>
+
+<!-- ==========================================================================
+     4. HANDPICKED STAYS (PREMIUM PROPERTY MARKETPLACE CARDS)
+     ========================================================================== -->
+<div class="container-max my-5">
+  <section class="reveal-on-scroll">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-end mb-4 gap-2">
+      <div>
+        <div class="section-kicker">EXCLUSIVE PORTFOLIO</div>
+        <h2 class="section-display-title mb-1">Handpicked Stays</h2>
+        <p class="text-muted mb-0">Exceptional homes verified for craftsmanship, breathtaking views, and luxury amenities.</p>
+      </div>
+      <a href="/listings" class="btn btn-outline-dark rounded-pill px-4">Browse All Stays</a>
+    </div>
+
+    <div class="listings-grid-container reveal-stagger">
+      <% for(let listing of (featured || [])) { %>
+        <div class="listing-card-wrapper">
+          <div class="listing-card-media">
+            <a href="/listings/<%= listing._id %>" aria-label="View <%= listing.title %>">
+              <img 
+                src="<%= (listing.image && listing.image.url) ? listing.image.url : (listing.photos && listing.photos[0] && (listing.photos[0].url || listing.photos[0])) || 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80' %>" 
+                alt="<%= listing.title %>" 
+                loading="lazy"
+              />
+            </a>
+            
+            <!-- Wishlist Button -->
+            <form action="/wishlist/<%= listing._id %>/toggle" method="POST" class="d-inline">
+              <button type="submit" class="listing-wishlist-toggle" aria-label="Toggle wishlist">
+                <i class="fa-regular fa-heart"></i>
+              </button>
+            </form>
+
+            <span class="listing-category-badge"><%= listing.category %></span>
+          </div>
+
+          <a href="/listings/<%= listing._id %>" class="text-decoration-none text-reset listing-card-body">
+            <div class="listing-card-header">
+              <div class="listing-card-location">
+                <i class="fa-solid fa-location-dot text-primary me-1"></i><%= listing.location %>, <%= listing.country %>
+              </div>
+              <div class="listing-rating-badge">
+                <i class="fa-solid fa-star"></i>
+                <span><%= listing.averageRating ? listing.averageRating.toFixed(1) : '4.9' %></span>
+              </div>
+            </div>
+            
+            <div class="listing-card-title"><%= listing.title %></div>
+
+            <% if (listing.owner) { %>
+              <div class="small text-muted mb-2 d-flex align-items-center gap-1">
+                <img src="<%= listing.owner.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=60&q=80' %>" alt="host" class="rounded-circle" style="width: 18px; height: 18px; object-fit: cover;">
+                <span>Hosted by <%= (listing.owner.firstName ? (listing.owner.firstName + ' ' + listing.owner.lastName) : listing.owner.username) %></span>
+              </div>
+            <% } %>
+
+            <div class="listing-card-footer">
+              <div>
+                <span class="listing-price-tag">&#8377; <%= Number(listing.price).toLocaleString("en-IN") %></span>
+                <span class="listing-price-period">/ night</span>
+              </div>
+              <span class="card-book-action">Book stay &rarr;</span>
+            </div>
+          </a>
+        </div>
+      <% } %>
+    </div>
+  </section>
+</div>
+
+<!-- ==========================================================================
+     5. CINEMATIC PARALLAX SECTION: "YOUR NEXT ESCAPE AWAITS"
+     ========================================================================== -->
+<section class="parallax-cinematic-banner my-5 reveal-on-scroll">
+  <div class="parallax-banner-media" style="background-image: url('https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=2400&q=90');"></div>
+  <div class="parallax-banner-overlay"></div>
+  
+  <div class="container-max">
+    <div class="parallax-banner-content">
+      <div class="glass-feature-hero-card">
+        <div class="section-kicker text-warning mb-2">UNRIVALED HOSPITALITY</div>
+        <h2 class="parallax-quote-title">Escape the ordinary.<br><span class="hero-title-serif">Discover places worth remembering.</span></h2>
+        <p class="text-white-50 leading-relaxed mb-4">
+          Every WanderStay villa and chalet is meticulously chosen for architectural elegance, serene surroundings, and verified hospitality standards.
+        </p>
+
+        <div class="row g-3 mb-4 text-start">
+          <div class="col-sm-4">
+            <div class="d-flex align-items-center gap-2 text-white">
+              <i class="fa-solid fa-award text-warning fs-5"></i>
+              <span class="small fw-semibold">100% Verified Stays</span>
+            </div>
+          </div>
+          <div class="col-sm-4">
+            <div class="d-flex align-items-center gap-2 text-white">
+              <i class="fa-solid fa-shield-heart text-warning fs-5"></i>
+              <span class="small fw-semibold">Guest Protection</span>
+            </div>
+          </div>
+          <div class="col-sm-4">
+            <div class="d-flex align-items-center gap-2 text-white">
+              <i class="fa-solid fa-headset text-warning fs-5"></i>
+              <span class="small fw-semibold">24/7 Concierge</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="d-flex flex-wrap gap-3">
+          <a href="/listings" class="btn btn-primary rounded-pill px-5 py-3 fw-bold">
+            <i class="fa-solid fa-compass me-2"></i>Explore All Stays
+          </a>
+          <a href="/ai-planner" class="btn btn-glass-light rounded-pill px-4 py-3 fw-bold">
+            <i class="fa-solid fa-wand-magic-sparkles me-2"></i>Plan with AI
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==========================================================================
+     6. WHY CHOOSE WANDERSTAY (FLOATING GLASS CARDS)
+     ========================================================================== -->
+<div class="container-max my-5 py-3">
+  <section class="reveal-on-scroll">
+    <div class="text-center mb-5 max-w-700 mx-auto">
+      <div class="section-kicker">THE WANDERSTAY ADVANTAGE</div>
+      <h2 class="section-display-title">Designed for Modern Explorers</h2>
+      <p class="text-muted">Combining curated luxury accommodations with cutting-edge travel intelligence.</p>
+    </div>
+
+    <div class="row g-4 reveal-stagger">
+      <div class="col-md-4">
+        <div class="feature-glass-card h-100 p-4 p-lg-5 text-center">
+          <div class="feature-icon-wrapper mx-auto mb-4" style="background: rgba(255, 56, 92, 0.12); color: #FF385C;">
+            <i class="fa-solid fa-shield-halved"></i>
+          </div>
+          <h4 class="fw-bold mb-2">Verified & Handpicked</h4>
+          <p class="text-muted leading-relaxed mb-0">Every property passes rigorous 50-point audits for hygiene, high-speed connectivity, premium linens, and comfort.</p>
+        </div>
+      </div>
+
+      <div class="col-md-4">
+        <div class="feature-glass-card h-100 p-4 p-lg-5 text-center">
+          <div class="feature-icon-wrapper mx-auto mb-4" style="background: rgba(245, 158, 11, 0.14); color: #F59E0B;">
+            <i class="fa-solid fa-wand-magic-sparkles"></i>
+          </div>
+          <h4 class="fw-bold mb-2">AI-Powered Itineraries</h4>
+          <p class="text-muted leading-relaxed mb-0">Generate personalized day-by-day itineraries tailored to your budget, travel rhythm, and local cuisine in seconds.</p>
+        </div>
+      </div>
+
+      <div class="col-md-4">
+        <div class="feature-glass-card h-100 p-4 p-lg-5 text-center">
+          <div class="feature-icon-wrapper mx-auto mb-4" style="background: rgba(14, 165, 233, 0.14); color: #0EA5E9;">
+            <i class="fa-solid fa-users-viewfinder"></i>
+          </div>
+          <h4 class="fw-bold mb-2">Group Trip Splitting</h4>
+          <p class="text-muted leading-relaxed mb-0">Coordinate with friends, vote on destinations, track shared expenses, and calculate automatic split settlements easily.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ==========================================================================
+     7. CINEMATIC FINAL CTA SECTION
+     ========================================================================== -->
+<div class="container-max my-5">
+  <section class="cinematic-final-cta p-5 text-center reveal-on-scroll">
+    <div class="cta-sunset-backdrop"></div>
+    <div class="cta-lighting-glow"></div>
+    
+    <div class="position-relative z-2 max-w-700 mx-auto">
+      <div class="section-kicker text-warning mb-2">START YOUR JOURNEY</div>
+      <h2 class="display-5 fw-bold text-white mb-3">Your next unforgettable stay is waiting.</h2>
+      <p class="text-white-50 fs-5 mb-4">
+        Join over 120,000 travelers experiencing extraordinary destinations around the world.
+      </p>
+      
+      <div class="d-flex flex-wrap justify-content-center gap-3">
+        <a href="/listings" class="btn btn-primary btn-lg rounded-pill px-5 py-3 fw-bold">
+          <i class="fa-solid fa-compass me-2"></i>Start Exploring
+        </a>
+        <a href="/signup?role=host" class="btn btn-outline-light btn-lg rounded-pill px-4 py-3 fw-bold">
+          <i class="fa-solid fa-house-chimney-medical me-2"></i>Become a Host
+        </a>
+      </div>
+    </div>
+  </section>
+</div>
