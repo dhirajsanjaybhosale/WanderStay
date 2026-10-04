@@ -10,7 +10,7 @@
       <div class="small text-muted">Created by <%= trip.owner && trip.owner.username ? trip.owner.username : 'Organizer' %></div>
     </div>
     <div class="d-flex gap-2">
-      <a class="btn btn-outline-dark rounded-pill px-4" href="/trips">
+      <a class="btn btn-outline-secondary rounded-pill px-4" href="/trips">
         <i class="fa-solid fa-arrow-left me-1"></i> Back to Trips
       </a>
     </div>
@@ -20,15 +20,15 @@
     <!-- Left Column: Members & Add Expense -->
     <div class="col-lg-5">
       <!-- Members Card -->
-      <div class="card border rounded-4 p-4 bg-white shadow-sm mb-4">
+      <div class="glass-card p-4 mb-4">
         <div class="d-flex justify-content-between align-items-center mb-3">
           <h5 class="fw-bold mb-0"><i class="fa-solid fa-users text-primary me-2"></i>Trip Members</h5>
-          <span class="badge bg-light text-dark border px-2 py-1"><%= (trip.members && trip.members.length) || 1 %></span>
+          <span class="badge bg-body-tertiary text-body border px-2 py-1"><%= (trip.members && trip.members.length) || 1 %></span>
         </div>
 
         <ul class="list-unstyled mb-3 d-flex flex-column gap-2">
           <% for (let m of (trip.members || [])) { %>
-            <li class="d-flex justify-content-between align-items-center p-2 rounded-3 bg-light">
+            <li class="d-flex justify-content-between align-items-center p-2 rounded-3 bg-body-tertiary">
               <div class="d-flex align-items-center gap-2">
                 <img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=60&q=80" alt="avatar" class="avatar-img" />
                 <div class="fw-semibold"><%= m.username || m.email %></div>
@@ -49,7 +49,7 @@
       </div>
 
       <!-- Add Expense Card -->
-      <div class="card border rounded-4 p-4 bg-white shadow-sm">
+      <div class="glass-card p-4">
         <h5 class="fw-bold mb-3"><i class="fa-solid fa-receipt text-primary me-2"></i>Add Group Expense</h5>
         <form action="/trips/<%= trip._id %>/expenses" method="POST">
           <div class="mb-3">
@@ -92,7 +92,7 @@
     <!-- Right Column: Expenses, Balances & Splitwise Settlements -->
     <div class="col-lg-7">
       <!-- Expenses List -->
-      <div class="card border rounded-4 p-4 bg-white shadow-sm mb-4">
+      <div class="glass-card p-4 mb-4">
         <h5 class="fw-bold mb-3"><i class="fa-solid fa-list-check text-primary me-2"></i>Recorded Expenses</h5>
         <% if (expenses && expenses.length) { %>
           <div class="table-responsive">
@@ -109,7 +109,7 @@
                   <tr>
                     <td><strong><%= e.description %></strong></td>
                     <td>
-                      <span class="badge bg-light text-dark border">
+                      <span class="badge bg-body-tertiary text-body border">
                         <%= e.payer && e.payer.username ? e.payer.username : 'Member' %>
                       </span>
                     </td>
@@ -125,7 +125,7 @@
       </div>
 
       <!-- Balances & Settlements Card -->
-      <div class="card border rounded-4 p-4 bg-white shadow-sm mb-4">
+      <div class="glass-card p-4 mb-4">
         <h5 class="fw-bold mb-3"><i class="fa-solid fa-scale-balanced text-primary me-2"></i>Net Balances</h5>
         
         <div class="row g-2 mb-4">
@@ -145,7 +145,7 @@
         <% if (settlements && settlements.length) { %>
           <ul class="list-unstyled mb-0 d-flex flex-column gap-2">
             <% for (let s of settlements) { %>
-              <li class="p-3 bg-light rounded-3 border d-flex justify-content-between align-items-center">
+              <li class="p-3 bg-body-tertiary rounded-3 border border-theme d-flex justify-content-between align-items-center">
                 <div>
                   <strong><%= s.from %></strong> pays <strong><%= s.to %></strong>
                 </div>
@@ -159,7 +159,7 @@
       </div>
 
       <!-- Voting Activity Card -->
-      <div class="card border rounded-4 p-4 bg-white shadow-sm">
+      <div class="glass-card p-4">
         <h5 class="fw-bold mb-3"><i class="fa-solid fa-square-poll-vertical text-primary me-2"></i>Trip Polls & Ideas</h5>
         <form action="/trips/<%= trip._id %>/vote" method="POST" class="d-flex gap-2">
           <input name="option" class="form-control" placeholder="Suggest an activity (e.g. Scuba Diving, Sunset Cruise)" required />

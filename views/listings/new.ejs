@@ -3,7 +3,7 @@
 <div class="container-max py-4">
 <div class="row justify-content-center my-4">
   <div class="col-lg-8 col-md-10">
-    <div class="card border rounded-4 p-4 p-md-5 bg-white shadow-sm">
+    <div class="glass-card rounded-4 p-4 p-md-5">
       <div class="text-center mb-4">
         <div class="brand-icon mx-auto mb-2" style="width: 48px; height: 48px; font-size: 1.3rem;">
           <i class="fa-solid fa-house-chimney-medical"></i>
@@ -42,18 +42,24 @@
           <div class="invalid-feedback">Please enter a description for your listing.</div>
         </div>
 
-        <!-- Image Upload -->
-        <div class="mb-3">
-          <label for="image" class="form-label">Property Photos</label>
-          <input 
-            name="listing[image]" 
-            id="image" 
-            type="file" 
-            class="form-control" 
-            accept="image/*"
-            multiple
-          />
-          <div class="form-text">Upload high quality photos (JPEG, PNG). You can select multiple images.</div>
+        <!-- Image Upload with Live Preview -->
+        <div class="mb-4">
+          <label for="image" class="form-label fw-bold">Property Photos</label>
+          <div class="photo-upload-dropzone p-4 text-center rounded-4 border border-dashed mb-2" id="photoDropzone" style="border: 2px dashed var(--border-color); background: var(--surface-subtle); cursor: pointer;">
+            <i class="fa-solid fa-cloud-arrow-up text-primary fs-2 mb-2"></i>
+            <div class="fw-semibold">Click or drag photos here to upload</div>
+            <div class="text-muted small">Supports high-res JPG, PNG, WEBP (Multiple allowed)</div>
+            <input 
+              name="listing[image]" 
+              id="image" 
+              type="file" 
+              class="form-control d-none" 
+              accept="image/*"
+              multiple
+            />
+          </div>
+          <!-- Preview container -->
+          <div id="imagePreviewContainer" class="d-flex flex-wrap gap-2 mt-2"></div>
         </div>
 
         <!-- Price & Category -->
@@ -61,7 +67,7 @@
           <div class="col-md-6">
             <label for="price" class="form-label">Price per Night (₹ INR)</label>
             <div class="input-group">
-              <span class="input-group-text bg-light fw-bold">&#8377;</span>
+              <span class="input-group-text bg-body-tertiary text-body fw-bold border-theme">&#8377;</span>
               <input 
                 name="listing[price]" 
                 id="price" 
@@ -126,10 +132,41 @@
           <button type="submit" class="btn btn-primary btn-lg flex-grow-1 rounded-pill">
             <i class="fa-solid fa-plus me-1"></i> Publish Listing
           </button>
-          <a href="/listings" class="btn btn-outline-dark btn-lg rounded-pill px-4">Cancel</a>
+          <a href="/listings" class="btn btn-outline-secondary btn-lg rounded-pill px-4">Cancel</a>
         </div>
       </form>
     </div>
   </div>
 </div>
 </div>
+
+<script>
+  (function() {
+    const dropzone = document.getElementById('photoDropzone');
+    const input = document.getElementById('image');
+    const previewContainer = document.getElementById('imagePreviewContainer');
+
+    if (dropzone && input) {
+      dropzone.addEventListener('click', () => input.click());
+
+      input.addEventListener('change', () => {
+        previewContainer.innerHTML = '';
+        const files = Array.from(input.files || []);
+        files.forEach(file => {
+          if (file.type.startsWith('image/')) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+              const imgWrap = document.createElement('div');
+              imgWrap.className = 'position-relative rounded-3 overflow-hidden shadow-xs border';
+              imgWrap.style.width = '90px';
+              imgWrap.style.height = '70px';
+              imgWrap.innerHTML = `<img src="${e.target.result}" style="width: 100%; height: 100%; object-fit: cover;" alt="Preview" />`;
+              previewContainer.appendChild(imgWrap);
+            };
+            reader.readAsDataURL(file);
+          }
+        });
+      });
+    }
+  })();
+</script>

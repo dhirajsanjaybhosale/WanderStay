@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <defs>
+    <linearGradient id="ws-grad" x1="4" y1="4" x2="44" y2="44" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FF5A5F" />
+      <stop offset="50%" stop-color="#FF7A45" />
+      <stop offset="100%" stop-color="#F5A623" />
+    </linearGradient>
+    <linearGradient id="ws-inner-grad" x1="16" y1="12" x2="32" y2="38" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FFFFFF" />
+      <stop offset="100%" stop-color="#FFF2EE" />
+    </linearGradient>
+    <filter id="ws-shadow" x="0" y="0" width="48" height="48" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#FF5A5F" flood-opacity="0.3" />
+    </filter>
+  </defs>
+  <!-- Background Badge -->
+  <rect width="48" height="48" rx="14" fill="#131722" />
+  
+  <!-- Outer WanderPin (Journey loop + Location marker) -->
+  <path d="M24 6C16.268 6 10 12.268 10 20C10 28.5 21.6 40.2 23.1 41.7C23.6 42.1 24.4 42.1 24.9 41.7C26.4 40.2 38 28.5 38 20C38 12.268 31.732 6 24 6Z" fill="url(#ws-grad)" filter="url(#ws-shadow)"/>
+  
+  <!-- Shelter & Mountain Contours (Stay + Altitude) -->
+  <path d="M24 13L15.5 24.5H20.5L24 19L27.5 24.5H32.5L24 13Z" fill="url(#ws-inner-grad)" />
+  <path d="M24 21L19 28H29L24 21Z" fill="#131722" fill-opacity="0.9" />
+  <path d="M24 23.5L21.5 27H26.5L24 23.5Z" fill="url(#ws-grad)" />
+  
+  <!-- Compass Star Spark at Peak -->
+  <path d="M24 9L24.8 11.2L27 12L24.8 12.8L24 15L23.2 12.8L21 12L23.2 11.2L24 9Z" fill="#FFFFFF" />
+</svg>

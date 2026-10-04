@@ -1,137 +1,153 @@
 <% layout("/layouts/boilerplate.ejs") %>
 
 <div class="container-max py-4">
-<!-- Category Filter Bar -->
-<section class="category-scroll-wrapper mt-2 reveal-on-scroll">
-  <div class="category-chips-bar">
-    <a href="/listings" class="category-chip-item <%= !currentCategory ? 'active' : '' %> text-decoration-none">
-      <i class="fa-solid fa-compass"></i>
-      <span>All Stays</span>
-    </a>
-    <a href="/listings?category=Beach" class="category-chip-item <%= currentCategory === 'Beach' ? 'active' : '' %> text-decoration-none">
-      <i class="fa-solid fa-umbrella-beach"></i>
-      <span>Beach</span>
-    </a>
-    <a href="/listings?category=Mountain" class="category-chip-item <%= currentCategory === 'Mountain' ? 'active' : '' %> text-decoration-none">
-      <i class="fa-solid fa-mountain"></i>
-      <span>Mountain</span>
-    </a>
-    <a href="/listings?category=Cabin" class="category-chip-item <%= currentCategory === 'Cabin' ? 'active' : '' %> text-decoration-none">
-      <i class="fa-solid fa-campground"></i>
-      <span>Cabins</span>
-    </a>
-    <a href="/listings?category=City" class="category-chip-item <%= currentCategory === 'City' ? 'active' : '' %> text-decoration-none">
-      <i class="fa-solid fa-city"></i>
-      <span>City</span>
-    </a>
-    <a href="/listings?category=Villa" class="category-chip-item <%= currentCategory === 'Villa' ? 'active' : '' %> text-decoration-none">
-      <i class="fa-solid fa-house-chimney-window"></i>
-      <span>Villa</span>
-    </a>
-    <a href="/listings?category=Lake" class="category-chip-item <%= currentCategory === 'Lake' ? 'active' : '' %> text-decoration-none">
-      <i class="fa-solid fa-water"></i>
-      <span>Lake</span>
-    </a>
-    <a href="/listings?category=Ski" class="category-chip-item <%= currentCategory === 'Ski' ? 'active' : '' %> text-decoration-none">
-      <i class="fa-solid fa-person-skiing"></i>
-      <span>Ski</span>
-    </a>
-    <a href="/listings?category=Desert" class="category-chip-item <%= currentCategory === 'Desert' ? 'active' : '' %> text-decoration-none">
-      <i class="fa-solid fa-sun"></i>
-      <span>Desert</span>
-    </a>
-  </div>
-</section>
-
-<!-- Filter & Search Summary Bar with Glassmorphic Styling -->
-<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4 p-3 glass-panel listings-summary-bar reveal-on-scroll">
-  <div>
-    <% if (searchQuery) { %>
-      <div class="fw-semibold">
-        Results for <span class="text-primary">"<%= searchQuery %>"</span>
-        <a href="/listings" class="small text-muted ms-2 text-decoration-underline">Clear</a>
-      </div>
-    <% } else if (currentCategory) { %>
-      <div class="fw-semibold">
-        Showing <span class="text-primary"><%= currentCategory %></span> accommodations
-        <a href="/listings" class="small text-muted ms-2 text-decoration-underline">Show all</a>
-      </div>
-    <% } else { %>
-      <div class="fw-semibold">All Accommodations</div>
-    <% } %>
-    <div class="text-muted small"><strong><%= allListings.length %></strong> <%= allListings.length === 1 ? 'place' : 'places' %> to stay</div>
-  </div>
-
-  <!-- Sort Controls -->
-  <form action="/listings" method="GET" class="d-flex align-items-center gap-2">
-    <% if (currentCategory) { %><input type="hidden" name="category" value="<%= currentCategory %>"><% } %>
-    <% if (searchQuery) { %><input type="hidden" name="q" value="<%= searchQuery %>"><% } %>
-    
-    <label for="sortBy" class="small text-muted text-nowrap fw-bold">Sort by:</label>
-    <select name="sortBy" id="sortBy" class="form-select form-select-sm rounded-pill" onchange="this.form.submit()">
-      <option value="" <%= !sortBy ? 'selected' : '' %>>Recommended</option>
-      <option value="priceAsc" <%= sortBy === 'priceAsc' ? 'selected' : '' %>>Price: Low to High</option>
-      <option value="priceDesc" <%= sortBy === 'priceDesc' ? 'selected' : '' %>>Price: High to Low</option>
-      <option value="rating" <%= sortBy === 'rating' ? 'selected' : '' %>>Top Rated</option>
-    </select>
-  </form>
-</div>
-
-<!-- Empty State -->
-<% if (allListings.length === 0) { %>
-  <div class="text-center py-5 my-5 glass-card p-4 reveal-on-scroll">
-    <div class="brand-icon mx-auto mb-3" style="width: 64px; height: 64px; font-size: 1.8rem;">
-      <i class="fa-solid fa-magnifying-glass"></i>
+  <!-- Category Filter Bar -->
+  <section class="category-scroll-wrapper mt-2 reveal-on-scroll">
+    <div class="category-chips-bar">
+      <a href="/listings" class="category-chip-item <%= !currentCategory ? 'active' : '' %> text-decoration-none">
+        <i class="fa-solid fa-compass"></i>
+        <span>All Stays</span>
+      </a>
+      <a href="/listings?category=Beach" class="category-chip-item <%= currentCategory === 'Beach' ? 'active' : '' %> text-decoration-none">
+        <i class="fa-solid fa-umbrella-beach"></i>
+        <span>Beach</span>
+      </a>
+      <a href="/listings?category=Mountain" class="category-chip-item <%= currentCategory === 'Mountain' ? 'active' : '' %> text-decoration-none">
+        <i class="fa-solid fa-mountain"></i>
+        <span>Mountain</span>
+      </a>
+      <a href="/listings?category=Cabin" class="category-chip-item <%= currentCategory === 'Cabin' ? 'active' : '' %> text-decoration-none">
+        <i class="fa-solid fa-campground"></i>
+        <span>Cabins</span>
+      </a>
+      <a href="/listings?category=City" class="category-chip-item <%= currentCategory === 'City' ? 'active' : '' %> text-decoration-none">
+        <i class="fa-solid fa-city"></i>
+        <span>City</span>
+      </a>
+      <a href="/listings?category=Villa" class="category-chip-item <%= currentCategory === 'Villa' ? 'active' : '' %> text-decoration-none">
+        <i class="fa-solid fa-house-chimney-window"></i>
+        <span>Villa</span>
+      </a>
+      <a href="/listings?category=Lake" class="category-chip-item <%= currentCategory === 'Lake' ? 'active' : '' %> text-decoration-none">
+        <i class="fa-solid fa-water"></i>
+        <span>Lake</span>
+      </a>
+      <a href="/listings?category=Ski" class="category-chip-item <%= currentCategory === 'Ski' ? 'active' : '' %> text-decoration-none">
+        <i class="fa-solid fa-person-skiing"></i>
+        <span>Ski</span>
+      </a>
+      <a href="/listings?category=Desert" class="category-chip-item <%= currentCategory === 'Desert' ? 'active' : '' %> text-decoration-none">
+        <i class="fa-solid fa-sun"></i>
+        <span>Desert</span>
+      </a>
     </div>
-    <h4 class="fw-bold">No exact matches found</h4>
-    <p class="text-muted mb-4">Try adjusting your search terms, changing filters, or browsing other categories.</p>
-    <a href="/listings" class="btn btn-primary rounded-pill px-4">View All Properties</a>
-  </div>
-<% } %>
+  </section>
 
-<!-- Listings Grid with Stagger Reveal -->
-<div class="listings-grid-container reveal-stagger">
-  <% for(let listing of allListings) { %>
-    <div class="listing-card-wrapper">
-      <div class="listing-card-media">
-        <a href="/listings/<%= listing._id %>">
-          <img 
-            src="<%= (listing.image && listing.image.url) ? listing.image.url : (listing.photos && listing.photos[0] && (listing.photos[0].url || listing.photos[0])) || 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80' %>" 
-            alt="<%= listing.title %>" 
-            loading="lazy"
-          />
-        </a>
-
-        <!-- Wishlist toggle -->
-        <form action="/wishlist/<%= listing._id %>/toggle" method="POST" class="d-inline">
-          <button type="submit" class="listing-wishlist-toggle" aria-label="Save listing">
-            <i class="fa-regular fa-heart"></i>
-          </button>
-        </form>
-
-        <span class="listing-category-badge"><%= listing.category %></span>
-      </div>
-
-      <a href="/listings/<%= listing._id %>" class="text-decoration-none text-reset listing-card-body">
-        <div class="listing-card-header">
-          <div class="listing-card-location"><%= listing.location %>, <%= listing.country %></div>
-          <div class="listing-rating-badge">
-            <i class="fa-solid fa-star"></i>
-            <span><%= listing.averageRating ? listing.averageRating.toFixed(1) : 'New' %></span>
-          </div>
+  <!-- Filter & Search Summary Bar with Glassmorphic Styling -->
+  <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4 p-3 glass-panel listings-summary-bar reveal-on-scroll">
+    <div>
+      <% if (searchQuery) { %>
+        <div class="fw-semibold">
+          Results for <span class="text-primary">"<%= searchQuery %>"</span>
+          <a href="/listings" class="small text-muted ms-2 text-decoration-underline">Clear</a>
         </div>
+      <% } else if (currentCategory) { %>
+        <div class="fw-semibold">
+          Showing <span class="text-primary"><%= currentCategory %></span> accommodations
+          <a href="/listings" class="small text-muted ms-2 text-decoration-underline">Show all</a>
+        </div>
+      <% } else { %>
+        <div class="fw-semibold">All Accommodations</div>
+      <% } %>
+      <div class="text-muted small"><strong><%= allListings.length %></strong> <%= allListings.length === 1 ? 'place' : 'places' %> available to book</div>
+    </div>
+
+    <!-- Quick Price Filters & Sort Controls -->
+    <div class="d-flex flex-wrap align-items-center gap-2">
+      <!-- Sort Controls -->
+      <form action="/listings" method="GET" class="d-flex align-items-center gap-2">
+        <% if (currentCategory) { %><input type="hidden" name="category" value="<%= currentCategory %>"><% } %>
+        <% if (searchQuery) { %><input type="hidden" name="q" value="<%= searchQuery %>"><% } %>
+        <% if (minPrice) { %><input type="hidden" name="minPrice" value="<%= minPrice %>"><% } %>
+        <% if (maxPrice) { %><input type="hidden" name="maxPrice" value="<%= maxPrice %>"><% } %>
         
-        <div class="listing-card-title"><%= listing.title %></div>
+        <label for="sortBy" class="small text-muted text-nowrap fw-bold">Sort by:</label>
+        <select name="sortBy" id="sortBy" class="form-select form-select-sm rounded-pill" onchange="this.form.submit()">
+          <option value="" <%= !sortBy ? 'selected' : '' %>>Recommended</option>
+          <option value="priceAsc" <%= sortBy === 'priceAsc' ? 'selected' : '' %>>Price: Low to High</option>
+          <option value="priceDesc" <%= sortBy === 'priceDesc' ? 'selected' : '' %>>Price: High to Low</option>
+          <option value="rating" <%= sortBy === 'rating' ? 'selected' : '' %>>Top Rated</option>
+        </select>
+      </form>
+    </div>
+  </div>
 
-        <div class="listing-card-footer">
-          <div>
-            <span class="listing-price-tag">&#8377; <%= Number(listing.price).toLocaleString("en-IN") %></span>
-            <span class="listing-price-period">/ night</span>
-          </div>
-          <span class="text-primary fw-semibold small">View details &rarr;</span>
-        </div>
+  <!-- Empty State -->
+  <% if (allListings.length === 0) { %>
+    <div class="text-center py-5 my-5 glass-card p-5 rounded-4 reveal-on-scroll">
+      <div class="brand-icon mx-auto mb-3" style="width: 72px; height: 72px; font-size: 2rem; background: var(--primary-light); color: var(--primary);">
+        <i class="fa-solid fa-compass"></i>
+      </div>
+      <h3 class="fw-bold mb-2">No stays found matching your criteria</h3>
+      <p class="text-muted mb-4 max-w-500 mx-auto">Try adjusting your destination keyword, clearing category filters, or exploring all available verified stays.</p>
+      <a href="/listings" class="btn btn-primary rounded-pill px-5 py-2 fw-semibold">
+        <i class="fa-solid fa-compass me-2"></i>View All Stays
       </a>
     </div>
   <% } %>
-</div>
+
+  <!-- Listings Grid with Stagger Reveal -->
+  <div class="listings-grid-container reveal-stagger">
+    <% for(let listing of allListings) { %>
+      <div class="listing-card-wrapper">
+        <div class="listing-card-media">
+          <a href="/listings/<%= listing._id %>" aria-label="View <%= listing.title %>">
+            <img 
+              src="<%= (listing.image && listing.image.url) ? listing.image.url : (listing.photos && listing.photos[0] && (listing.photos[0].url || listing.photos[0])) || 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80' %>" 
+              alt="<%= listing.title %>" 
+              loading="lazy"
+            />
+          </a>
+
+          <!-- Wishlist toggle -->
+          <form action="/wishlist/<%= listing._id %>/toggle" method="POST" class="d-inline">
+            <button type="submit" class="listing-wishlist-toggle" aria-label="Save listing">
+              <i class="fa-regular fa-heart"></i>
+            </button>
+          </form>
+
+          <span class="listing-category-badge"><%= listing.category %></span>
+        </div>
+
+        <a href="/listings/<%= listing._id %>" class="text-decoration-none text-reset listing-card-body">
+          <div class="listing-card-header">
+            <div class="listing-card-location">
+              <i class="fa-solid fa-location-dot text-primary me-1"></i><%= listing.location %>, <%= listing.country %>
+            </div>
+            <div class="listing-rating-badge">
+              <i class="fa-solid fa-star"></i>
+              <span><%= listing.averageRating ? listing.averageRating.toFixed(1) : '4.9' %></span>
+            </div>
+          </div>
+          
+          <div class="listing-card-title"><%= listing.title %></div>
+
+          <% if (listing.owner) { %>
+            <div class="small text-muted mb-2 d-flex align-items-center gap-1">
+              <img src="<%= listing.owner.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=60&q=80' %>" alt="host" class="rounded-circle" style="width: 18px; height: 18px; object-fit: cover;">
+              <span class="text-truncate">Hosted by <%= (listing.owner.firstName ? (listing.owner.firstName + ' ' + listing.owner.lastName) : listing.owner.username) %></span>
+            </div>
+          <% } %>
+
+          <div class="listing-card-footer">
+            <div>
+              <span class="listing-price-tag">&#8377; <%= Number(listing.price).toLocaleString("en-IN") %></span>
+              <span class="listing-price-period">/ night</span>
+            </div>
+            <span class="card-book-action">Book stay &rarr;</span>
+          </div>
+        </a>
+      </div>
+    <% } %>
+  </div>
 </div>

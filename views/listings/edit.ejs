@@ -3,7 +3,7 @@
 <div class="container-max py-4">
 <div class="row justify-content-center my-4">
   <div class="col-lg-8 col-md-10">
-    <div class="card border rounded-4 p-4 p-md-5 bg-white shadow-sm">
+    <div class="glass-card rounded-4 p-4 p-md-5">
       <div class="text-center mb-4">
         <div class="brand-icon mx-auto mb-2" style="width: 48px; height: 48px; font-size: 1.3rem;">
           <i class="fa-solid fa-pen-to-square"></i>
@@ -42,7 +42,7 @@
         </div>
 
         <!-- Current Image Preview -->
-        <div class="mb-3 p-3 bg-light rounded-3 border">
+        <div class="mb-3 p-3 bg-body-tertiary rounded-3 border border-theme">
           <label class="form-label d-block mb-2">Current Cover Image</label>
           <img 
             src="<%= (listing.image && listing.image.url) ? listing.image.url : (listing.photos && listing.photos[0] && (listing.photos[0].url || listing.photos[0])) || 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=600&q=80' %>" 
@@ -51,11 +51,16 @@
           />
         </div>
 
-        <!-- Upload New Image -->
-        <div class="mb-3">
-          <label for="image" class="form-label">Upload New Photos (Optional)</label>
-          <input name="listing[image]" id="image" type="file" class="form-control" accept="image/*" multiple />
-          <div class="form-text">Uploading new images will add them to your property photo gallery.</div>
+        <!-- Upload New Image with Live Preview -->
+        <div class="mb-4">
+          <label for="image" class="form-label fw-bold">Upload New Photos (Optional)</label>
+          <div class="photo-upload-dropzone p-3 text-center rounded-4 border border-dashed mb-2" id="editPhotoDropzone" style="border: 2px dashed var(--border-color); background: var(--surface-subtle); cursor: pointer;">
+            <i class="fa-solid fa-cloud-arrow-up text-primary fs-3 mb-1"></i>
+            <div class="fw-semibold small">Click or drag new photos to add</div>
+            <div class="text-muted" style="font-size: 0.75rem;">Supports JPG, PNG, WEBP (Multiple allowed)</div>
+            <input name="listing[image]" id="image" type="file" class="form-control d-none" accept="image/*" multiple />
+          </div>
+          <div id="editImagePreviewContainer" class="d-flex flex-wrap gap-2 mt-2"></div>
         </div>
 
         <!-- Price & Category -->
@@ -63,7 +68,7 @@
           <div class="col-md-6">
             <label for="price" class="form-label">Price per Night (₹ INR)</label>
             <div class="input-group">
-              <span class="input-group-text bg-light fw-bold">&#8377;</span>
+              <span class="input-group-text bg-body-tertiary text-body fw-bold border-theme">&#8377;</span>
               <input 
                 name="listing[price]" 
                 id="price" 
@@ -127,10 +132,41 @@
           <button type="submit" class="btn btn-primary btn-lg flex-grow-1 rounded-pill">
             <i class="fa-solid fa-check me-1"></i> Save Changes
           </button>
-          <a href="/listings/<%= listing._id %>" class="btn btn-outline-dark btn-lg rounded-pill px-4">Cancel</a>
+          <a href="/listings/<%= listing._id %>" class="btn btn-outline-secondary btn-lg rounded-pill px-4">Cancel</a>
         </div>
       </form>
     </div>
   </div>
 </div>
 </div>
+
+<script>
+  (function() {
+    const dropzone = document.getElementById('editPhotoDropzone');
+    const input = document.getElementById('image');
+    const previewContainer = document.getElementById('editImagePreviewContainer');
+
+    if (dropzone && input) {
+      dropzone.addEventListener('click', () => input.click());
+
+      input.addEventListener('change', () => {
+        previewContainer.innerHTML = '';
+        const files = Array.from(input.files || []);
+        files.forEach(file => {
+          if (file.type.startsWith('image/')) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+              const imgWrap = document.createElement('div');
+              imgWrap.className = 'position-relative rounded-3 overflow-hidden shadow-xs border';
+              imgWrap.style.width = '90px';
+              imgWrap.style.height = '70px';
+              imgWrap.innerHTML = `<img src="${e.target.result}" style="width: 100%; height: 100%; object-fit: cover;" alt="Preview" />`;
+              previewContainer.appendChild(imgWrap);
+            };
+            reader.readAsDataURL(file);
+          }
+        });
+      });
+    }
+  })();
+</script>

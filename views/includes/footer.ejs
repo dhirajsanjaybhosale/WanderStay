@@ -3,69 +3,83 @@
     <div class="row g-4 pb-4">
       <!-- Brand & Tagline -->
       <div class="col-lg-4 col-md-6">
-        <div class="footer-brand">
-          <div class="brand-icon" style="width: 32px; height: 32px; font-size: 1rem;">
-            <i class="fa-solid fa-mountain-sun"></i>
-          </div>
-          <span>WanderStay</span>
+        <div class="footer-brand mb-3">
+          <a href="/" class="text-decoration-none text-reset">
+            <%- include('../components/logo.ejs', { variant: 'footer', size: 'md' }) %>
+          </a>
         </div>
-        <p class="text-secondary small mb-3">
-          <strong>Wander Far. Stay Better.</strong> Discover unique villas, mountain cabins, beachfront homes, and unforgettable travel experiences worldwide.
+        <p class="text-secondary small mb-4 leading-relaxed" style="max-width: 340px;">
+          Curated collection of architectural villas, secluded alpine cabins, oceanfront estates, and memorable travel adventures across 45+ destinations worldwide.
         </p>
-        <div class="d-flex gap-3">
-          <a href="#" class="fs-5" aria-label="Facebook"><i class="fa-brands fa-facebook"></i></a>
-          <a href="#" class="fs-5" aria-label="Instagram"><i class="fa-brands fa-instagram"></i></a>
-          <a href="#" class="fs-5" aria-label="Twitter"><i class="fa-brands fa-x-twitter"></i></a>
-          <a href="#" class="fs-5" aria-label="LinkedIn"><i class="fa-brands fa-linkedin"></i></a>
+        <div class="footer-social-links d-flex gap-3">
+          <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" class="social-circle-link" aria-label="Instagram"><i class="fa-brands fa-instagram"></i></a>
+          <a href="https://x.com" target="_blank" rel="noopener noreferrer" class="social-circle-link" aria-label="X / Twitter"><i class="fa-brands fa-x-twitter"></i></a>
+          <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" class="social-circle-link" aria-label="Facebook"><i class="fa-brands fa-facebook"></i></a>
+          <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" class="social-circle-link" aria-label="LinkedIn"><i class="fa-brands fa-linkedin"></i></a>
         </div>
       </div>
 
-      <!-- Quick Links -->
-      <div class="col-lg-2 col-md-6 col-6">
-        <h6 class="fw-bold text-white mb-3">Explore</h6>
+      <!-- Quick Links: Explore -->
+      <div class="col-lg-2 col-md-3 col-6">
+        <h6 class="fw-bold text-white mb-3 text-uppercase" style="font-size: 0.8rem; letter-spacing: 0.08em;">Explore</h6>
         <ul class="list-unstyled d-flex flex-column gap-2 small">
-          <li><a href="/listings">All Stays</a></li>
-          <li><a href="/listings?category=Beach">Beachfront</a></li>
-          <li><a href="/listings?category=Mountain">Mountain Cabins</a></li>
-          <li><a href="/listings?category=Villa">Luxury Villas</a></li>
-          <li><a href="/ai-planner">AI Itinerary Planner</a></li>
+          <li><a href="/listings" class="footer-link">All Stays</a></li>
+          <li><a href="/listings?category=Beach" class="footer-link">Beachfront Villas</a></li>
+          <li><a href="/listings?category=Mountain" class="footer-link">Mountain Cabins</a></li>
+          <li><a href="/listings?category=Villa" class="footer-link">Luxury Estates</a></li>
+          <li><a href="/ai-planner" class="footer-link">AI Itinerary Planner</a></li>
         </ul>
       </div>
 
-      <!-- Hosting -->
-      <div class="col-lg-2 col-md-6 col-6">
-        <h6 class="fw-bold text-white mb-3">Hosting</h6>
+      <!-- Host & Group Travel -->
+      <div class="col-lg-2 col-md-3 col-6">
+        <h6 class="fw-bold text-white mb-3 text-uppercase" style="font-size: 0.8rem; letter-spacing: 0.08em;">Hosting & Trips</h6>
         <ul class="list-unstyled d-flex flex-column gap-2 small">
-          <li><a href="/listings/new">Host your home</a></li>
-          <li><a href="/dashboard">Host Dashboard</a></li>
-          <li><a href="/trips">Group Trip Planning</a></li>
-          <li><a href="/help">Community Guidelines</a></li>
+          <li><a href="/become-host" class="footer-link">Become a Host</a></li>
+          <li><a href="/listings/new" class="footer-link">List Your Home</a></li>
+          <li><a href="/dashboard/host" class="footer-link">Host Dashboard</a></li>
+          <li><a href="/trips" class="footer-link">Group Trips & Splits</a></li>
+          <li><a href="/dashboard" class="footer-link">Guest Portal</a></li>
         </ul>
       </div>
 
-      <!-- Support & Newsletter -->
+      <!-- Company & Support -->
       <div class="col-lg-4 col-md-6">
-        <h6 class="fw-bold text-white mb-3">Stay Updated</h6>
-        <p class="text-secondary small mb-3">Subscribe to receive exclusive travel discounts and curated destination guides.</p>
-        <form class="d-flex gap-2" onsubmit="event.preventDefault(); alert('Thank you for subscribing to WanderStay!');">
-          <input type="email" class="form-control form-control-sm rounded-pill" placeholder="Enter your email" required aria-label="Email address" />
-          <button type="submit" class="btn btn-primary btn-sm rounded-pill px-3">Join</button>
-        </form>
+        <h6 class="fw-bold text-white mb-3 text-uppercase" style="font-size: 0.8rem; letter-spacing: 0.08em;">Travel Intelligence</h6>
+        <p class="text-secondary small mb-3">
+          Get weekly curated hideaways, off-grid cabins, and secret travel destinations directly to your inbox.
+        </p>
+        <div class="footer-newsletter-wrap">
+          <form class="d-flex gap-2" onsubmit="event.preventDefault(); alert('Thank you for subscribing to WanderStay Curated Escapes!'); this.reset();">
+            <input 
+              type="email" 
+              class="form-control form-control-sm rounded-pill px-3" 
+              placeholder="Your email address" 
+              required 
+              aria-label="Your email address" 
+            />
+            <button type="submit" class="btn btn-primary btn-sm rounded-pill px-4 fw-semibold">Subscribe</button>
+          </form>
+        </div>
+        <div class="small text-secondary mt-2" style="font-size: 0.72rem;">
+          <i class="fa-solid fa-shield-halved text-success me-1"></i> No spam. Unsubscribe anytime.
+        </div>
       </div>
     </div>
 
+    <!-- Bottom Copyright & Legal -->
     <div class="d-flex flex-column flex-md-row justify-content-between align-items-center pt-4 border-top border-secondary border-opacity-25 small text-secondary">
-      <div class="mb-2 mb-md-0">
-        &copy; <%= new Date().getFullYear() %> WanderStay, Inc. • All rights reserved.
+      <div class="mb-2 mb-md-0 d-flex align-items-center gap-2">
+        <span>&copy; <%= new Date().getFullYear() %> WanderStay, Inc. All rights reserved.</span>
       </div>
-      <div class="d-flex gap-3">
-        <a href="#">Privacy</a>
+      <div class="d-flex gap-3 footer-legal-links">
+        <a href="/listings" class="footer-link">Privacy</a>
         <span>•</span>
-        <a href="#">Terms</a>
+        <a href="/listings" class="footer-link">Terms</a>
         <span>•</span>
-        <a href="#">Sitemap</a>
+        <a href="/listings" class="footer-link">Sitemap</a>
         <span>•</span>
-        <a href="#">Company Details</a>
+        <a href="/listings" class="footer-link">Trust & Safety</a>
       </div>
     </div>
   </div>

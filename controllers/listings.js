@@ -59,7 +59,7 @@ module.exports.index = async (req, res) => {
   if (sortBy === 'priceDesc') sort = { price: -1 };
   if (sortBy === 'rating') sort = { averageRating: -1, createdAt: -1 };
 
-  const allListings = await Listing.find(query).sort(sort);
+  const allListings = await Listing.find(query).sort(sort).populate("owner");
 
   res.render("listings/index.ejs", {
     allListings,

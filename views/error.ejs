@@ -1,23 +1,65 @@
 <% layout("/layouts/boilerplate.ejs") %>
 
-<div class="row justify-content-center my-5">
-  <div class="col-lg-6 col-md-8 text-center">
-    <div class="card border-0 rounded-4 p-5 bg-white shadow-sm">
-      <div class="brand-icon mx-auto mb-3" style="width: 72px; height: 72px; font-size: 2rem; background: var(--primary-light); color: var(--primary);">
-        <i class="fa-solid fa-triangle-exclamation"></i>
-      </div>
-      <h2 class="fw-bold mb-2">Oops! Something went wrong</h2>
-      <p class="text-muted mb-4">
-        <%= (err && err.message) ? err.message : "The page you're looking for doesn't exist or an unexpected error occurred." %>
-      </p>
-      
-      <div class="d-flex justify-content-center gap-2">
-        <a href="/listings" class="btn btn-primary rounded-pill px-4">
-          <i class="fa-solid fa-house me-1"></i> Return Home
-        </a>
-        <button onclick="history.back()" class="btn btn-outline-dark rounded-pill px-4">
-          Go Back
-        </button>
+<% 
+  const statusCode = (typeof err !== 'undefined' && err && err.statusCode) ? err.statusCode : 500;
+  const is404 = statusCode === 404 || (err && err.message && err.message.toLowerCase().includes('not found'));
+%>
+
+<div class="container-max py-5 my-4">
+  <div class="row justify-content-center">
+    <div class="col-lg-7 col-md-9 text-center">
+      <div class="glass-card p-5 rounded-4 shadow-lg border reveal-on-scroll">
+        <% if (is404) { %>
+          <!-- 404: Wandered Off Graphic -->
+          <div class="brand-icon mx-auto mb-4" style="width: 88px; height: 88px; font-size: 2.4rem; background: var(--primary-light); color: var(--primary);">
+            <i class="fa-solid fa-compass"></i>
+          </div>
+
+          <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill px-3 py-1 fw-bold mb-3">
+            ERROR 404 • ROUTE NOT FOUND
+          </span>
+
+          <h1 class="display-6 fw-bold mb-3">Looks like you've wandered off.</h1>
+          <p class="text-muted fs-6 mb-4 max-w-500 mx-auto leading-relaxed">
+            The path you followed doesn't lead to a destination on our map. It may have been moved, renamed, or retired.
+          </p>
+
+          <div class="d-flex flex-wrap justify-content-center gap-3">
+            <a href="/" class="btn btn-primary btn-lg rounded-pill px-5 fw-semibold">
+              <i class="fa-solid fa-house me-2"></i>Return Home
+            </a>
+            <a href="/listings" class="btn btn-outline-secondary btn-lg rounded-pill px-4 fw-semibold">
+              <i class="fa-solid fa-compass me-2"></i>Explore Stays
+            </a>
+          </div>
+        <% } else { %>
+          <!-- 500 / Generic Error Graphic -->
+          <div class="brand-icon mx-auto mb-4" style="width: 88px; height: 88px; font-size: 2.4rem; background: #FEF3C7; color: #D97706;">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+          </div>
+
+          <span class="badge bg-warning-subtle text-warning border border-warning-subtle rounded-pill px-3 py-1 fw-bold mb-3">
+            ERROR <%= statusCode %> • TEMPORARY EXPEDITION GLITCH
+          </span>
+
+          <h1 class="display-6 fw-bold mb-3">Temporary trail interruption.</h1>
+          <p class="text-muted fs-6 mb-4 max-w-500 mx-auto leading-relaxed">
+            <%= (err && err.message) ? err.message : "We encountered an unexpected situation while navigating to this page. Please try again in a moment." %>
+          </p>
+
+          <div class="d-flex flex-wrap justify-content-center gap-3">
+            <a href="/" class="btn btn-primary btn-lg rounded-pill px-5 fw-semibold">
+              <i class="fa-solid fa-house me-2"></i>Return Home
+            </a>
+            <button onclick="window.location.reload()" class="btn btn-outline-secondary btn-lg rounded-pill px-4 fw-semibold">
+              <i class="fa-solid fa-rotate-right me-2"></i>Try Again
+            </button>
+          </div>
+        <% } %>
+
+        <div class="mt-4 pt-3 border-top text-muted small">
+          Need assistance? <a href="/listings" class="text-primary text-decoration-none">Search all WanderStay accommodations</a>
+        </div>
       </div>
     </div>
   </div>

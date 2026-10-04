@@ -2,7 +2,7 @@
 
 <div class="row justify-content-center my-5">
   <div class="col-lg-8 col-md-10">
-    <div class="card border-0 rounded-4 p-4 p-md-5 bg-white shadow-lg text-center">
+    <div class="glass-card rounded-4 p-4 p-md-5 text-center">
       <div class="brand-icon mx-auto mb-3" style="width: 64px; height: 64px; font-size: 1.8rem; background: #DCFCE7; color: #166534;">
         <i class="fa-solid fa-circle-check"></i>
       </div>
@@ -28,7 +28,7 @@
               <div class="small text-muted mb-3"><i class="fa-solid fa-location-dot me-1 text-primary"></i><%= booking.listing.location %>, <%= booking.listing.country %></div>
             </div>
 
-            <div class="row g-2 p-3 bg-light rounded-3 small">
+            <div class="row g-2 p-3 bg-body-tertiary rounded-3 small border border-theme">
               <div class="col-6">
                 <div class="text-muted">Check-in</div>
                 <div class="fw-bold"><%= new Date(booking.checkIn).toDateString() %></div>
@@ -54,7 +54,7 @@
         <a href="/bookings/history" class="btn btn-primary rounded-pill px-4">
           <i class="fa-solid fa-suitcase me-1"></i> View All Bookings
         </a>
-        <a href="/listings" class="btn btn-outline-dark rounded-pill px-4">
+        <a href="/listings" class="btn btn-outline-secondary rounded-pill px-4">
           Explore More Stays
         </a>
       </div>

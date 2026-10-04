@@ -24,11 +24,33 @@
   <!-- Starability CSS -->
   <link rel="stylesheet" href="/css/rating.css">
 
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="apple-touch-icon" href="/favicon.svg">
+  <meta name="theme-color" content="#FF5A5F">
+
   <!-- Custom Stylesheets -->
   <link rel="stylesheet" href="/css/style.css">
   <link rel="stylesheet" href="/css/ui.css">
+
+  <!-- Immediate Theme Initializer (Prevents Dark Mode Flash) -->
+  <script>
+    (function() {
+      try {
+        const savedTheme = localStorage.getItem('wanderstay_theme') || localStorage.getItem('ws-theme');
+        if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+          document.documentElement.classList.add('dark');
+        }
+      } catch (e) {}
+    })();
+  </script>
 </head>
 <body>
+  <script>
+    if (document.documentElement.classList.contains('dark')) {
+      document.body.classList.add('dark');
+    }
+  </script>
   <!-- Ambient Floating Background Elements (Global, Non-blocking) -->
   <div class="travel-ambient-bg" aria-hidden="true">
     <div class="ambient-orb orb-1"></div>

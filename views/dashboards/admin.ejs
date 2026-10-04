@@ -10,7 +10,7 @@
       <button type="button" class="btn btn-primary rounded-pill px-4" data-bs-toggle="modal" data-bs-target="#createHostModal">
         <i class="fa-solid fa-user-plus me-1"></i> Add New Host
       </button>
-      <a href="/listings/new" class="btn btn-outline-dark rounded-pill px-3">
+      <a href="/listings/new" class="btn btn-outline-secondary rounded-pill px-3">
         <i class="fa-solid fa-plus me-1"></i> Add Listing
       </a>
     </div>
@@ -74,7 +74,7 @@
   </div>
 
   <!-- Users Table Card -->
-  <div class="card border rounded-4 shadow-sm bg-white p-4 mb-4">
+  <div class="glass-card rounded-4 p-4 mb-4">
     <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 mb-3">
       <div>
         <h4 class="fw-bold mb-0">Platform Users &amp; Hosts</h4>
@@ -84,7 +84,7 @@
         <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2 rounded-pill">
           <i class="fa-solid fa-circle-check me-1"></i> <%= hostsList.length %> Hosts
         </span>
-        <span class="badge bg-light text-dark border px-3 py-2 rounded-pill">
+        <span class="badge bg-body-tertiary text-body border px-3 py-2 rounded-pill">
           <%= guestsList.length %> Travelers
         </span>
       </div>
@@ -112,14 +112,14 @@
                     style="width: 44px; height: 44px; object-fit: cover;"
                   />
                   <div>
-                    <div class="fw-bold text-dark">
+                    <div class="fw-bold text-body">
                       <%= (u.firstName || u.lastName) ? (u.firstName + ' ' + u.lastName) : u.username %>
                     </div>
                     <div class="small text-muted">@<%= u.username %></div>
                   </div>
                 </div>
               </td>
-              <td class="text-secondary"><%= u.email %></td>
+              <td class="text-muted"><%= u.email %></td>
               <td>
                 <% if (u.role === 'host') { %>
                   <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-1 rounded-pill fw-semibold">
@@ -152,7 +152,7 @@
   </div>
 
   <!-- Recent Reviews Table -->
-  <div class="card border rounded-4 shadow-sm bg-white p-4">
+  <div class="glass-card rounded-4 p-4">
     <h4 class="fw-bold mb-3">Community Reviews</h4>
     <% if (reviews.length === 0) { %>
       <p class="text-muted">No reviews found.</p>
@@ -172,7 +172,7 @@
               <tr>
                 <td><strong><%= r.author && r.author.username ? r.author.username : 'User' %></strong></td>
                 <td>
-                  <span class="badge bg-warning-subtle text-dark border px-2 py-1">
+                  <span class="badge bg-warning-subtle text-body border px-2 py-1">
                     <i class="fa-solid fa-star text-warning me-1"></i><%= r.rating %>/5
                   </span>
                 </td>

@@ -5,20 +5,20 @@
   <div class="ai-hero-card mb-4">
     <div class="row align-items-center">
       <div class="col-lg-8">
-        <div class="d-inline-flex align-items-center gap-2 px-3 py-1 bg-white rounded-pill text-primary fw-bold small mb-2 shadow-xs border">
+        <div class="d-inline-flex align-items-center gap-2 px-3 py-1 bg-body-tertiary rounded-pill text-primary fw-bold small mb-2 shadow-xs border">
           <i class="fa-solid fa-wand-magic-sparkles"></i> AI Powered Travel Assistant
         </div>
         <h2 class="fw-bold mb-2">Smart Itinerary Generator</h2>
         <p class="text-muted mb-0">Generate a custom day-by-day vacation itinerary with recommended activities, top food spots, and daily budget estimations.</p>
       </div>
       <div class="col-lg-4 text-lg-end mt-3 mt-lg-0">
-        <a href="/listings" class="btn btn-outline-dark rounded-pill px-4">Explore Stays</a>
+        <a href="/listings" class="btn btn-outline-secondary rounded-pill px-4">Explore Stays</a>
       </div>
     </div>
   </div>
 
   <!-- Form -->
-  <div class="card border rounded-4 p-4 p-md-5 bg-white shadow-sm mb-5">
+  <div class="glass-card p-4 p-md-5 mb-5">
     <h4 class="fw-bold mb-4">Plan Your Next Adventure</h4>
     <form id="planner-form" action="/ai-planner" method="POST" class="needs-validation" novalidate>
       <div class="row g-3">
@@ -93,7 +93,7 @@
           <div class="text-muted small"><%= plan.days %> Days • <%= plan.travelType %> • Budget: &#8377; <%= Number(plan.budget).toLocaleString("en-IN") %></div>
         </div>
         <div class="d-flex gap-2">
-          <button class="btn btn-outline-dark rounded-pill" onclick="window.print()">
+          <button class="btn btn-outline-secondary rounded-pill" onclick="window.print()">
             <i class="fa-solid fa-print me-1"></i> Print
           </button>
           <a href="/listings?q=<%= encodeURIComponent(plan.destination) %>" class="btn btn-primary rounded-pill">
@@ -121,7 +121,7 @@
               </div>
             <% } %>
           <% } else { %>
-            <div class="card p-4 rounded-4 bg-white border">
+            <div class="glass-card p-4 rounded-4">
               <pre class="mb-0" style="white-space: pre-wrap; font-family: inherit;"><%= generatedText %></pre>
             </div>
           <% } %>
@@ -130,7 +130,7 @@
         <!-- Sidebar Attractions & Tips -->
         <div class="col-lg-4">
           <!-- Attractions -->
-          <div class="card border rounded-4 p-4 bg-white shadow-sm mb-4">
+          <div class="glass-card p-4 mb-4">
             <h5 class="fw-bold mb-3"><i class="fa-solid fa-camera text-primary me-2"></i>Must-See Sights</h5>
             <ul class="list-unstyled mb-0 d-flex flex-column gap-2 small">
               <% for (let a of (plan.itinerary && plan.itinerary.attractions) || ['Scenic viewpoints', 'Historic Old Town', 'Local Art Bazaar']) { %>
@@ -143,7 +143,7 @@
           </div>
 
           <!-- Food & Cuisine -->
-          <div class="card border rounded-4 p-4 bg-white shadow-sm mb-4">
+          <div class="glass-card p-4 mb-4">
             <h5 class="fw-bold mb-3"><i class="fa-solid fa-utensils text-primary me-2"></i>Food Recommendations</h5>
             <ul class="list-unstyled mb-0 d-flex flex-column gap-2 small">
               <% for (let f of (plan.itinerary && plan.itinerary.food) || ['Traditional regional dishes', 'Popular cafe quarter', 'Night street food market']) { %>
@@ -156,7 +156,7 @@
           </div>
 
           <!-- Travel Tips -->
-          <div class="card border rounded-4 p-4 bg-white shadow-sm">
+          <div class="glass-card p-4">
             <h5 class="fw-bold mb-3"><i class="fa-solid fa-lightbulb text-primary me-2"></i>Travel Tips</h5>
             <ul class="list-unstyled mb-0 d-flex flex-column gap-2 small">
               <% for (let t of (plan.itinerary && plan.itinerary.travelTips) || ['Book tickets early during peak seasons', 'Carry light footwear for walking', 'Keep local currency handy']) { %>

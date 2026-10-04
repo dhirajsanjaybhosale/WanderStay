@@ -12,13 +12,15 @@
   </div>
 
   <% if (!bookings || bookings.length === 0) { %>
-    <div class="text-center py-5 my-5 bg-white border rounded-4 shadow-sm p-4">
-      <div class="brand-icon mx-auto mb-3" style="width: 64px; height: 64px; font-size: 1.8rem; background: var(--primary-light); color: var(--primary);">
+    <div class="text-center py-5 my-5 glass-card border rounded-4 p-5 reveal-on-scroll">
+      <div class="brand-icon mx-auto mb-3" style="width: 72px; height: 72px; font-size: 2rem; background: var(--primary-light); color: var(--primary);">
         <i class="fa-solid fa-suitcase-rolling"></i>
       </div>
-      <h4 class="fw-bold">No trips booked... yet!</h4>
-      <p class="text-muted mb-4">Time to dust off your bags and start planning your next vacation adventure.</p>
-      <a href="/listings" class="btn btn-primary rounded-pill px-4">Start Searching</a>
+      <h3 class="fw-bold mb-2">No trips yet.</h3>
+      <p class="text-muted mb-4 max-w-500 mx-auto">When you book an extraordinary stay, your reservations, dates, and receipts will appear right here.</p>
+      <a href="/listings" class="btn btn-primary rounded-pill px-5 py-2 fw-semibold">
+        <i class="fa-solid fa-compass me-2"></i>Explore Stays
+      </a>
     </div>
   <% } else { %>
     <div class="row g-4">
@@ -58,7 +60,7 @@
                   </div>
                 </div>
 
-                <div class="row g-2 p-3 bg-light rounded-3 small mb-3">
+                <div class="row g-2 p-3 bg-body-tertiary rounded-3 small mb-3 border border-theme">
                   <div class="col-sm-4">
                     <span class="text-muted">Dates:</span>
                     <strong class="d-block"><%= new Date(booking.checkIn).toLocaleDateString() %> — <%= new Date(booking.checkOut).toLocaleDateString() %></strong>
@@ -74,7 +76,7 @@
                 </div>
 
                 <div class="d-flex flex-wrap gap-2 justify-content-end">
-                  <a href="/bookings/<%= booking._id %>/confirmation" class="btn btn-outline-dark btn-sm rounded-pill px-3">
+                  <a href="/bookings/<%= booking._id %>/confirmation" class="btn btn-outline-secondary btn-sm rounded-pill px-3">
                     <i class="fa-solid fa-receipt me-1"></i> Receipt
                   </a>
                   <a href="/listings/<%= booking.listing._id %>" class="btn btn-outline-primary btn-sm rounded-pill px-3">

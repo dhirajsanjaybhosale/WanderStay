@@ -8,29 +8,35 @@
   /* ==========================================================================
      1. THEME CONTROLLER (Cinematic Dark / Warm Light)
      ========================================================================== */
-  const savedTheme = localStorage.getItem('ws-theme');
-  if (savedTheme === 'dark') {
+  const savedTheme = localStorage.getItem('wanderstay_theme') || localStorage.getItem('ws-theme');
+  const isDarkInitial = savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  if (isDarkInitial) {
+    document.documentElement.classList.add('dark');
     document.body.classList.add('dark');
   }
 
-  const themeToggle = document.querySelector('#theme-toggle');
-  if (themeToggle) {
-    const isDark = document.body.classList.contains('dark');
-    themeToggle.setAttribute('aria-pressed', isDark ? 'true' : 'false');
-    const icon = themeToggle.querySelector('i');
-    if (icon) {
-      icon.className = isDark ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
-    }
-
-    themeToggle.addEventListener('click', () => {
-      const activeDark = document.body.classList.toggle('dark');
-      localStorage.setItem('ws-theme', activeDark ? 'dark' : 'light');
-      themeToggle.setAttribute('aria-pressed', activeDark ? 'true' : 'false');
+  const themeToggles = document.querySelectorAll('#theme-toggle, #theme-toggle-mobile, .theme-toggle-btn');
+  const updateToggleIcons = (isDark) => {
+    themeToggles.forEach(btn => {
+      btn.setAttribute('aria-pressed', isDark ? 'true' : 'false');
+      const icon = btn.querySelector('i');
       if (icon) {
-        icon.className = activeDark ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
+        icon.className = isDark ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
       }
     });
-  }
+  };
+
+  updateToggleIcons(document.documentElement.classList.contains('dark') || document.body.classList.contains('dark'));
+
+  themeToggles.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const isDark = document.documentElement.classList.toggle('dark');
+      document.body.classList.toggle('dark', isDark);
+      localStorage.setItem('wanderstay_theme', isDark ? 'dark' : 'light');
+      localStorage.setItem('ws-theme', isDark ? 'dark' : 'light');
+      updateToggleIcons(isDark);
+    });
+  });
 
   /* ==========================================================================
      2. NAVBAR CONTROLLER (Hero Transparency & Frosted Glass Morph)

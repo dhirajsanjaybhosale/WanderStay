@@ -51,16 +51,22 @@
   </div>
 
   <!-- Listings Management Table -->
-  <div class="card border rounded-4 shadow-sm bg-white p-4 mb-4">
+  <div class="glass-card rounded-4 p-4 mb-4">
     <div class="d-flex justify-content-between align-items-center mb-3">
       <h4 class="fw-bold mb-0">Your Properties</h4>
-      <span class="badge bg-light text-dark border px-3 py-2 rounded-pill"><%= listings.length %> Properties</span>
+      <span class="badge bg-body-tertiary text-body border px-3 py-2 rounded-pill"><%= listings.length %> Properties</span>
     </div>
 
     <% if (listings.length === 0) { %>
-      <div class="text-center py-4 text-muted">
-        <p>You haven't added any listings yet.</p>
-        <a href="/listings/new" class="btn btn-outline-primary btn-sm rounded-pill">Create Your First Listing</a>
+      <div class="text-center py-5 my-2">
+        <div class="brand-icon mx-auto mb-3" style="width: 64px; height: 64px; font-size: 1.8rem; background: var(--primary-light); color: var(--primary);">
+          <i class="fa-solid fa-house-chimney-medical"></i>
+        </div>
+        <h4 class="fw-bold mb-2">Your first stay starts here.</h4>
+        <p class="text-muted mb-4 max-w-500 mx-auto">Publish your villa, mountain cabin, or apartment to start receiving reservations from travelers worldwide.</p>
+        <a href="/listings/new" class="btn btn-primary rounded-pill px-4 py-2 fw-semibold">
+          <i class="fa-solid fa-plus me-1"></i> Add Your First Listing
+        </a>
       </div>
     <% } else { %>
       <div class="table-responsive">
@@ -90,7 +96,7 @@
                     </div>
                   </div>
                 </td>
-                <td><span class="badge bg-light text-dark border"><%= item.category %></span></td>
+                <td><span class="badge bg-body-tertiary text-body border"><%= item.category %></span></td>
                 <td class="fw-bold">&#8377; <%= Number(item.price).toLocaleString("en-IN") %></td>
                 <td>
                   <i class="fa-solid fa-star text-warning me-1"></i>
@@ -98,7 +104,7 @@
                 </td>
                 <td class="text-end">
                   <div class="d-inline-flex gap-2">
-                    <a href="/listings/<%= item._id %>/edit" class="btn btn-outline-dark btn-sm rounded-pill">
+                    <a href="/listings/<%= item._id %>/edit" class="btn btn-outline-secondary btn-sm rounded-pill">
                       <i class="fa-solid fa-pen-to-square"></i>
                     </a>
                     <form action="/listings/<%= item._id %>?_method=DELETE" method="POST" onsubmit="return confirm('Delete this property?');">
@@ -117,7 +123,7 @@
   </div>
 
   <!-- Recent Bookings on Your Properties -->
-  <div class="card border rounded-4 shadow-sm bg-white p-4">
+  <div class="glass-card rounded-4 p-4">
     <h4 class="fw-bold mb-3">Recent Reservations</h4>
     <% if (!hostBookings || hostBookings.length === 0) { %>
       <p class="text-muted">No reservations received yet for your properties.</p>

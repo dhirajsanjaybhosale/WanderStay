@@ -3,10 +3,10 @@
 <div class="auth-container">
   <div class="auth-card">
     <div class="auth-header">
-      <div class="brand-icon mx-auto mb-3">
-        <i class="fa-solid fa-user-plus"></i>
+      <div class="mb-3 d-flex justify-content-center">
+        <%- include('../components/logo.ejs', { variant: 'icon', size: 'lg' }) %>
       </div>
-      <h2>Join WanderStay</h2>
+      <h2 class="fw-bold">Join WanderStay</h2>
       <p>Discover unique places, plan trips, and become a host</p>
     </div>
 
@@ -21,7 +21,7 @@
               <div>
                 <div class="d-flex align-items-center gap-2 mb-1">
                   <i class="fa-solid fa-compass text-primary"></i>
-                  <span class="fw-bold text-dark">Traveler</span>
+                  <span class="fw-bold text-body">Traveler</span>
                 </div>
                 <div class="small text-muted" style="font-size: 0.76rem;">Book stays & explore places</div>
               </div>
@@ -33,7 +33,7 @@
               <div>
                 <div class="d-flex align-items-center gap-2 mb-1">
                   <i class="fa-solid fa-house-chimney-user text-primary"></i>
-                  <span class="fw-bold text-dark">Host</span>
+                  <span class="fw-bold text-body">Host</span>
                 </div>
                 <div class="small text-muted" style="font-size: 0.76rem;">List homes & host guests</div>
               </div>
