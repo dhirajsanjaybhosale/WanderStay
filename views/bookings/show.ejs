@@ -1,0 +1,296 @@
+<% layout('/layouts/boilerplate.ejs') %>
+
+<% 
+  const isPaid = (booking.paymentStatus === 'paid' || booking.status === 'confirmed');
+  const isCancelled = booking.status === 'cancelled';
+  const host = booking.listing ? booking.listing.owner : null;
+  const guest = booking.guest;
+  const pricePerNight = booking.listing ? booking.listing.price : Math.round((booking.totalPrice - 1250) / (booking.nights || 1));
+  const subtotal = pricePerNight * (booking.nights || 1);
+  const cleaningFee = 500;
+  const serviceFee = 750;
+%>
+
+<div class="container-max my-4">
+  <!-- Breadcrumb -->
+  <nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb small">
+      <li class="breadcrumb-item"><a href="/" class="text-decoration-none text-muted">Home</a></li>
+      <li class="breadcrumb-item"><a href="/bookings/history" class="text-decoration-none text-muted">My Bookings</a></li>
+      <li class="breadcrumb-item active text-body fw-semibold" aria-current="page">Booking #<%= booking._id.toString().slice(-8).toUpperCase() %></li>
+    </ol>
+  </nav>
+
+  <!-- Header Banner -->
+  <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4 p-4 glass-card rounded-4 border">
+    <div>
+      <div class="d-flex flex-wrap gap-2 align-items-center mb-2">
+        <span class="badge font-monospace bg-body-tertiary text-body border px-2.5 py-1">
+          #<%= booking._id.toString().slice(-8).toUpperCase() %>
+        </span>
+
+        <% if (booking.status === 'confirmed') { %>
+          <span class="badge badge-status badge-confirmed">
+            <i class="fa-solid fa-circle-check me-1"></i> Confirmed
+          </span>
+        <% } else if (booking.status === 'cancelled') { %>
+          <span class="badge badge-status badge-cancelled">
+            <i class="fa-solid fa-ban me-1"></i> Cancelled
+          </span>
+        <% } else { %>
+          <span class="badge bg-warning-subtle text-warning border border-warning rounded-pill px-3 py-1">
+            <i class="fa-solid fa-clock me-1"></i> <%= booking.status %>
+          </span>
+        <% } %>
+
+        <% if (booking.paymentStatus === 'paid') { %>
+          <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2.5 py-1">
+            <i class="fa-solid fa-shield-check me-1"></i> Payment Verified
+          </span>
+        <% } else if (booking.paymentStatus === 'refunded') { %>
+          <span class="badge bg-info-subtle text-info border border-info-subtle rounded-pill px-2.5 py-1">
+            <i class="fa-solid fa-rotate-left me-1"></i> Refunded
+          </span>
+        <% } else if (booking.paymentStatus === 'failed') { %>
+          <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill px-2.5 py-1">
+            <i class="fa-solid fa-triangle-exclamation me-1"></i> Payment Failed
+          </span>
+        <% } else { %>
+          <span class="badge bg-warning-subtle text-warning border border-warning-subtle rounded-pill px-2.5 py-1">
+            <i class="fa-solid fa-hourglass-half me-1"></i> Unpaid
+          </span>
+        <% } %>
+      </div>
+
+      <h2 class="fw-bold mb-1" style="letter-spacing: -0.02em;">
+        <%= booking.listing ? booking.listing.title : 'Reservation Details' %>
+      </h2>
+      <div class="text-muted small">
+        <i class="fa-solid fa-location-dot me-1 text-primary"></i>
+        <%= booking.listing ? `${booking.listing.location}, ${booking.listing.country}` : 'Destination Worldwide' %>
+        • Booked on <%= new Date(booking.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) %>
+      </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="d-flex flex-wrap gap-2 align-items-center">
+      <!-- Invoice Download Button -->
+      <a href="/bookings/<%= booking._id %>/invoice" class="btn btn-primary rounded-pill px-4 py-2 fw-semibold shadow-sm" title="Download Official PDF Invoice">
+        <i class="fa-solid fa-file-invoice-dollar me-2"></i> Download Invoice
+      </a>
+
+      <% if (booking.listing) { %>
+        <a href="/messages/new?listingId=<%= booking.listing._id %>&bookingId=<%= booking._id %>" class="btn btn-outline-secondary rounded-pill px-3 py-2 fw-semibold">
+          <i class="fa-regular fa-message me-1"></i> Message Host
+        </a>
+        <a href="/listings/<%= booking.listing._id %>" class="btn btn-light border rounded-pill px-3 py-2 fw-semibold">
+          <i class="fa-solid fa-arrow-up-right-from-square me-1"></i> View Stay
+        </a>
+      <% } %>
+    </div>
+  </div>
+
+  <div class="row g-4">
+    <!-- Left Column: Details & Itinerary -->
+    <div class="col-lg-7">
+      
+      <!-- Stay Showcase Card -->
+      <% if (booking.listing) { %>
+        <div class="glass-card rounded-4 p-4 mb-4 border">
+          <div class="row g-3 align-items-center">
+            <div class="col-sm-4">
+              <img 
+                src="<%= (booking.listing.image && booking.listing.image.url) ? booking.listing.image.url : 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=600&q=80' %>" 
+                alt="<%= booking.listing.title %>"
+                class="rounded-3 w-100 border shadow-sm"
+                style="height: 140px; object-fit: cover;"
+              />
+            </div>
+            <div class="col-sm-8">
+              <span class="badge bg-secondary-subtle text-secondary rounded-pill mb-1">
+                <%= booking.listing.category %>
+              </span>
+              <h4 class="fw-bold mb-1"><%= booking.listing.title %></h4>
+              <p class="text-muted small mb-2 line-clamp-2">
+                <%= booking.listing.description ? booking.listing.description.slice(0, 140) + '...' : '' %>
+              </p>
+              <div class="d-flex align-items-center gap-3 small text-muted">
+                <span><i class="fa-solid fa-star text-warning me-1"></i><%= booking.listing.averageRating > 0 ? booking.listing.averageRating : '5.0' %> rating</span>
+                <span>•</span>
+                <span>₹<%= booking.listing.price.toLocaleString('en-IN') %> / night</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      <% } %>
+
+      <!-- Schedule & Itinerary Card -->
+      <div class="glass-card rounded-4 p-4 mb-4 border">
+        <h5 class="fw-bold mb-3 d-flex align-items-center gap-2">
+          <i class="fa-solid fa-calendar-days text-primary"></i> Reservation Itinerary
+        </h5>
+
+        <div class="row g-3 p-3 bg-body-tertiary rounded-3 border mb-3">
+          <div class="col-6 col-sm-3 border-end">
+            <div class="text-muted small text-uppercase fw-semibold" style="font-size: 0.72rem;">Check-in</div>
+            <div class="fw-bold fs-6"><%= new Date(booking.checkIn).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) %></div>
+            <div class="text-muted small">From 3:00 PM</div>
+          </div>
+          <div class="col-6 col-sm-3 border-end">
+            <div class="text-muted small text-uppercase fw-semibold" style="font-size: 0.72rem;">Check-out</div>
+            <div class="fw-bold fs-6"><%= new Date(booking.checkOut).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) %></div>
+            <div class="text-muted small">By 11:00 AM</div>
+          </div>
+          <div class="col-6 col-sm-3 border-end">
+            <div class="text-muted small text-uppercase fw-semibold" style="font-size: 0.72rem;">Duration</div>
+            <div class="fw-bold fs-6"><%= booking.nights %> <%= booking.nights === 1 ? 'Night' : 'Nights' %></div>
+            <div class="text-muted small">Total stay</div>
+          </div>
+          <div class="col-6 col-sm-3">
+            <div class="text-muted small text-uppercase fw-semibold" style="font-size: 0.72rem;">Travelers</div>
+            <div class="fw-bold fs-6"><%= booking.guests || 1 %> <%= (booking.guests === 1) ? 'Guest' : 'Guests' %></div>
+            <div class="text-muted small">Registered</div>
+          </div>
+        </div>
+
+        <div class="p-3 rounded-3 border bg-light small">
+          <div class="d-flex align-items-center gap-2 mb-1 fw-bold text-body">
+            <i class="fa-solid fa-key text-primary"></i> Self Check-in Guide
+          </div>
+          <p class="text-muted mb-0">
+            Check-in details and keycode instructions will be coordinated with your host via the WanderStay messaging channel prior to arrival.
+          </p>
+        </div>
+      </div>
+
+      <!-- Host & Support Card -->
+      <div class="glass-card rounded-4 p-4 border">
+        <h5 class="fw-bold mb-3 d-flex align-items-center gap-2">
+          <i class="fa-solid fa-house-chimney-user text-primary"></i> Host Information
+        </h5>
+
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+          <div class="d-flex align-items-center gap-3">
+            <img 
+              src="<%= (host && host.avatar) ? host.avatar : 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80' %>" 
+              alt="Host avatar" 
+              class="rounded-circle border"
+              style="width: 52px; height: 52px; object-fit: cover;"
+            />
+            <div>
+              <div class="fw-bold text-body fs-6"><%= host ? host.fullName || host.username : 'WanderStay Verified Host' %></div>
+              <div class="text-muted small">@<%= host ? host.username : 'host' %> • Verified Property Partner</div>
+              <div class="text-muted small" style="font-size: 0.75rem;"><%= host ? host.email : '' %></div>
+            </div>
+          </div>
+
+          <% if (booking.listing) { %>
+            <a href="/messages/new?listingId=<%= booking.listing._id %>&bookingId=<%= booking._id %>" class="btn btn-outline-primary rounded-pill px-4 btn-sm fw-semibold">
+              <i class="fa-regular fa-message me-1"></i> Chat with Host
+            </a>
+          <% } %>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Right Column: Financial Breakdown & Invoice Card -->
+    <div class="col-lg-5">
+      
+      <!-- Price & Invoice Card -->
+      <div class="glass-card rounded-4 p-4 mb-4 border">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h5 class="fw-bold mb-0">Financial Summary</h5>
+          <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2.5 py-1">
+            <i class="fa-solid fa-check me-1"></i> Paid in Full
+          </span>
+        </div>
+
+        <div class="d-flex flex-column gap-2.5 py-2 border-bottom mb-3 small">
+          <div class="d-flex justify-content-between">
+            <span class="text-muted">₹<%= pricePerNight.toLocaleString('en-IN') %> × <%= booking.nights %> nights</span>
+            <span class="fw-semibold">₹<%= subtotal.toLocaleString('en-IN') %></span>
+          </div>
+          <div class="d-flex justify-content-between">
+            <span class="text-muted">Standard Cleaning Fee</span>
+            <span class="fw-semibold">₹<%= cleaningFee.toLocaleString('en-IN') %></span>
+          </div>
+          <div class="d-flex justify-content-between">
+            <span class="text-muted">WanderStay Service &amp; Platform Fee</span>
+            <span class="fw-semibold">₹<%= serviceFee.toLocaleString('en-IN') %></span>
+          </div>
+          <div class="d-flex justify-content-between">
+            <span class="text-muted">Promotional Discount</span>
+            <span class="fw-semibold text-success">₹0.00</span>
+          </div>
+        </div>
+
+        <!-- Total Paid -->
+        <div class="d-flex justify-content-between align-items-center py-2 mb-3">
+          <span class="fw-bold fs-6">Total Amount Paid</span>
+          <span class="fw-bold fs-4 text-primary">₹<%= Number(booking.totalPrice).toLocaleString('en-IN') %></span>
+        </div>
+
+        <!-- Safe Payment Metadata -->
+        <div class="p-3 rounded-3 bg-body-tertiary border mb-3 small">
+          <div class="text-muted fw-semibold text-uppercase mb-2" style="font-size: 0.7rem;">Payment Verification</div>
+          
+          <div class="d-flex justify-content-between mb-1">
+            <span class="text-muted">Gateway:</span>
+            <span class="fw-semibold">Razorpay Verified</span>
+          </div>
+
+          <% if (booking.razorpayPaymentId) { %>
+            <div class="d-flex justify-content-between mb-1">
+              <span class="text-muted">Payment ID:</span>
+              <code class="text-body"><%= booking.razorpayPaymentId %></code>
+            </div>
+          <% } %>
+
+          <% if (booking.razorpayOrderId) { %>
+            <div class="d-flex justify-content-between mb-1">
+              <span class="text-muted">Order ID:</span>
+              <code class="text-muted"><%= booking.razorpayOrderId %></code>
+            </div>
+          <% } %>
+
+          <% if (booking.paidAt) { %>
+            <div class="d-flex justify-content-between">
+              <span class="text-muted">Timestamp:</span>
+              <span><%= new Date(booking.paidAt).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) %></span>
+            </div>
+          <% } %>
+        </div>
+
+        <!-- Download Invoice Prominent CTA -->
+        <a href="/bookings/<%= booking._id %>/invoice" class="btn btn-primary w-100 rounded-pill py-2.5 fw-bold shadow-sm mb-2">
+          <i class="fa-solid fa-file-pdf me-2"></i> Download Official PDF Invoice
+        </a>
+        <div class="text-center text-muted small" style="font-size: 0.72rem;">
+          <i class="fa-solid fa-lock text-success me-1"></i> Official receipt verified by WanderStay Inc.
+        </div>
+      </div>
+
+      <!-- Cancellation & Actions Card -->
+      <div class="glass-card rounded-4 p-4 border">
+        <h6 class="fw-bold mb-2">Cancellation Policy</h6>
+        <p class="text-muted small mb-3">
+          Free cancellation is available in accordance with WanderStay's standard reservation terms. If cancelled, a full refund is automatically issued to your original payment method.
+        </p>
+
+        <% if (!isCancelled) { %>
+          <form action="/bookings/<%= booking._id %>/cancel" method="POST" onsubmit="return confirm('Are you sure you want to cancel this booking? If paid, a full refund will be initiated.');">
+            <button type="submit" class="btn btn-outline-danger w-100 rounded-pill btn-sm py-2 fw-semibold">
+              <i class="fa-solid fa-ban me-1"></i> Cancel Reservation
+            </button>
+          </form>
+        <% } else { %>
+          <div class="alert alert-danger mb-0 small rounded-3 p-2 text-center">
+            <i class="fa-solid fa-circle-info me-1"></i> This reservation has been cancelled.
+          </div>
+        <% } %>
+      </div>
+
+    </div>
+  </div>
+</div>

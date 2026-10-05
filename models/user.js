@@ -26,6 +26,10 @@ const userSchema = new Schema({
       enum: ['guest','host','admin'],
       default: 'guest'
     },
+    isSuspended: {
+      type: Boolean,
+      default: false
+    },
     avatar: {
       type: String,
       default: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80'
@@ -60,6 +64,12 @@ const userSchema = new Schema({
         ref: 'Listing'
       }
     ],
+    resetPasswordToken: {
+      type: String
+    },
+    resetPasswordExpires: {
+      type: Date
+    },
     hash: {
         type: String,
         required: true

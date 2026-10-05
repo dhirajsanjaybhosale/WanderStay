@@ -1,0 +1,409 @@
+/* ==========================================================================
+   WanderStay — Luxury Property Availability Calendar System
+   ========================================================================== */
+
+.wander-calendar-card {
+  background: var(--surface, #ffffff);
+  border: 1px solid var(--border, #E8E5DF);
+  border-radius: 20px;
+  padding: 1.5rem;
+  box-shadow: 0 10px 30px -10px rgba(17, 22, 34, 0.05);
+  margin-bottom: 1.75rem;
+  transition: all 0.3s ease;
+}
+
+[data-bs-theme="dark"] .wander-calendar-card {
+  background: rgba(28, 35, 51, 0.7);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.cal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.25rem;
+  gap: 1rem;
+}
+
+.cal-title-wrap {
+  display: flex;
+  flex-direction: column;
+}
+
+.cal-month-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text, #111622);
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.cal-subtitle {
+  font-size: 0.8rem;
+  color: var(--text-muted, #64748B);
+}
+
+.cal-nav-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid var(--border, #E8E5DF);
+  background: var(--surface, #ffffff);
+  color: var(--text, #111622);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.cal-nav-btn:hover:not(:disabled) {
+  border-color: var(--primary, #FF5A5F);
+  color: var(--primary, #FF5A5F);
+  background: var(--primary-light, #FFF0F1);
+  transform: translateY(-1px);
+}
+
+.cal-nav-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* Day of week labels */
+.cal-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  text-align: center;
+  margin-bottom: 0.5rem;
+}
+
+.cal-weekday {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted, #64748B);
+  padding: 0.4rem 0;
+}
+
+/* Grid of days */
+.cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 3px 0;
+  row-gap: 6px;
+}
+
+.cal-cell {
+  position: relative;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+}
+
+.cal-cell.empty {
+  visibility: hidden;
+}
+
+.cal-day-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text, #111622);
+  font-size: 0.88rem;
+  font-weight: 500;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  position: relative;
+  z-index: 2;
+}
+
+/* Today indicator */
+.cal-day-btn.is-today::after {
+  content: "";
+  position: absolute;
+  bottom: 3px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--primary, #FF5A5F);
+}
+
+/* Available Day */
+.cal-cell.available .cal-day-btn {
+  color: var(--text, #111622);
+}
+
+.cal-cell.available .cal-day-btn:hover {
+  background: #FFF0F1;
+  color: #FF5A5F;
+  border-color: #FF5A5F;
+  transform: scale(1.08);
+}
+
+/* Past Day */
+.cal-cell.past .cal-day-btn {
+  color: #CBD5E1;
+  cursor: not-allowed;
+  text-decoration: line-through;
+  opacity: 0.6;
+}
+
+/* Booked Day */
+.cal-cell.booked {
+  position: relative;
+}
+
+.cal-cell.booked .cal-day-btn {
+  background: #FEE2E2;
+  color: #991B1B;
+  border-color: rgba(239, 68, 68, 0.25);
+  cursor: not-allowed;
+  font-weight: 600;
+  text-decoration: line-through;
+}
+
+[data-bs-theme="dark"] .cal-cell.booked .cal-day-btn {
+  background: rgba(239, 68, 68, 0.2);
+  color: #FCA5A5;
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+/* Blocked / Unavailable Day */
+.cal-cell.blocked .cal-day-btn {
+  background: #F1F5F9;
+  color: #64748B;
+  border-color: #E2E8F0;
+  cursor: not-allowed;
+  position: relative;
+}
+
+.cal-cell.blocked .cal-day-btn::after {
+  content: "\f023";
+  font-family: "Font Awesome 6 Free";
+  font-weight: 900;
+  font-size: 8px;
+  position: absolute;
+  bottom: 2px;
+  opacity: 0.7;
+}
+
+[data-bs-theme="dark"] .cal-cell.blocked .cal-day-btn {
+  background: rgba(100, 116, 139, 0.18);
+  color: #94A3B8;
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+/* Selected Start Date */
+.cal-cell.range-start::before {
+  content: "";
+  position: absolute;
+  right: 0;
+  top: 2px;
+  bottom: 2px;
+  width: 50%;
+  background: #FFE4E6;
+  z-index: 1;
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
+.cal-cell.range-start .cal-day-btn {
+  background: var(--primary, #FF5A5F) !important;
+  color: #ffffff !important;
+  font-weight: 700;
+  box-shadow: 0 4px 12px rgba(255, 90, 95, 0.4);
+  transform: scale(1.05);
+}
+
+/* Selected End Date */
+.cal-cell.range-end::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 2px;
+  bottom: 2px;
+  width: 50%;
+  background: #FFE4E6;
+  z-index: 1;
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.cal-cell.range-end .cal-day-btn {
+  background: var(--primary, #FF5A5F) !important;
+  color: #ffffff !important;
+  font-weight: 700;
+  box-shadow: 0 4px 12px rgba(255, 90, 95, 0.4);
+  transform: scale(1.05);
+}
+
+/* Single Selected Day */
+.cal-cell.range-start.range-end::before {
+  display: none;
+}
+
+/* In-Between Selected Nights */
+.cal-cell.in-range::before,
+.cal-cell.hover-range::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 2px;
+  bottom: 2px;
+  background: #FFE4E6;
+  z-index: 1;
+}
+
+[data-bs-theme="dark"] .cal-cell.in-range::before,
+[data-bs-theme="dark"] .cal-cell.hover-range::before,
+[data-bs-theme="dark"] .cal-cell.range-start::before,
+[data-bs-theme="dark"] .cal-cell.range-end::before {
+  background: rgba(255, 90, 95, 0.22);
+}
+
+.cal-cell.in-range .cal-day-btn,
+.cal-cell.hover-range .cal-day-btn {
+  color: #E04348;
+  font-weight: 600;
+  background: transparent;
+}
+
+/* Legend section */
+.cal-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.85rem 1.25rem;
+  padding-top: 1rem;
+  margin-top: 1rem;
+  border-top: 1px dashed var(--border, #E8E5DF);
+  font-size: 0.8rem;
+  color: var(--text-muted, #64748B);
+}
+
+.cal-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.cal-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.cal-dot.available {
+  background: #ffffff;
+  border: 2px solid #10B981;
+}
+
+.cal-dot.selected {
+  background: #FF5A5F;
+  border: 1px solid #FF5A5F;
+}
+
+.cal-dot.booked {
+  background: #EF4444;
+  border: 1px solid #DC2626;
+}
+
+.cal-dot.blocked {
+  background: #64748B;
+  border: 1px solid #475569;
+}
+
+/* Calendar status & selection bar */
+.cal-status-bar {
+  background: var(--surface-subtle, #F5F2EC);
+  border-radius: 12px;
+  padding: 0.75rem 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 1rem;
+  font-size: 0.85rem;
+  gap: 0.5rem;
+}
+
+[data-bs-theme="dark"] .cal-status-bar {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.cal-selected-dates {
+  font-weight: 600;
+  color: var(--text, #111622);
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.cal-clear-btn {
+  background: none;
+  border: none;
+  color: var(--primary, #FF5A5F);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.cal-clear-btn:hover {
+  color: var(--primary-dark, #E04348);
+}
+
+/* Host Calendar Management Section */
+.host-cal-management {
+  background: linear-gradient(145deg, rgba(255, 90, 95, 0.04) 0%, rgba(245, 166, 35, 0.04) 100%);
+  border: 1px solid rgba(255, 90, 95, 0.2);
+  border-radius: 16px;
+  padding: 1.25rem;
+  margin-top: 1.25rem;
+}
+
+.host-blocked-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--surface, #ffffff);
+  border: 1px solid var(--border, #E8E5DF);
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  margin: 0.25rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .wander-calendar-card {
+    padding: 1rem;
+  }
+  .cal-cell {
+    height: 38px;
+  }
+  .cal-day-btn {
+    width: 32px;
+    height: 32px;
+    font-size: 0.8rem;
+  }
+  .cal-month-title {
+    font-size: 1rem;
+  }
+  .cal-legend {
+    font-size: 0.75rem;
+    gap: 0.5rem 0.85rem;
+  }
+}

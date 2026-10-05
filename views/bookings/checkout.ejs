@@ -1,0 +1,305 @@
+<% layout("/layouts/boilerplate.ejs") %>
+
+<div class="container-max my-4">
+  <!-- Progress Breadcrumb -->
+  <div class="d-flex align-items-center gap-2 mb-4 text-muted small">
+    <a href="/listings/<%= listing._id %>" class="text-decoration-none text-muted">
+      <i class="fa-solid fa-arrow-left me-1"></i> Back to Property
+    </a>
+    <span>/</span>
+    <span class="text-primary fw-bold">Review & Pay</span>
+  </div>
+
+  <div class="row g-4 g-lg-5">
+    <!-- Left Column: Checkout Details & Payment Action -->
+    <div class="col-lg-7">
+      <h2 class="fw-bold mb-1">Confirm and Pay</h2>
+      <p class="text-muted mb-4">Complete your secure payment via Razorpay to confirm your reservation.</p>
+
+      <!-- Alert placeholder for interactive feedback -->
+      <div id="payment-alert" class="alert d-none mb-4 rounded-3" role="alert"></div>
+
+      <!-- Property Summary Card -->
+      <div class="glass-card rounded-4 p-4 mb-4">
+        <div class="d-flex gap-3 align-items-center">
+          <img 
+            src="<%= (listing.image && listing.image.url) ? listing.image.url : (listing.photos && listing.photos[0] && (listing.photos[0].url || listing.photos[0])) || 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=300&q=80' %>" 
+            alt="<%= listing.title %>"
+            style="width: 90px; height: 75px; object-fit: cover; border-radius: 12px;"
+          />
+          <div class="flex-grow-1">
+            <span class="badge bg-primary-subtle text-primary fw-bold px-2 py-1 rounded-pill mb-1">
+              <%= listing.category %>
+            </span>
+            <h5 class="fw-bold mb-1 text-truncate" style="max-width: 380px;">
+              <%= listing.title %>
+            </h5>
+            <div class="small text-muted">
+              <i class="fa-solid fa-location-dot text-primary me-1"></i>
+              <%= listing.location %>, <%= listing.country %>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Trip Details Card -->
+      <div class="glass-card rounded-4 p-4 mb-4">
+        <h5 class="fw-bold mb-3">Your Trip Details</h5>
+        
+        <div class="row g-3 py-2 border-bottom">
+          <div class="col-sm-6">
+            <span class="text-muted small d-block">Dates</span>
+            <div class="fw-semibold">
+              <%= new Date(booking.checkIn).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) %> &mdash; 
+              <%= new Date(booking.checkOut).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) %>
+            </div>
+            <div class="small text-muted"><%= booking.nights %> <%= booking.nights === 1 ? 'night' : 'nights' %></div>
+          </div>
+          <div class="col-sm-6">
+            <span class="text-muted small d-block">Guests</span>
+            <div class="fw-semibold"><%= booking.guests %> <%= booking.guests === 1 ? 'guest' : 'guests' %></div>
+          </div>
+        </div>
+
+        <div class="py-3">
+          <span class="text-muted small d-block mb-1">Primary Traveler</span>
+          <div class="fw-semibold"><%= (currUser && currUser.fullName) ? currUser.fullName : (currUser ? currUser.username : 'Traveler') %></div>
+          <div class="small text-muted"><%= (currUser && currUser.email) ? currUser.email : '' %></div>
+        </div>
+      </div>
+
+      <!-- Payment Section -->
+      <div class="glass-card rounded-4 p-4 mb-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h5 class="fw-bold mb-0">Pay with Razorpay</h5>
+          <span class="badge bg-success-subtle text-success rounded-pill px-3 py-1">
+            <i class="fa-solid fa-shield-halved me-1"></i> 256-Bit SSL
+          </span>
+        </div>
+
+        <p class="text-muted small mb-3">
+          Razorpay supports all major credit & debit cards (Visa, MasterCard, RuPay), UPI (Google Pay, PhonePe, Paytm), NetBanking, and digital wallets.
+        </p>
+
+        <!-- Payment Method Highlights -->
+        <div class="p-3 bg-body-tertiary rounded-3 mb-4 border border-theme">
+          <div class="d-flex align-items-center justify-content-between mb-2">
+            <div class="d-flex align-items-center gap-2">
+              <i class="fa-solid fa-credit-card text-primary fs-5"></i>
+              <span class="fw-semibold">Cards, UPI & NetBanking</span>
+            </div>
+            <span class="badge bg-primary rounded-pill px-2 py-1 small">Razorpay Secure</span>
+          </div>
+          <div class="small text-muted">
+            Instant automatic receipt and reservation confirmation upon successful authorization.
+          </div>
+        </div>
+
+        <!-- Main Pay Button -->
+        <button id="rzp-pay-btn" type="button" class="btn btn-primary btn-lg w-100 rounded-3 mb-2 py-3 fw-bold shadow-sm">
+          <i class="fa-solid fa-lock me-2"></i> Pay &#8377; <%= Number(booking.totalPrice).toLocaleString("en-IN") %>
+        </button>
+
+        <div class="text-center mt-3">
+          <small class="text-muted">
+            <i class="fa-solid fa-shield-check text-success me-1"></i>
+            WanderStay never stores your credit card, debit card, or UPI PIN details.
+          </small>
+        </div>
+      </div>
+
+      <!-- Cancellation Policy Card -->
+      <div class="p-3 bg-body-tertiary rounded-4 small text-muted border border-theme">
+        <div class="fw-bold text-body mb-1"><i class="fa-solid fa-circle-info text-primary me-1"></i> Cancellation Policy</div>
+        Full refund available if cancelled up to 48 hours prior to check-in. The reservation dates are immediately protected upon successful payment.
+      </div>
+    </div>
+
+    <!-- Right Column: Sticky Price Summary Card -->
+    <div class="col-lg-5">
+      <div class="booking-widget-card sticky-top" style="top: 90px; z-index: 10;">
+        <h5 class="fw-bold mb-3">Price Summary</h5>
+
+        <div class="booking-breakdown-row">
+          <span>&#8377; <%= Number(listing.price).toLocaleString("en-IN") %> &times; <%= booking.nights %> <%= booking.nights === 1 ? 'night' : 'nights' %></span>
+          <span>&#8377; <%= (booking.nights * Number(listing.price)).toLocaleString("en-IN") %></span>
+        </div>
+
+        <div class="booking-breakdown-row">
+          <span>Cleaning fee</span>
+          <span>&#8377; 500</span>
+        </div>
+
+        <div class="booking-breakdown-row">
+          <span>WanderStay service fee</span>
+          <span>&#8377; 750</span>
+        </div>
+
+        <div class="booking-breakdown-total mt-3 pt-3 border-top">
+          <div>
+            <div class="fw-bold">Total Due</div>
+            <div class="small text-muted fw-normal">Includes all taxes and fees</div>
+          </div>
+          <span class="fs-4 fw-bold text-primary">&#8377; <%= Number(booking.totalPrice).toLocaleString("en-IN") %></span>
+        </div>
+
+        <hr class="my-4" />
+
+        <div class="small text-muted">
+          <div class="d-flex align-items-center gap-2 mb-2 text-body fw-semibold">
+            <i class="fa-solid fa-award text-warning"></i>
+            WanderStay Booking Guarantee
+          </div>
+          <p class="mb-0">
+            Every booking includes comprehensive protection against host cancellations, listing inaccuracies, and check-in issues.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Razorpay Checkout Script -->
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
+<script>
+  (function() {
+    const payBtn = document.getElementById('rzp-pay-btn');
+    const alertBox = document.getElementById('payment-alert');
+    const bookingId = "<%= booking._id %>";
+    const razorpayKeyId = "<%= razorpayKeyId %>";
+    const orderId = "<%= booking.razorpayOrderId %>";
+    const amountInPaise = <%= Math.round(booking.totalPrice * 100) %>;
+
+    function showAlert(message, type) {
+      if (!alertBox) return;
+      alertBox.className = `alert alert-${type} rounded-3 mb-4 d-block`;
+      alertBox.innerHTML = message;
+      alertBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    async function handlePaymentVerification(paymentData) {
+      showAlert('<i class="fa-solid fa-spinner fa-spin me-2"></i> Verifying payment signature with WanderStay secure server...', 'info');
+      if (payBtn) payBtn.disabled = true;
+
+      try {
+        const response = await fetch(`/bookings/${bookingId}/verify-payment`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+          body: JSON.stringify(paymentData)
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.success) {
+          showAlert('<i class="fa-solid fa-circle-check me-2"></i> Payment verified successfully! Redirecting to your confirmation...', 'success');
+          setTimeout(() => {
+            window.location.href = data.redirectUrl || `/bookings/${bookingId}/confirmation`;
+          }, 1200);
+        } else {
+          showAlert(`<i class="fa-solid fa-triangle-exclamation me-2"></i> ${data.message || 'Payment verification failed. Please try again.'}`, 'danger');
+          if (payBtn) payBtn.disabled = false;
+        }
+      } catch (err) {
+        console.error('Network error during verification:', err);
+        showAlert('<i class="fa-solid fa-wifi me-2"></i> Network error while verifying payment. If amount was deducted, please check your bookings history or contact support.', 'warning');
+        if (payBtn) payBtn.disabled = false;
+      }
+    }
+
+    if (payBtn) {
+      payBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+
+        // Configure standard Razorpay options
+        const options = {
+          key: razorpayKeyId,
+          amount: amountInPaise,
+          currency: "INR",
+          name: "WanderStay",
+          description: "Reservation for <%= listing.title.replace(/"/g, '') %>",
+          image: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=120&q=80",
+          order_id: orderId,
+          handler: function(response) {
+            // Success response from Razorpay modal
+            handlePaymentVerification({
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_signature: response.razorpay_signature
+            });
+          },
+          prefill: {
+            name: "<%= (currUser && currUser.fullName) ? currUser.fullName.replace(/"/g, '') : (currUser ? currUser.username : 'Traveler') %>",
+            email: "<%= (currUser && currUser.email) ? currUser.email : '' %>",
+            contact: "<%= (currUser && currUser.phone) ? currUser.phone : '' %>"
+          },
+          theme: {
+            color: "#FF5A5F"
+          },
+          modal: {
+            ondismiss: function() {
+              showAlert('<i class="fa-solid fa-info-circle me-2"></i> Payment checkout was closed. Your reservation is pending payment. Click "Pay" when you are ready to complete.', 'secondary');
+              if (payBtn) payBtn.disabled = false;
+            }
+          }
+        };
+
+        // If in mock/test mode without live keys, or if Razorpay SDK fails to load
+        if (typeof Razorpay === 'undefined' || razorpayKeyId.includes('mock') || razorpayKeyId.includes('placeholder')) {
+          showAlert('<div class="d-flex flex-column gap-2"><div><i class="fa-solid fa-flask text-warning me-2"></i> <strong>Razorpay Test Mode Active:</strong> Simulating secure payment authorization.</div><div><button id="simulate-success-btn" class="btn btn-sm btn-success rounded-pill px-3 me-2">Complete Test Payment</button><button id="simulate-fail-btn" class="btn btn-sm btn-outline-danger rounded-pill px-3">Simulate Failed Payment</button></div></div>', 'info');
+
+          const simSuccessBtn = document.getElementById('simulate-success-btn');
+          const simFailBtn = document.getElementById('simulate-fail-btn');
+
+          if (simSuccessBtn) {
+            simSuccessBtn.onclick = function() {
+              handlePaymentVerification({
+                razorpay_order_id: orderId,
+                razorpay_payment_id: 'pay_test_' + Date.now(),
+                razorpay_signature: `simulated_valid_signature_${orderId}`
+              });
+            };
+          }
+
+          if (simFailBtn) {
+            simFailBtn.onclick = async function() {
+              showAlert('<i class="fa-solid fa-circle-xmark me-2"></i> Payment authorization failed: Card declined / Simulation error.', 'danger');
+              await fetch(`/bookings/${bookingId}/payment-failed`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ errorDescription: 'Simulated payment failure' })
+              });
+            };
+          }
+          return;
+        }
+
+        try {
+          const rzp = new Razorpay(options);
+
+          rzp.on('payment.failed', function(response) {
+            console.warn('Payment failed:', response.error);
+            const reason = response.error ? response.error.description : 'Payment could not be processed.';
+            showAlert(`<i class="fa-solid fa-circle-xmark me-2"></i> Payment Failed: ${reason}`, 'danger');
+
+            fetch(`/bookings/${bookingId}/payment-failed`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ errorDescription: reason })
+            }).catch(console.error);
+
+            if (payBtn) payBtn.disabled = false;
+          });
+
+          rzp.open();
+        } catch (err) {
+          console.error("Razorpay modal error:", err);
+          showAlert('<i class="fa-solid fa-triangle-exclamation me-2"></i> Could not launch Razorpay modal: ' + err.message, 'danger');
+        }
+      });
+    }
+  })();
+</script>

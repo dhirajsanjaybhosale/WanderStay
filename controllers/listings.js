@@ -1,6 +1,8 @@
 const Listing = require("../models/listing");
 const User = require("../models/user");
+const Booking = require("../models/booking");
 const mongoose = require('mongoose');
+const { createNotification } = require('../utils/notificationHelper');
 
 const mbxGeocoding = require('@mapbox/mapbox-sdk/services/geocoding');
 const mapToken = process.env.MAP_TOKEN;
@@ -104,7 +106,21 @@ module.exports.showListing = async (req, res) => {
     ? req.user.wishlist.some((item) => item.equals(listing._id))
     : false;
 
-  res.render("listings/show.ejs", { listing, isWishlisted });
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const confirmedBookings = await Booking.find({
+    listing: listing._id,
+    status: 'confirmed',
+    checkOut: { $gte: today }
+  }).select('checkIn checkOut nights guests status');
+
+  res.render("listings/show.ejs", {
+    listing,
+    isWishlisted,
+    confirmedBookings: confirmedBookings || [],
+    blockedDates: listing.blockedDates || []
+  });
 };
 
 
@@ -181,6 +197,15 @@ module.exports.createListing = async (req, res) => {
     await User.findByIdAndUpdate(req.user._id, { role: 'host' });
     req.user.role = 'host';
   }
+
+  // In-app notification for host
+  createNotification({
+    userId: req.user._id,
+    type: 'listing_approved',
+    title: 'Listing Published & Live!',
+    message: `Your property "${newListing.title}" is now published and active on WanderStay.`,
+    link: `/listings/${newListing._id}`
+  });
 
   req.flash('success', 'New Listing Created!');
   res.redirect(`/listings/${newListing._id}`);
@@ -287,5 +312,114 @@ module.exports.destroyListing = async (req, res) => {
 
   req.flash("success", "Listing Deleted!");
   res.redirect("/listings");
+};
+
+// Availability JSON endpoint
+module.exports.getAvailability = async (req, res) => {
+  const { id } = req.params;
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return res.status(400).json({ error: "Invalid listing id" });
+  }
+
+  const listing = await Listing.findById(id).select("isAvailable blockedDates title price");
+  if (!listing) {
+    return res.status(404).json({ error: "Listing not found" });
+  }
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const bookings = await Booking.find({
+    listing: id,
+    status: "confirmed",
+    checkOut: { $gte: today }
+  }).select("checkIn checkOut nights status");
+
+  res.json({
+    success: true,
+    isAvailable: listing.isAvailable,
+    bookedRanges: bookings.map((b) => ({
+      checkIn: b.checkIn,
+      checkOut: b.checkOut,
+      nights: b.nights
+    })),
+    blockedRanges: (listing.blockedDates || []).map((b) => ({
+      _id: b._id,
+      startDate: b.startDate,
+      endDate: b.endDate,
+      reason: b.reason
+    }))
+  });
+};
+
+// Host blocks dates manually
+module.exports.blockDates = async (req, res) => {
+  const { id } = req.params;
+  const { startDate, endDate, reason } = req.body;
+  const listing = await Listing.findById(id);
+
+  if (!listing) {
+    req.flash("error", "Listing not found.");
+    return res.redirect("/listings");
+  }
+
+  if (!startDate || !endDate) {
+    req.flash("error", "Please provide both start date and end date.");
+    return res.redirect(`/listings/${id}#calendar-section`);
+  }
+
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  start.setHours(0, 0, 0, 0);
+  end.setHours(0, 0, 0, 0);
+
+  if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+    req.flash("error", "Invalid date format.");
+    return res.redirect(`/listings/${id}#calendar-section`);
+  }
+
+  if (end <= start) {
+    req.flash("error", "End date must be after start date.");
+    return res.redirect(`/listings/${id}#calendar-section`);
+  }
+
+  // Check if there are confirmed bookings during this time
+  const conflict = await Booking.findOne({
+    listing: listing._id,
+    status: "confirmed",
+    checkIn: { $lt: end },
+    checkOut: { $gt: start }
+  });
+
+  if (conflict) {
+    req.flash("error", "Cannot block dates because a guest already has a confirmed reservation in that range.");
+    return res.redirect(`/listings/${id}#calendar-section`);
+  }
+
+  listing.blockedDates.push({
+    startDate: start,
+    endDate: end,
+    reason: reason ? reason.trim() : "Blocked by host"
+  });
+
+  await listing.save();
+  req.flash("success", "Selected dates have been blocked from reservations.");
+  res.redirect(`/listings/${id}#calendar-section`);
+};
+
+// Host unblocks dates
+module.exports.unblockDates = async (req, res) => {
+  const { id, blockId } = req.params;
+  const listing = await Listing.findById(id);
+
+  if (!listing) {
+    req.flash("error", "Listing not found.");
+    return res.redirect("/listings");
+  }
+
+  listing.blockedDates = listing.blockedDates.filter((b) => !b._id.equals(blockId));
+  await listing.save();
+  req.flash("success", "Blocked dates removed and reopened for reservations.");
+  res.redirect(`/listings/${id}#calendar-section`);
 };
 

@@ -33,6 +33,26 @@ const listingSchema = new Schema({
     type: Boolean,
     default: true,
   },
+  blockedDates: [
+    {
+      startDate: {
+        type: Date,
+        required: true,
+      },
+      endDate: {
+        type: Date,
+        required: true,
+      },
+      reason: {
+        type: String,
+        default: "Host blocked",
+      },
+      createdAt: {
+        type: Date,
+        default: Date.now,
+      },
+    },
+  ],
   price: {
     type: Number,
     required: true,

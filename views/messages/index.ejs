@@ -1,0 +1,306 @@
+<% layout("/layouts/boilerplate.ejs") %>
+
+<div class="container-max my-3">
+  <div class="messaging-hub <%= activeConversation ? 'has-active-chat' : '' %>">
+    
+    <!-- ==============================================
+         LEFT PANEL: CONVERSATIONS SIDEBAR
+         ============================================== -->
+    <aside class="messages-sidebar">
+      <div class="messages-sidebar-header">
+        <div class="d-flex align-items-center justify-content-between">
+          <div class="d-flex align-items-center gap-2">
+            <h4 class="fw-bold mb-0">Messages</h4>
+            <% if (totalUnread > 0) { %>
+              <span class="conv-unread-badge"><%= totalUnread %> new</span>
+            <% } %>
+          </div>
+          <span class="text-muted small"><%= conversations.length %> <%= conversations.length === 1 ? 'chat' : 'chats' %></span>
+        </div>
+
+        <!-- Search Bar -->
+        <div class="messages-search-wrap">
+          <i class="fa-solid fa-magnifying-glass messages-search-icon"></i>
+          <input 
+            type="text" 
+            id="convSearchInput" 
+            placeholder="Search conversations..." 
+            aria-label="Search conversations by user or property" 
+          />
+        </div>
+      </div>
+
+      <!-- Conversations Scroll List -->
+      <div class="conversations-scroll-list" id="conversationsList">
+        <% if (!conversations || conversations.length === 0) { %>
+          <div class="messages-empty-state py-5">
+            <div class="empty-state-icon-box">
+              <i class="fa-regular fa-comments"></i>
+            </div>
+            <h6 class="fw-bold mb-1">No conversations yet</h6>
+            <p class="text-muted small mb-3">When you inquire about a stay or receive guest messages, they will appear here.</p>
+            <a href="/listings" class="btn btn-outline-primary btn-sm rounded-pill px-3">
+              Explore Stays
+            </a>
+          </div>
+        <% } else { %>
+          <% conversations.forEach(function(conv) { %>
+            <% 
+              const other = conv.otherParticipant || {};
+              const otherName = (other.firstName ? (other.firstName + ' ' + (other.lastName || '')) : other.username) || 'Traveler';
+              const isActive = activeConversation && activeConversation._id.equals(conv._id);
+              const avatarUrl = other.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80';
+              const lastMsgTime = conv.lastMessage && conv.lastMessage.createdAt ? new Date(conv.lastMessage.createdAt) : new Date(conv.updatedAt);
+              const isToday = new Date().toDateString() === lastMsgTime.toDateString();
+              const timeDisplay = isToday 
+                ? lastMsgTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) 
+                : lastMsgTime.toLocaleDateString([], { month: 'short', day: 'numeric' });
+            %>
+            <a 
+              href="/messages/<%= conv._id %>" 
+              class="conversation-card <%= isActive ? 'active' : '' %>"
+              data-user="<%= otherName.toLowerCase() %>"
+              data-stay="<%= conv.listing ? conv.listing.title.toLowerCase() : '' %>"
+            >
+              <div class="conversation-avatar-wrap">
+                <img src="<%= avatarUrl %>" alt="<%= otherName %>" class="conversation-avatar" />
+                <% if (conv.unreadCount > 0) { %>
+                  <span class="conv-unread-dot" title="Unread messages"></span>
+                <% } %>
+              </div>
+
+              <div class="conversation-info">
+                <div class="conversation-meta-top">
+                  <span class="conversation-name"><%= otherName %></span>
+                  <span class="conversation-time"><%= timeDisplay %></span>
+                </div>
+
+                <% if (conv.listing) { %>
+                  <div class="conversation-stay-tag">
+                    <i class="fa-solid fa-house-chimney me-1" style="font-size: 0.65rem;"></i>
+                    <%= conv.listing.title %>
+                  </div>
+                <% } %>
+
+                <div class="d-flex justify-content-between align-items-center">
+                  <p class="conversation-preview <%= conv.unreadCount > 0 ? 'unread' : '' %>">
+                    <%= (conv.lastMessage && conv.lastMessage.content) ? conv.lastMessage.content : 'Started conversation' %>
+                  </p>
+                  <% if (conv.unreadCount > 0) { %>
+                    <span class="conv-unread-badge"><%= conv.unreadCount %></span>
+                  <% } %>
+                </div>
+              </div>
+            </a>
+          <% }); %>
+        <% } %>
+      </div>
+    </aside>
+
+    <!-- ==============================================
+         RIGHT PANEL: ACTIVE CHAT WINDOW
+         ============================================== -->
+    <main class="messages-chat-window">
+      <% if (!activeConversation) { %>
+        <div class="messages-empty-state">
+          <div class="empty-state-icon-box">
+            <i class="fa-regular fa-paper-plane"></i>
+          </div>
+          <h4 class="fw-bold mb-1">Your WanderStay Inbox</h4>
+          <p class="text-muted small max-w-500 mx-auto mb-4">
+            Select an existing conversation from the list, or contact a host directly from any listing page to get local tips and booking assistance.
+          </p>
+          <a href="/listings" class="btn btn-primary rounded-pill px-4">
+            <i class="fa-solid fa-compass me-1"></i> Browse Properties
+          </a>
+        </div>
+      <% } else { %>
+        <% 
+          const currentUserIdStr = currentUserId.toString();
+          const chatPartner = activeConversation.participants.find(p => p._id.toString() !== currentUserIdStr) || activeConversation.participants[0] || {};
+          const partnerName = (chatPartner.firstName ? (chatPartner.firstName + ' ' + (chatPartner.lastName || '')) : chatPartner.username) || 'WanderStay Member';
+          const partnerAvatar = chatPartner.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80';
+          const partnerRole = chatPartner.role === 'host' ? 'Host' : (chatPartner.role === 'admin' ? 'Admin' : 'Guest');
+        %>
+
+        <!-- Chat Header -->
+        <header class="chat-header">
+          <div class="d-flex align-items-center gap-2">
+            <!-- Mobile Back Button -->
+            <a href="/messages" class="btn btn-sm btn-outline-secondary rounded-pill d-lg-none" title="Back to conversations">
+              <i class="fa-solid fa-arrow-left"></i>
+            </a>
+
+            <div class="chat-partner-info">
+              <img src="<%= partnerAvatar %>" alt="<%= partnerName %>" class="chat-partner-avatar" />
+              <div>
+                <h6 class="fw-bold mb-0 d-flex align-items-center gap-2">
+                  <%= partnerName %>
+                  <span class="badge bg-body-tertiary text-body border rounded-pill" style="font-size: 0.68rem;">
+                    <%= partnerRole %>
+                  </span>
+                </h6>
+                <div class="small text-muted">Active on WanderStay</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Related Stay Chip & Booking Reference -->
+          <div class="d-flex align-items-center gap-2">
+            <% if (activeConversation.listing) { %>
+              <a href="/listings/<%= activeConversation.listing._id %>" class="chat-stay-chip" title="View Property Details">
+                <img 
+                  src="<%= (activeConversation.listing.image && activeConversation.listing.image.url) ? activeConversation.listing.image.url : 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=100&q=80' %>" 
+                  alt="<%= activeConversation.listing.title %>"
+                  class="chat-stay-thumb" 
+                />
+                <div class="d-none d-sm-block text-truncate" style="max-width: 170px;">
+                  <span class="fw-bold d-block text-truncate"><%= activeConversation.listing.title %></span>
+                  <span class="small text-muted">&#8377; <%= Number(activeConversation.listing.price).toLocaleString('en-IN') %>/night</span>
+                </div>
+                <i class="fa-solid fa-arrow-up-right-from-square text-muted" style="font-size: 0.75rem;"></i>
+              </a>
+            <% } %>
+
+            <% if (activeConversation.booking) { %>
+              <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill d-none d-md-inline-block px-2 py-1">
+                <i class="fa-solid fa-circle-check me-1"></i> Booked
+              </span>
+            <% } %>
+          </div>
+        </header>
+
+        <!-- Chat Messages Feed -->
+        <div class="chat-messages-feed" id="chatFeed">
+          <div class="chat-date-separator">
+            <span>Conversation started</span>
+          </div>
+
+          <% if (!activeConversation.messages || activeConversation.messages.length === 0) { %>
+            <div class="text-center py-4 text-muted small">
+              <i class="fa-regular fa-comment-dots fs-3 mb-2 d-block"></i>
+              No messages yet. Send a greeting to start chatting!
+            </div>
+          <% } else { %>
+            <% activeConversation.messages.forEach(function(msg) { %>
+              <% 
+                const isMine = msg.sender && (msg.sender._id ? msg.sender._id.toString() === currentUserIdStr : msg.sender.toString() === currentUserIdStr);
+                const senderAvatar = (msg.sender && msg.sender.avatar) ? msg.sender.avatar : partnerAvatar;
+                const msgTime = new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+              %>
+              <div class="message-row <%= isMine ? 'outgoing' : 'incoming' %>">
+                <% if (!isMine) { %>
+                  <img src="<%= senderAvatar %>" alt="Sender avatar" class="message-sender-avatar" />
+                <% } %>
+
+                <div>
+                  <div class="message-bubble">
+                    <%= msg.content %>
+                  </div>
+                  <div class="message-time-meta">
+                    <span><%= msgTime %></span>
+                    <% if (isMine) { %>
+                      <i class="fa-solid fa-check-double text-white text-opacity-75" style="font-size: 0.65rem;" title="Delivered"></i>
+                    <% } %>
+                  </div>
+                </div>
+              </div>
+            <% }); %>
+          <% } %>
+        </div>
+
+        <!-- Chat Composer -->
+        <footer class="chat-composer">
+          <!-- Quick Prompts Bar -->
+          <div class="quick-prompts-bar">
+            <button type="button" class="quick-prompt-btn" data-text="Hi! Is early check-in possible for this stay?">
+              Early check-in?
+            </button>
+            <button type="button" class="quick-prompt-btn" data-text="Hello! What is the best way to reach your property from the airport or railway station?">
+              Directions & Transport?
+            </button>
+            <button type="button" class="quick-prompt-btn" data-text="Is high-speed Wi-Fi available for remote work?">
+              Wi-Fi speed?
+            </button>
+            <button type="button" class="quick-prompt-btn" data-text="Thank you so much! Looking forward to our stay.">
+              Thank you!
+            </button>
+          </div>
+
+          <!-- Message Form -->
+          <form action="/messages/<%= activeConversation._id %>" method="POST" id="chatMessageForm">
+            <div class="chat-input-row">
+              <textarea 
+                name="content" 
+                id="chatTextarea" 
+                class="chat-input-textarea" 
+                placeholder="Type your message to <%= partnerName %>... (Press Enter to send)" 
+                rows="1" 
+                required
+              ></textarea>
+              <button type="submit" class="chat-send-btn" id="sendMsgBtn" title="Send message" aria-label="Send message">
+                <i class="fa-solid fa-paper-plane"></i>
+              </button>
+            </div>
+          </form>
+        </footer>
+      <% } %>
+    </main>
+
+  </div>
+</div>
+
+<script>
+  (function() {
+    // 1. Auto-scroll chat feed to bottom
+    const feed = document.getElementById('chatFeed');
+    if (feed) {
+      feed.scrollTop = feed.scrollHeight;
+    }
+
+    // 2. Client-side search filter for conversations
+    const searchInput = document.getElementById('convSearchInput');
+    const convCards = document.querySelectorAll('.conversation-card');
+
+    if (searchInput) {
+      searchInput.addEventListener('input', function(e) {
+        const query = e.target.value.toLowerCase().trim();
+        convCards.forEach(card => {
+          const userText = card.dataset.user || '';
+          const stayText = card.dataset.stay || '';
+          if (!query || userText.includes(query) || stayText.includes(query)) {
+            card.style.display = 'flex';
+          } else {
+            card.style.display = 'none';
+          }
+        });
+      });
+    }
+
+    // 3. Quick prompts insertion
+    const promptButtons = document.querySelectorAll('.quick-prompt-btn');
+    const textarea = document.getElementById('chatTextarea');
+    const messageForm = document.getElementById('chatMessageForm');
+
+    promptButtons.forEach(btn => {
+      btn.addEventListener('click', function() {
+        if (textarea) {
+          textarea.value = this.dataset.text;
+          textarea.focus();
+        }
+      });
+    });
+
+    // 4. Enter to submit (Shift+Enter for new line)
+    if (textarea && messageForm) {
+      textarea.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          if (textarea.value.trim().length > 0) {
+            messageForm.submit();
+          }
+        }
+      });
+    }
+  })();
+</script>

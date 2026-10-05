@@ -1,0 +1,51 @@
+<% layout("/layouts/boilerplate.ejs") %>
+
+<div class="auth-container">
+  <div class="auth-card">
+    <div class="auth-header">
+      <div class="mb-3 d-flex justify-content-center">
+        <%- include('../components/logo.ejs', { variant: 'icon', size: 'lg' }) %>
+      </div>
+      <h2 class="fw-bold">Create New Password</h2>
+      <p>Please enter and confirm your new secure password below.</p>
+    </div>
+
+    <form action="/reset-password/<%= token %>" method="POST" novalidate class="needs-validation">
+      <div class="mb-3">
+        <label for="password" class="form-label">New Password</label>
+        <input
+          name="password"
+          id="password"
+          type="password"
+          class="form-control"
+          placeholder="Min 6 characters"
+          minlength="6"
+          required
+        />
+        <div class="invalid-feedback">Password must be at least 6 characters.</div>
+      </div>
+
+      <div class="mb-4">
+        <label for="confirmPassword" class="form-label">Confirm New Password</label>
+        <input
+          name="confirmPassword"
+          id="confirmPassword"
+          type="password"
+          class="form-control"
+          placeholder="Re-enter new password"
+          minlength="6"
+          required
+        />
+        <div class="invalid-feedback">Please confirm your new password.</div>
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-lg w-100 rounded-pill mb-3">
+        <i class="fa-solid fa-lock me-1.5"></i> Update Password &amp; Log In
+      </button>
+    </form>
+
+    <div class="text-center text-muted small mt-3">
+      Back to <a href="/login" class="text-primary fw-bold text-decoration-none">Log in</a>
+    </div>
+  </div>
+</div>

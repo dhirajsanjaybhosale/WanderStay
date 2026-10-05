@@ -28,9 +28,14 @@ const reviewRouter = require("./routes/review");
 const bookingRouter = require("./routes/booking");
 const wishlistRouter = require("./routes/wishlist");
 const dashboardRouter = require("./routes/dashboard");
+const adminRouter = require("./routes/admin");
 const userRouter = require("./routes/user");
 const aiPlannerRouter = require("./routes/aiPlanner");
 const tripsRouter = require("./routes/trips");
+const messageRouter = require("./routes/message");
+const notificationRouter = require("./routes/notification");
+const Notification = require("./models/notification");
+const { getNotificationMeta } = require("./utils/notificationHelper");
 const Listing = require("./models/listing");
 
 /* =======================
@@ -66,6 +71,7 @@ app.engine("ejs", ejsMate);
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
 
+app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(methodOverride("_method"));
 app.use(express.static(path.join(__dirname, "public")));
@@ -100,12 +106,30 @@ app.use(flash());
 app.use(passport.initialize());
 app.use(passport.session());
 
-app.use((req, res, next) => {
+app.use(async (req, res, next) => {
   res.locals.success = req.flash("success");
   res.locals.error = req.flash("error");
   res.locals.currUser = req.user;
   res.locals.CurrUser = req.user;
   res.locals.mapToken = process.env.MAP_TOKEN || "";
+  res.locals.getNotificationMeta = getNotificationMeta;
+
+  if (req.user) {
+    try {
+      const [unreadCount, recentNotifs] = await Promise.all([
+        Notification.countDocuments({ user: req.user._id, isRead: false }),
+        Notification.find({ user: req.user._id }).sort({ createdAt: -1 }).limit(6)
+      ]);
+      res.locals.unreadNotificationCount = unreadCount;
+      res.locals.recentNotifications = recentNotifs;
+    } catch (err) {
+      res.locals.unreadNotificationCount = 0;
+      res.locals.recentNotifications = [];
+    }
+  } else {
+    res.locals.unreadNotificationCount = 0;
+    res.locals.recentNotifications = [];
+  }
   next();
 });
 
@@ -123,6 +147,10 @@ passport.use(new LocalStrategy({
     
     if (!user) {
       return done(null, false, { message: 'Incorrect username or email.' });
+    }
+
+    if (user.isSuspended) {
+      return done(null, false, { message: 'Your account has been suspended by an administrator.' });
     }
     
     // Validate password using our custom method
@@ -144,6 +172,9 @@ passport.serializeUser((user, done) => {
 passport.deserializeUser(async (id, done) => {
   try {
     const user = await User.findById(id);
+    if (user && user.isSuspended) {
+      return done(null, false);
+    }
     done(null, user);
   } catch (err) {
     done(err, null);
@@ -153,6 +184,7 @@ passport.deserializeUser(async (id, done) => {
 /* =======================
    ROUTE HANDLERS
 ======================= */
+app.use("/admin", adminRouter);
 app.use("/listings", listingRouter);
 app.use("/listings/:id/reviews", reviewRouter);
 app.use("/bookings", bookingRouter);
@@ -161,6 +193,8 @@ app.use("/dashboard", dashboardRouter);
 app.use("/", userRouter);
 app.use("/ai-planner", aiPlannerRouter);
 app.use("/trips", tripsRouter);
+app.use("/messages", messageRouter);
+app.use("/notifications", notificationRouter);
 
 // Homepage - premium landing
 app.get('/', async (req, res, next) => {

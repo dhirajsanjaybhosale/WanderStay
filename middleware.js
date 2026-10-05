@@ -82,9 +82,18 @@ module.exports.isHost = (req, res, next) => {
 };
 
 module.exports.isAdmin = (req, res, next) => {
-  if (!req.user || req.user.role !== 'admin') {
-    req.flash('error', 'Admin access only.');
-    return res.redirect('/listings');
+  if (!req.isAuthenticated()) {
+    req.session.redirectUrl = req.originalUrl;
+    req.flash('error', 'You must be logged in as an administrator.');
+    return res.redirect('/login');
+  }
+  if (req.user.role !== 'admin') {
+    return res.status(403).render('error.ejs', {
+      err: {
+        statusCode: 403,
+        message: 'Access Denied: Administrator privileges are required to access this resource.'
+      }
+    });
   }
   next();
 };

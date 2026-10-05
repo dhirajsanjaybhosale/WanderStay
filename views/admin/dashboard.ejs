@@ -1,0 +1,1089 @@
+<% layout('/layouts/boilerplate.ejs') %>
+
+<div class="container-max admin-layout-container">
+  <!-- Top Portal Header -->
+  <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+    <div>
+      <div class="d-flex align-items-center gap-2 mb-1">
+        <span class="admin-portal-badge">
+          <i class="fa-solid fa-shield-halved"></i> Root Administrator
+        </span>
+        <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2.5 py-1">
+          <span class="pulse-green d-inline-block me-1"></span> Live DB Sync
+        </span>
+      </div>
+      <h2 class="fw-bold mb-1" style="letter-spacing: -0.02em;">Admin Control Portal</h2>
+      <p class="text-muted mb-0 small">Real-time database metrics, user accounts, listing moderation, bookings, and community reviews.</p>
+    </div>
+
+    <div class="d-flex flex-wrap gap-2">
+      <button type="button" class="btn btn-primary rounded-pill px-3 py-2 fw-semibold" data-bs-toggle="modal" data-bs-target="#createHostModal">
+        <i class="fa-solid fa-user-plus me-1.5"></i> Provision Host
+      </button>
+      <a href="/listings/new" class="btn btn-outline-secondary rounded-pill px-3 py-2 fw-semibold">
+        <i class="fa-solid fa-plus me-1.5"></i> Add Stay
+      </a>
+      <a href="/listings" class="btn btn-light rounded-pill px-3 py-2 fw-semibold border">
+        <i class="fa-solid fa-compass me-1.5"></i> Explore Site
+      </a>
+    </div>
+  </div>
+
+  <!-- Mobile Tab Bar (Visible on < 992px) -->
+  <div class="admin-mobile-tabs">
+    <button class="btn btn-sm rounded-pill fw-semibold admin-tab-btn <%= activeTab === 'overview' ? 'btn-primary' : 'btn-light border' %>" data-tab="overview">
+      <i class="fa-solid fa-gauge-high me-1"></i> Overview
+    </button>
+    <button class="btn btn-sm rounded-pill fw-semibold admin-tab-btn <%= activeTab === 'users' ? 'btn-primary' : 'btn-light border' %>" data-tab="users">
+      <i class="fa-solid fa-users me-1"></i> Users (<%= stats.totalUsers %>)
+    </button>
+    <button class="btn btn-sm rounded-pill fw-semibold admin-tab-btn <%= activeTab === 'listings' ? 'btn-primary' : 'btn-light border' %>" data-tab="listings">
+      <i class="fa-solid fa-house-chimney me-1"></i> Listings (<%= stats.totalListings %>)
+    </button>
+    <button class="btn btn-sm rounded-pill fw-semibold admin-tab-btn <%= activeTab === 'bookings' ? 'btn-primary' : 'btn-light border' %>" data-tab="bookings">
+      <i class="fa-solid fa-calendar-check me-1"></i> Bookings (<%= stats.totalBookings %>)
+    </button>
+    <button class="btn btn-sm rounded-pill fw-semibold admin-tab-btn <%= activeTab === 'reviews' ? 'btn-primary' : 'btn-light border' %>" data-tab="reviews">
+      <i class="fa-solid fa-star-half-stroke me-1"></i> Reviews (<%= stats.totalReviews %>)
+    </button>
+  </div>
+
+  <!-- Master Grid Frame: Sidebar + Dynamic Content -->
+  <div class="admin-grid-frame">
+    
+    <!-- Sidebar Navigation (Desktop) -->
+    <aside class="admin-sidebar-card">
+      <div class="admin-sidebar-header">
+        <div class="text-muted small fw-semibold text-uppercase" style="letter-spacing: 0.05em; font-size: 0.72rem;">Navigation</div>
+      </div>
+
+      <ul class="admin-nav-list">
+        <li>
+          <button type="button" class="admin-nav-item-btn admin-tab-btn <%= activeTab === 'overview' ? 'active' : '' %>" data-tab="overview">
+            <span class="admin-nav-label-box">
+              <span class="admin-nav-icon bg-primary-subtle text-primary">
+                <i class="fa-solid fa-gauge-high"></i>
+              </span>
+              <span>Overview</span>
+            </span>
+          </button>
+        </li>
+        <li>
+          <button type="button" class="admin-nav-item-btn admin-tab-btn <%= activeTab === 'users' ? 'active' : '' %>" data-tab="users">
+            <span class="admin-nav-label-box">
+              <span class="admin-nav-icon bg-info-subtle text-info">
+                <i class="fa-solid fa-users"></i>
+              </span>
+              <span>Users</span>
+            </span>
+            <span class="admin-nav-badge"><%= stats.totalUsers %></span>
+          </button>
+        </li>
+        <li>
+          <button type="button" class="admin-nav-item-btn admin-tab-btn <%= activeTab === 'listings' ? 'active' : '' %>" data-tab="listings">
+            <span class="admin-nav-label-box">
+              <span class="admin-nav-icon bg-success-subtle text-success">
+                <i class="fa-solid fa-house-chimney"></i>
+              </span>
+              <span>Listings</span>
+            </span>
+            <span class="admin-nav-badge"><%= stats.totalListings %></span>
+          </button>
+        </li>
+        <li>
+          <button type="button" class="admin-nav-item-btn admin-tab-btn <%= activeTab === 'bookings' ? 'active' : '' %>" data-tab="bookings">
+            <span class="admin-nav-label-box">
+              <span class="admin-nav-icon bg-warning-subtle text-warning">
+                <i class="fa-solid fa-calendar-check"></i>
+              </span>
+              <span>Bookings</span>
+            </span>
+            <span class="admin-nav-badge"><%= stats.totalBookings %></span>
+          </button>
+        </li>
+        <li>
+          <button type="button" class="admin-nav-item-btn admin-tab-btn <%= activeTab === 'reviews' ? 'active' : '' %>" data-tab="reviews">
+            <span class="admin-nav-label-box">
+              <span class="admin-nav-icon bg-danger-subtle text-danger">
+                <i class="fa-solid fa-star-half-stroke"></i>
+              </span>
+              <span>Reviews</span>
+            </span>
+            <span class="admin-nav-badge"><%= stats.totalReviews %></span>
+          </button>
+        </li>
+      </ul>
+
+      <!-- Current Admin Footnote -->
+      <div class="admin-sidebar-footer">
+        <div class="admin-current-user-box">
+          <div class="avatar-initials-badge" style="width: 36px; height: 36px; min-width: 36px; font-size: 0.85rem;">
+            <%= (currentUser && currentUser.username ? currentUser.username.slice(0, 2).toUpperCase() : 'AD') %>
+          </div>
+          <div class="overflow-hidden">
+            <div class="fw-bold small text-truncate"><%= currentUser ? currentUser.fullName || currentUser.username : 'Administrator' %></div>
+            <div class="text-muted text-truncate" style="font-size: 0.72rem;">@<%= currentUser ? currentUser.username : 'admin' %> • Admin</div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content Panels -->
+    <main class="admin-main-viewport">
+      
+      <!-- ===================================================================
+           TAB 1: OVERVIEW
+           =================================================================== -->
+      <section class="admin-tab-pane <%= activeTab === 'overview' ? '' : 'd-none' %>" id="tab-overview">
+        <!-- Live Statistics Row 1 -->
+        <div class="row g-3 mb-4">
+          <!-- Revenue -->
+          <div class="col-sm-6 col-xl-3">
+            <div class="admin-metric-card">
+              <div class="admin-metric-icon bg-success-subtle text-success">
+                <i class="fa-solid fa-indian-rupee-sign"></i>
+              </div>
+              <div class="overflow-hidden">
+                <div class="admin-metric-val text-success">₹<%= stats.verifiedRevenue.toLocaleString('en-IN') %></div>
+                <div class="admin-metric-title">Verified Revenue</div>
+                <div class="text-muted small" style="font-size: 0.72rem;"><%= stats.paidBookings || 0 %> paid via Razorpay</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Total Listings -->
+          <div class="col-sm-6 col-xl-3">
+            <div class="admin-metric-card">
+              <div class="admin-metric-icon bg-primary-subtle text-primary">
+                <i class="fa-solid fa-hotel"></i>
+              </div>
+              <div>
+                <div class="admin-metric-val"><%= stats.totalListings %></div>
+                <div class="admin-metric-title">Total Stays</div>
+                <div class="text-muted small" style="font-size: 0.72rem;"><%= stats.availableListings %> currently available</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Users Count -->
+          <div class="col-sm-6 col-xl-3">
+            <div class="admin-metric-card">
+              <div class="admin-metric-icon bg-info-subtle text-info">
+                <i class="fa-solid fa-users"></i>
+              </div>
+              <div>
+                <div class="admin-metric-val"><%= stats.totalUsers %></div>
+                <div class="admin-metric-title">Platform Users</div>
+                <div class="text-muted small" style="font-size: 0.72rem;"><%= stats.totalHosts %> hosts • <%= stats.totalGuests %> travelers</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bookings & Rating -->
+          <div class="col-sm-6 col-xl-3">
+            <div class="admin-metric-card">
+              <div class="admin-metric-icon bg-warning-subtle text-warning">
+                <i class="fa-solid fa-calendar-check"></i>
+              </div>
+              <div>
+                <div class="admin-metric-val"><%= stats.totalBookings %></div>
+                <div class="admin-metric-title">Total Bookings</div>
+                <div class="text-muted small" style="font-size: 0.72rem;"><%= stats.confirmedBookings %> confirmed • <%= stats.cancelledBookings %> cancelled</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Secondary Overview Grid -->
+        <div class="row g-3 mb-4">
+          <!-- Booking Value & Rating Summary -->
+          <div class="col-lg-6">
+            <div class="admin-panel-card h-100">
+              <h5 class="fw-bold mb-3 d-flex align-items-center gap-2">
+                <i class="fa-solid fa-chart-pie text-primary"></i> Marketplace Summary
+              </h5>
+              <div class="d-flex flex-column gap-3">
+                <div class="p-3 rounded-3 bg-body-tertiary border d-flex justify-content-between align-items-center">
+                  <div>
+                    <div class="text-muted small fw-semibold">Total Confirmed Booking Value</div>
+                    <div class="fs-4 fw-bold">₹<%= stats.confirmedVolume.toLocaleString('en-IN') %></div>
+                  </div>
+                  <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2 rounded-pill">
+                    <i class="fa-solid fa-circle-check me-1"></i> Active Bookings
+                  </span>
+                </div>
+
+                <div class="p-3 rounded-3 bg-body-tertiary border d-flex justify-content-between align-items-center">
+                  <div>
+                    <div class="text-muted small fw-semibold">Community Quality Rating</div>
+                    <div class="fs-4 fw-bold text-warning">
+                      <i class="fa-solid fa-star me-1"></i><%= stats.platformAvgRating > 0 ? stats.platformAvgRating : '5.0' %> / 5.0
+                    </div>
+                  </div>
+                  <span class="badge bg-warning-subtle text-body border px-3 py-2 rounded-pill">
+                    <%= stats.totalReviews %> Total Reviews
+                  </span>
+                </div>
+
+                <div class="p-3 rounded-3 bg-body-tertiary border d-flex justify-content-between align-items-center">
+                  <div>
+                    <div class="text-muted small fw-semibold">Security & Moderation Status</div>
+                    <div class="fw-bold"><%= stats.totalSuspended %> Suspended Accounts</div>
+                  </div>
+                  <span class="badge <%= stats.totalSuspended > 0 ? 'bg-danger-subtle text-danger border-danger-subtle' : 'bg-success-subtle text-success border-success-subtle' %> border px-3 py-2 rounded-pill">
+                    <%= stats.totalSuspended > 0 ? 'Action Recommended' : 'Clean Platform' %>
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick Navigation Cards -->
+          <div class="col-lg-6">
+            <div class="admin-panel-card h-100">
+              <h5 class="fw-bold mb-3 d-flex align-items-center gap-2">
+                <i class="fa-solid fa-bolt text-warning"></i> Fast Actions
+              </h5>
+              <div class="d-grid gap-2.5">
+                <button type="button" class="btn btn-light border text-start p-3 rounded-3 d-flex align-items-center justify-content-between admin-tab-btn" data-tab="users">
+                  <div class="d-flex align-items-center gap-3">
+                    <span class="admin-nav-icon bg-info-subtle text-info"><i class="fa-solid fa-users-gear"></i></span>
+                    <div>
+                      <div class="fw-bold">Manage Users & Roles</div>
+                      <div class="text-muted small">Update traveler roles, suspend abusers, create hosts</div>
+                    </div>
+                  </div>
+                  <i class="fa-solid fa-chevron-right text-muted"></i>
+                </button>
+
+                <button type="button" class="btn btn-light border text-start p-3 rounded-3 d-flex align-items-center justify-content-between admin-tab-btn" data-tab="listings">
+                  <div class="d-flex align-items-center gap-3">
+                    <span class="admin-nav-icon bg-success-subtle text-success"><i class="fa-solid fa-house-circle-check"></i></span>
+                    <div>
+                      <div class="fw-bold">Moderate Listings</div>
+                      <div class="text-muted small">Inspect properties, delete non-compliant stays</div>
+                    </div>
+                  </div>
+                  <i class="fa-solid fa-chevron-right text-muted"></i>
+                </button>
+
+                <button type="button" class="btn btn-light border text-start p-3 rounded-3 d-flex align-items-center justify-content-between admin-tab-btn" data-tab="reviews">
+                  <div class="d-flex align-items-center gap-3">
+                    <span class="admin-nav-icon bg-danger-subtle text-danger"><i class="fa-solid fa-comment-slash"></i></span>
+                    <div>
+                      <div class="fw-bold">Moderate Reviews</div>
+                      <div class="text-muted small">Filter community feedback and delete inappropriate reviews</div>
+                    </div>
+                  </div>
+                  <i class="fa-solid fa-chevron-right text-muted"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recent Bookings Snapshot -->
+        <div class="admin-panel-card">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <div>
+              <h5 class="fw-bold mb-0">Recent Bookings</h5>
+              <div class="text-muted small">Latest reservations placed on WanderStay</div>
+            </div>
+            <button class="btn btn-sm btn-outline-primary rounded-pill admin-tab-btn" data-tab="bookings">View All Bookings</button>
+          </div>
+
+          <% if (bookings.length === 0) { %>
+            <div class="admin-empty-state">
+              <i class="fa-solid fa-calendar-xmark admin-empty-icon"></i>
+              <h6>No bookings in database</h6>
+              <p class="small text-muted mb-0">Reservations placed by guests will appear here live.</p>
+            </div>
+          <% } else { %>
+            <div class="admin-table-wrapper">
+              <table class="admin-table">
+                <thead>
+                  <tr>
+                    <th>Ref #</th>
+                    <th>Stay</th>
+                    <th>Guest</th>
+                    <th>Dates</th>
+                    <th>Amount</th>
+                    <th>Status</th>
+                    <th>Payment</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% bookings.slice(0, 5).forEach(b => { %>
+                    <tr>
+                      <td><code class="fw-bold text-body">#<%= b._id.toString().slice(-6).toUpperCase() %></code></td>
+                      <td>
+                        <div class="fw-bold text-truncate" style="max-width: 180px;"><%= b.listing ? b.listing.title : 'Deleted Stay' %></div>
+                        <div class="small text-muted"><%= b.listing ? b.listing.location : '' %></div>
+                      </td>
+                      <td>
+                        <div class="fw-semibold text-body"><%= b.guest ? b.guest.fullName || b.guest.username : 'Unknown Traveler' %></div>
+                        <div class="small text-muted"><%= b.guest ? b.guest.email : '' %></div>
+                      </td>
+                      <td class="small">
+                        <%= new Date(b.checkIn).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) %> → 
+                        <%= new Date(b.checkOut).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) %>
+                        <div class="text-muted"><%= b.nights %> nights • <%= b.guests || 1 %> guests</div>
+                      </td>
+                      <td class="fw-bold">₹<%= (b.totalPrice || 0).toLocaleString('en-IN') %></td>
+                      <td>
+                        <% if (b.status === 'confirmed') { %>
+                          <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill">Confirmed</span>
+                        <% } else if (b.status === 'cancelled') { %>
+                          <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill">Cancelled</span>
+                        <% } else { %>
+                          <span class="badge bg-warning-subtle text-warning border border-warning-subtle rounded-pill"><%= b.status %></span>
+                        <% } %>
+                      </td>
+                      <td>
+                        <% if (b.paymentStatus === 'paid') { %>
+                          <span class="admin-badge-paid"><i class="fa-solid fa-check me-1"></i> Paid</span>
+                        <% } else if (b.paymentStatus === 'refunded') { %>
+                          <span class="admin-badge-refunded"><i class="fa-solid fa-rotate-left me-1"></i> Refunded</span>
+                        <% } else { %>
+                          <span class="admin-badge-pending"><%= b.paymentStatus || 'pending' %></span>
+                        <% } %>
+                      </td>
+                    </tr>
+                  <% }) %>
+                </tbody>
+              </table>
+            </div>
+          <% } %>
+        </div>
+      </section>
+
+      <!-- ===================================================================
+           TAB 2: USERS MANAGEMENT
+           =================================================================== -->
+      <section class="admin-tab-pane <%= activeTab === 'users' ? '' : 'd-none' %>" id="tab-users">
+        <div class="admin-panel-card">
+          <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-3">
+            <div>
+              <h5 class="fw-bold mb-0">Platform User Directory</h5>
+              <div class="text-muted small">Manage account credentials, roles, suspensions, and access permissions</div>
+            </div>
+            <button type="button" class="btn btn-primary btn-sm rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#createHostModal">
+              <i class="fa-solid fa-user-plus me-1"></i> Add Host
+            </button>
+          </div>
+
+          <!-- Filter & Live Search Bar -->
+          <div class="admin-filter-bar">
+            <div class="admin-search-input">
+              <i class="fa-solid fa-magnifying-glass"></i>
+              <input type="text" id="userFilterInput" class="form-control form-control-sm" placeholder="Search by name, username, or email..." />
+            </div>
+            <div class="d-flex flex-wrap gap-1">
+              <button class="btn btn-sm btn-outline-secondary rounded-pill active user-role-filter-btn" data-role="all">All (<%= users.length %>)</button>
+              <button class="btn btn-sm btn-outline-secondary rounded-pill user-role-filter-btn" data-role="host">Hosts (<%= stats.totalHosts %>)</button>
+              <button class="btn btn-sm btn-outline-secondary rounded-pill user-role-filter-btn" data-role="guest">Travelers (<%= stats.totalGuests %>)</button>
+              <button class="btn btn-sm btn-outline-secondary rounded-pill user-role-filter-btn" data-role="admin">Admins (<%= stats.totalAdmins %>)</button>
+              <button class="btn btn-sm btn-outline-danger rounded-pill user-role-filter-btn" data-role="suspended">Suspended (<%= stats.totalSuspended %>)</button>
+            </div>
+          </div>
+
+          <!-- Users Table -->
+          <div class="admin-table-wrapper">
+            <table class="admin-table" id="usersTable">
+              <thead>
+                <tr>
+                  <th>User Profile</th>
+                  <th>Email & Phone</th>
+                  <th>Role</th>
+                  <th>Status</th>
+                  <th>Change Role</th>
+                  <th class="text-end">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% users.forEach(u => { %>
+                  <% 
+                    const isSelf = currentUser && currentUser._id.toString() === u._id.toString(); 
+                    const uRole = u.role || 'guest';
+                  %>
+                  <tr class="user-row" data-role="<%= uRole %>" data-suspended="<%= u.isSuspended ? 'true' : 'false' %>" data-search="<%= (u.username + ' ' + (u.fullName || '') + ' ' + u.email).toLowerCase() %>">
+                    <td>
+                      <div class="d-flex align-items-center gap-2.5">
+                        <img 
+                          src="<%= u.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=80&q=80' %>" 
+                          alt="<%= u.username %>" 
+                          class="rounded-circle border" 
+                          style="width: 40px; height: 40px; object-fit: cover;"
+                        />
+                        <div>
+                          <div class="fw-bold text-body">
+                            <%= u.fullName || u.username %>
+                            <% if (isSelf) { %>
+                              <span class="badge bg-secondary-subtle text-secondary rounded-pill ms-1" style="font-size: 0.65rem;">You</span>
+                            <% } %>
+                          </div>
+                          <div class="small text-muted">@<%= u.username %> • Joined <%= u.memberSince %></div>
+                        </div>
+                      </div>
+                    </td>
+                    <td>
+                      <div class="text-body"><%= u.email %></div>
+                      <div class="small text-muted"><%= u.phone || 'No phone set' %></div>
+                    </td>
+                    <td>
+                      <% if (u.role === 'admin') { %>
+                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-2.5 py-1">
+                          <i class="fa-solid fa-shield-halved me-1"></i> Admin
+                        </span>
+                      <% } else if (u.role === 'host') { %>
+                        <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2.5 py-1">
+                          <i class="fa-solid fa-house-chimney-user me-1"></i> Host
+                        </span>
+                      <% } else { %>
+                        <span class="badge bg-body-tertiary text-body border rounded-pill px-2.5 py-1">
+                          <i class="fa-solid fa-user me-1"></i> Traveler
+                        </span>
+                      <% } %>
+                    </td>
+                    <td>
+                      <% if (u.isSuspended) { %>
+                        <span class="admin-badge-suspended">
+                          <span class="pulse-red"></span> Suspended
+                        </span>
+                      <% } else { %>
+                        <span class="admin-badge-active">
+                          <span class="pulse-green"></span> Active
+                        </span>
+                      <% } %>
+                    </td>
+                    <td>
+                      <% if (isSelf) { %>
+                        <span class="small text-muted">Admin (Locked)</span>
+                      <% } else { %>
+                        <form action="/admin/users/<%= u._id %>/role" method="POST" class="d-inline-flex align-items-center">
+                          <select name="role" class="form-select form-select-sm rounded-pill" style="min-width: 110px;" onchange="this.form.submit()">
+                            <option value="guest" <%= uRole === 'guest' ? 'selected' : '' %>>Traveler</option>
+                            <option value="host" <%= uRole === 'host' ? 'selected' : '' %>>Host</option>
+                            <option value="admin" <%= uRole === 'admin' ? 'selected' : '' %>>Admin</option>
+                          </select>
+                        </form>
+                      <% } %>
+                    </td>
+                    <td class="text-end">
+                      <div class="d-inline-flex align-items-center gap-1.5">
+                        <!-- Suspend / Unsuspend -->
+                        <% if (!isSelf) { %>
+                          <form action="/admin/users/<%= u._id %>/suspend" method="POST" class="d-inline" onsubmit="return confirm('<%= u.isSuspended ? 'Reactivate this user account?' : 'Are you sure you want to suspend this user? They will be locked out immediately.' %>')">
+                            <button 
+                              type="submit" 
+                              class="btn-admin-action <%= u.isSuspended ? 'btn-admin-action-primary' : 'btn-admin-action-warning' %>" 
+                              title="<%= u.isSuspended ? 'Reactivate User' : 'Suspend User' %>"
+                            >
+                              <i class="fa-solid <%= u.isSuspended ? 'fa-user-check' : 'fa-user-slash' %>"></i>
+                            </button>
+                          </form>
+
+                          <!-- Delete User -->
+                          <form action="/admin/users/<%= u._id %>/delete" method="POST" class="d-inline" onsubmit="return confirm('PERMANENT ACTION: Delete user @<%= u.username %>? This cannot be undone.')">
+                            <button type="submit" class="btn-admin-action btn-admin-action-danger" title="Permanently Delete User">
+                              <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                          </form>
+                        <% } else { %>
+                          <span class="text-muted small fst-italic">Protected</span>
+                        <% } %>
+                      </div>
+                    </td>
+                  </tr>
+                <% }) %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================================================================
+           TAB 3: LISTINGS MODERATION
+           =================================================================== -->
+      <section class="admin-tab-pane <%= activeTab === 'listings' ? '' : 'd-none' %>" id="tab-listings">
+        <div class="admin-panel-card">
+          <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-3">
+            <div>
+              <h5 class="fw-bold mb-0">Listings Moderation Directory</h5>
+              <div class="text-muted small">Inspect property quality, prices, location authenticity, and remove inappropriate content</div>
+            </div>
+            <a href="/listings/new" class="btn btn-primary btn-sm rounded-pill px-3">
+              <i class="fa-solid fa-plus me-1"></i> New Listing
+            </a>
+          </div>
+
+          <!-- Filter & Search Bar -->
+          <div class="admin-filter-bar">
+            <div class="admin-search-input">
+              <i class="fa-solid fa-magnifying-glass"></i>
+              <input type="text" id="listingFilterInput" class="form-control form-control-sm" placeholder="Search by title, location, country, or category..." />
+            </div>
+            <span class="text-muted small"><%= listings.length %> Stays Published</span>
+          </div>
+
+          <!-- Listings Table -->
+          <div class="admin-table-wrapper">
+            <table class="admin-table" id="listingsTable">
+              <thead>
+                <tr>
+                  <th>Stay &amp; Category</th>
+                  <th>Location</th>
+                  <th>Host / Owner</th>
+                  <th>Price / Night</th>
+                  <th>Rating</th>
+                  <th>Status</th>
+                  <th class="text-end">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% listings.forEach(l => { %>
+                  <tr class="listing-row" data-search="<%= (l.title + ' ' + l.location + ' ' + l.country + ' ' + l.category + ' ' + (l.owner ? l.owner.username : '')).toLowerCase() %>">
+                    <td>
+                      <div class="d-flex align-items-center gap-2.5">
+                        <img 
+                          src="<%= l.image ? l.image.url : 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=120&q=80' %>" 
+                          alt="<%= l.title %>" 
+                          class="rounded-3 border" 
+                          style="width: 52px; height: 42px; object-fit: cover;"
+                        />
+                        <div class="overflow-hidden">
+                          <a href="/listings/<%= l._id %>" target="_blank" class="fw-bold text-decoration-none text-body text-truncate d-block" style="max-width: 220px;" title="<%= l.title %>">
+                            <%= l.title %>
+                          </a>
+                          <span class="badge bg-secondary-subtle text-secondary rounded-pill" style="font-size: 0.68rem;">
+                            <%= l.category %>
+                          </span>
+                        </div>
+                      </div>
+                    </td>
+                    <td>
+                      <div class="text-body"><%= l.location %></div>
+                      <div class="small text-muted"><%= l.country %></div>
+                    </td>
+                    <td>
+                      <div class="fw-semibold text-body"><%= l.owner ? l.owner.fullName || l.owner.username : 'Unknown' %></div>
+                      <div class="small text-muted">@<%= l.owner ? l.owner.username : 'none' %></div>
+                    </td>
+                    <td>
+                      <span class="fw-bold">₹<%= (l.price || 0).toLocaleString('en-IN') %></span>
+                    </td>
+                    <td>
+                      <span class="badge bg-warning-subtle text-body border px-2 py-1">
+                        <i class="fa-solid fa-star text-warning me-1"></i><%= l.averageRating > 0 ? l.averageRating : '5.0' %>
+                      </span>
+                      <div class="small text-muted" style="font-size: 0.7rem;"><%= l.reviews ? l.reviews.length : 0 %> reviews</div>
+                    </td>
+                    <td>
+                      <% if (l.isAvailable) { %>
+                        <span class="admin-badge-active"><span class="pulse-green"></span> Active</span>
+                      <% } else { %>
+                        <span class="badge bg-secondary-subtle text-secondary rounded-pill px-2 py-1">Offline</span>
+                      <% } %>
+                    </td>
+                    <td class="text-end">
+                      <div class="d-inline-flex align-items-center gap-1.5">
+                        <a href="/listings/<%= l._id %>" target="_blank" class="btn-admin-action btn-admin-action-primary" title="View Property Page">
+                          <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                        </a>
+                        <form action="/admin/listings/<%= l._id %>/delete" method="POST" class="d-inline" onsubmit="return confirm('MODERATION ACTION: Are you sure you want to remove this listing? Active bookings will be cancelled.')">
+                          <button type="submit" class="btn-admin-action btn-admin-action-danger" title="Remove Inappropriate Listing">
+                            <i class="fa-solid fa-trash-can"></i>
+                          </button>
+                        </form>
+                      </div>
+                    </td>
+                  </tr>
+                <% }) %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================================================================
+           TAB 4: BOOKINGS & PAYMENTS
+           =================================================================== -->
+      <section class="admin-tab-pane <%= activeTab === 'bookings' ? '' : 'd-none' %>" id="tab-bookings">
+        <div class="admin-panel-card">
+          <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-3">
+            <div>
+              <h5 class="fw-bold mb-0">Platform Bookings &amp; Payment Ledger</h5>
+              <div class="text-muted small">Live transaction log, Razorpay IDs, reservation lifecycle, and refund administration</div>
+            </div>
+            <div class="d-flex gap-2">
+              <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2 rounded-pill">
+                ₹<%= stats.verifiedRevenue.toLocaleString('en-IN') %> Total Paid
+              </span>
+            </div>
+          </div>
+
+          <!-- Filters -->
+          <div class="admin-filter-bar">
+            <div class="admin-search-input">
+              <i class="fa-solid fa-magnifying-glass"></i>
+              <input type="text" id="bookingFilterInput" class="form-control form-control-sm" placeholder="Search by booking ref, guest name, email, or stay..." />
+            </div>
+            <div class="d-flex flex-wrap gap-1">
+              <button class="btn btn-sm btn-outline-secondary rounded-pill active booking-status-filter-btn" data-status="all">All (<%= bookings.length %>)</button>
+              <button class="btn btn-sm btn-outline-success rounded-pill booking-status-filter-btn" data-status="paid">Paid (<%= stats.paidBookings %>)</button>
+              <button class="btn btn-sm btn-outline-primary rounded-pill booking-status-filter-btn" data-status="confirmed">Confirmed (<%= stats.confirmedBookings %>)</button>
+              <button class="btn btn-sm btn-outline-warning rounded-pill booking-status-filter-btn" data-status="pending">Pending (<%= stats.pendingBookings %>)</button>
+              <button class="btn btn-sm btn-outline-danger rounded-pill booking-status-filter-btn" data-status="cancelled">Cancelled (<%= stats.cancelledBookings %>)</button>
+            </div>
+          </div>
+
+          <!-- Bookings Table -->
+          <% if (bookings.length === 0) { %>
+            <div class="admin-empty-state">
+              <i class="fa-solid fa-calendar-xmark admin-empty-icon"></i>
+              <h6>No bookings found</h6>
+              <p class="small text-muted mb-0">Bookings placed through the checkout flow will automatically display here.</p>
+            </div>
+          <% } else { %>
+            <div class="admin-table-wrapper">
+              <table class="admin-table" id="bookingsTable">
+                <thead>
+                  <tr>
+                    <th>Ref #</th>
+                    <th>Property Stay</th>
+                    <th>Guest / Traveler</th>
+                    <th>Stay Dates</th>
+                    <th>Total</th>
+                    <th>Status</th>
+                    <th>Payment</th>
+                    <th>Razorpay Details</th>
+                    <th class="text-end">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% bookings.forEach(b => { %>
+                    <tr class="booking-row" data-status="<%= b.status %>" data-payment="<%= b.paymentStatus || 'pending' %>" data-search="<%= (b._id.toString() + ' ' + (b.listing ? b.listing.title : '') + ' ' + (b.guest ? (b.guest.username + ' ' + b.guest.email + ' ' + (b.guest.fullName || '')) : '') + ' ' + (b.razorpayOrderId || '') + ' ' + (b.razorpayPaymentId || '')).toLowerCase() %>">
+                      <td><code class="fw-bold text-body">#<%= b._id.toString().slice(-6).toUpperCase() %></code></td>
+                      <td>
+                        <div class="fw-bold text-truncate" style="max-width: 170px;"><%= b.listing ? b.listing.title : 'Deleted Stay' %></div>
+                        <div class="small text-muted"><%= b.listing ? b.listing.location : '' %></div>
+                      </td>
+                      <td>
+                        <div class="fw-semibold text-body"><%= b.guest ? b.guest.fullName || b.guest.username : 'Unknown Traveler' %></div>
+                        <div class="small text-muted"><%= b.guest ? b.guest.email : '' %></div>
+                      </td>
+                      <td class="small">
+                        <%= new Date(b.checkIn).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) %> → 
+                        <%= new Date(b.checkOut).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) %>
+                        <div class="text-muted"><%= b.nights %> nights • <%= b.guests || 1 %> guests</div>
+                      </td>
+                      <td>
+                        <div class="fw-bold">₹<%= (b.totalPrice || 0).toLocaleString('en-IN') %></div>
+                      </td>
+                      <td>
+                        <% if (b.status === 'confirmed') { %>
+                          <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill">Confirmed</span>
+                        <% } else if (b.status === 'cancelled') { %>
+                          <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill">Cancelled</span>
+                        <% } else if (b.status === 'completed') { %>
+                          <span class="badge bg-info-subtle text-info border border-info-subtle rounded-pill">Completed</span>
+                        <% } else { %>
+                          <span class="badge bg-warning-subtle text-warning border border-warning-subtle rounded-pill"><%= b.status %></span>
+                        <% } %>
+                      </td>
+                      <td>
+                        <% if (b.paymentStatus === 'paid') { %>
+                          <span class="admin-badge-paid"><i class="fa-solid fa-circle-check me-1"></i> Paid</span>
+                        <% } else if (b.paymentStatus === 'refunded') { %>
+                          <span class="admin-badge-refunded"><i class="fa-solid fa-rotate-left me-1"></i> Refunded</span>
+                        <% } else if (b.paymentStatus === 'failed') { %>
+                          <span class="admin-badge-cancelled"><i class="fa-solid fa-circle-xmark me-1"></i> Failed</span>
+                        <% } else { %>
+                          <span class="admin-badge-pending"><i class="fa-solid fa-clock me-1"></i> Pending</span>
+                        <% } %>
+                      </td>
+                      <td>
+                        <% if (b.razorpayPaymentId) { %>
+                          <div class="small text-truncate" style="max-width: 130px;" title="<%= b.razorpayPaymentId %>">
+                            <span class="text-muted">Pay:</span> <code><%= b.razorpayPaymentId %></code>
+                          </div>
+                        <% } %>
+                        <% if (b.razorpayOrderId) { %>
+                          <div class="small text-truncate text-muted" style="max-width: 130px;" title="<%= b.razorpayOrderId %>">
+                            Ord: <code><%= b.razorpayOrderId %></code>
+                          </div>
+                        <% } %>
+                        <% if (!b.razorpayPaymentId && !b.razorpayOrderId) { %>
+                          <span class="small text-muted">—</span>
+                        <% } %>
+                      </td>
+                      <td class="text-end">
+                        <div class="d-inline-flex align-items-center gap-1.5">
+                          <a href="/bookings/<%= b._id %>/invoice" class="btn-admin-action btn-admin-action-primary" title="Download Booking Invoice PDF">
+                            <i class="fa-solid fa-file-invoice-dollar"></i>
+                          </a>
+                          <a href="/bookings/<%= b._id %>" class="btn-admin-action" title="View Booking Details">
+                            <i class="fa-solid fa-receipt"></i>
+                          </a>
+                          <% if (b.status !== 'cancelled') { %>
+                            <form action="/admin/bookings/<%= b._id %>/cancel" method="POST" class="d-inline" onsubmit="return confirm('Cancel this booking and mark payment as refunded?')">
+                              <button type="submit" class="btn-admin-action btn-admin-action-danger" title="Cancel Booking as Admin">
+                                <i class="fa-solid fa-ban"></i>
+                              </button>
+                            </form>
+                          <% } else { %>
+                            <span class="small text-muted">Cancelled</span>
+                          <% } %>
+                        </div>
+                      </td>
+                    </tr>
+                  <% }) %>
+                </tbody>
+              </table>
+            </div>
+          <% } %>
+        </div>
+      </section>
+
+      <!-- ===================================================================
+           TAB 5: COMMUNITY REVIEWS
+           =================================================================== -->
+      <section class="admin-tab-pane <%= activeTab === 'reviews' ? '' : 'd-none' %>" id="tab-reviews">
+        <div class="admin-panel-card">
+          <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-3">
+            <div>
+              <h5 class="fw-bold mb-0">Community Reviews Moderation</h5>
+              <div class="text-muted small">Monitor feedback quality, investigate complaints, and remove abusive or spam reviews</div>
+            </div>
+            <span class="badge bg-warning-subtle text-body border px-3 py-2 rounded-pill">
+              <i class="fa-solid fa-star text-warning me-1"></i> <%= stats.platformAvgRating > 0 ? stats.platformAvgRating : '5.0' %> Platform Avg
+            </span>
+          </div>
+
+          <!-- Search Bar -->
+          <div class="admin-filter-bar">
+            <div class="admin-search-input">
+              <i class="fa-solid fa-magnifying-glass"></i>
+              <input type="text" id="reviewFilterInput" class="form-control form-control-sm" placeholder="Search by reviewer name, comment text, or stay..." />
+            </div>
+            <span class="text-muted small"><%= reviews.length %> Reviews Registered</span>
+          </div>
+
+          <!-- Reviews Table -->
+          <% if (reviews.length === 0) { %>
+            <div class="admin-empty-state">
+              <i class="fa-solid fa-comment-dots admin-empty-icon"></i>
+              <h6>No reviews in database</h6>
+              <p class="small text-muted mb-0">Reviews submitted by guests on stays will appear here.</p>
+            </div>
+          <% } else { %>
+            <div class="admin-table-wrapper">
+              <table class="admin-table" id="reviewsTable">
+                <thead>
+                  <tr>
+                    <th>Reviewer</th>
+                    <th>Stay / Listing</th>
+                    <th>Rating</th>
+                    <th>Review Content</th>
+                    <th>Date</th>
+                    <th class="text-end">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% reviews.forEach(r => { %>
+                    <% 
+                      const associatedStay = reviewToListingMap[r._id.toString()]; 
+                    %>
+                    <tr class="review-row" data-search="<%= ((r.author ? (r.author.username + ' ' + (r.author.fullName || '')) : '') + ' ' + (associatedStay ? associatedStay.title : '') + ' ' + (r.comment || '')).toLowerCase() %>">
+                      <td>
+                        <div class="d-flex align-items-center gap-2">
+                          <img 
+                            src="<%= (r.author && r.author.avatar) ? r.author.avatar : 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=80&q=80' %>" 
+                            alt="<%= r.author ? r.author.username : 'User' %>" 
+                            class="rounded-circle border" 
+                            style="width: 32px; height: 32px; object-fit: cover;"
+                          />
+                          <div>
+                            <div class="fw-semibold text-body"><%= r.author ? r.author.fullName || r.author.username : 'Anonymous User' %></div>
+                            <div class="small text-muted">@<%= r.author ? r.author.username : 'deleted' %></div>
+                          </div>
+                        </div>
+                      </td>
+                      <td>
+                        <% if (associatedStay) { %>
+                          <a href="/listings/<%= associatedStay._id %>" target="_blank" class="fw-bold text-decoration-none text-body text-truncate d-block" style="max-width: 170px;" title="<%= associatedStay.title %>">
+                            <%= associatedStay.title %>
+                          </a>
+                        <% } else { %>
+                          <span class="small text-muted">Unlinked stay</span>
+                        <% } %>
+                      </td>
+                      <td>
+                        <span class="badge bg-warning-subtle text-body border px-2 py-1">
+                          <i class="fa-solid fa-star text-warning me-1"></i><%= r.rating %>/5
+                        </span>
+                      </td>
+                      <td>
+                        <div class="text-muted text-break" style="max-width: 340px; font-size: 0.85rem;">
+                          <%= r.comment %>
+                        </div>
+                      </td>
+                      <td class="small text-muted">
+                        <%= r.createdAt ? new Date(r.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Recently' %>
+                      </td>
+                      <td class="text-end">
+                        <form action="/admin/reviews/<%= r._id %>/delete" method="POST" class="d-inline" onsubmit="return confirm('MODERATION ACTION: Permanently remove this review? The property average rating will be recalculated.')">
+                          <button type="submit" class="btn-admin-action btn-admin-action-danger" title="Remove Inappropriate Review">
+                            <i class="fa-solid fa-trash-can"></i>
+                          </button>
+                        </form>
+                      </td>
+                    </tr>
+                  <% }) %>
+                </tbody>
+              </table>
+            </div>
+          <% } %>
+        </div>
+      </section>
+
+    </main>
+  </div>
+</div>
+
+<!-- =======================================================================
+     MODAL: CREATE NEW HOST
+     ======================================================================= -->
+<div class="modal fade" id="createHostModal" tabindex="-1" aria-labelledby="createHostModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg rounded-4">
+      <div class="modal-header border-bottom-0 pb-0">
+        <h5 class="modal-title fw-bold" id="createHostModalLabel">
+          <i class="fa-solid fa-house-chimney-user text-primary me-2"></i>Provision New Host Account
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body pt-2">
+        <p class="text-muted small mb-3">Creates an authorized host account with direct property hosting privileges.</p>
+        <form action="/admin/hosts" method="POST" class="needs-validation" novalidate>
+          <div class="row g-2 mb-3">
+            <div class="col-6">
+              <label class="form-label small fw-semibold">First Name</label>
+              <input type="text" name="firstName" class="form-control rounded-3" placeholder="e.g. Elena" />
+            </div>
+            <div class="col-6">
+              <label class="form-label small fw-semibold">Last Name</label>
+              <input type="text" name="lastName" class="form-control rounded-3" placeholder="e.g. Rostova" />
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Username *</label>
+            <input type="text" name="username" class="form-control rounded-3" placeholder="e.g. elena_villas" required />
+            <div class="invalid-feedback">Username is required.</div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Email Address *</label>
+            <input type="email" name="email" class="form-control rounded-3" placeholder="e.g. elena@wanderstay.com" required />
+            <div class="invalid-feedback">Valid email is required.</div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Temporary Password (default: password123)</label>
+            <input type="password" name="password" class="form-control rounded-3" placeholder="Min 6 characters" minlength="6" value="password123" />
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Host Biography / Experience</label>
+            <textarea name="bio" class="form-control rounded-3" rows="2" placeholder="e.g. Experienced host of luxury Mediterranean villas..."></textarea>
+          </div>
+
+          <div class="d-flex justify-content-end gap-2 mt-4">
+            <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-primary rounded-pill px-4">
+              <i class="fa-solid fa-check me-1"></i> Create Host
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- =======================================================================
+     CLIENT-SIDE DYNAMIC TAB SWITCHING & LIVE FILTER SCRIPTS
+     ======================================================================= -->
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // 1. Dynamic Tab Switching (supports instant client-side transitions and back/forward history)
+    const tabButtons = document.querySelectorAll('.admin-tab-btn');
+    const tabPanes = document.querySelectorAll('.admin-tab-pane');
+
+    function switchTab(targetTab) {
+      if (!targetTab) return;
+
+      // Update sidebar & mobile button active states
+      tabButtons.forEach(btn => {
+        if (btn.dataset.tab === targetTab) {
+          if (btn.classList.contains('admin-nav-item-btn')) {
+            btn.classList.add('active');
+          } else {
+            btn.classList.remove('btn-light', 'border');
+            btn.classList.add('btn-primary');
+          }
+        } else {
+          if (btn.classList.contains('admin-nav-item-btn')) {
+            btn.classList.remove('active');
+          } else {
+            btn.classList.remove('btn-primary');
+            btn.classList.add('btn-light', 'border');
+          }
+        }
+      });
+
+      // Show targeted pane
+      tabPanes.forEach(pane => {
+        if (pane.id === 'tab-' + targetTab) {
+          pane.classList.remove('d-none');
+        } else {
+          pane.classList.add('d-none');
+        }
+      });
+
+      // Update URL without full page reload
+      const newUrl = new URL(window.location);
+      newUrl.searchParams.set('tab', targetTab);
+      window.history.replaceState({ tab: targetTab }, '', newUrl);
+    }
+
+    tabButtons.forEach(btn => {
+      btn.addEventListener('click', function(e) {
+        e.preventDefault();
+        const target = this.dataset.tab;
+        switchTab(target);
+      });
+    });
+
+    // Check URL query parameter on initial load
+    const urlParams = new URLSearchParams(window.location.search);
+    const initialTab = urlParams.get('tab');
+    if (initialTab && ['overview', 'users', 'listings', 'bookings', 'reviews'].includes(initialTab)) {
+      switchTab(initialTab);
+    }
+
+    // 2. Live Users Search & Role Filter
+    const userFilterInput = document.getElementById('userFilterInput');
+    const userRoleFilterBtns = document.querySelectorAll('.user-role-filter-btn');
+    const userRows = document.querySelectorAll('.user-row');
+    let activeUserRole = 'all';
+
+    function filterUsers() {
+      const q = (userFilterInput ? userFilterInput.value : '').toLowerCase().trim();
+      userRows.forEach(row => {
+        const rowSearch = row.dataset.search || '';
+        const rowRole = row.dataset.role || 'guest';
+        const isSuspended = row.dataset.suspended === 'true';
+
+        let matchesRole = true;
+        if (activeUserRole === 'suspended') {
+          matchesRole = isSuspended;
+        } else if (activeUserRole !== 'all') {
+          matchesRole = (rowRole === activeUserRole);
+        }
+
+        const matchesQuery = !q || rowSearch.includes(q);
+
+        if (matchesRole && matchesQuery) {
+          row.style.display = '';
+        } else {
+          row.style.display = 'none';
+        }
+      });
+    }
+
+    if (userFilterInput) {
+      userFilterInput.addEventListener('input', filterUsers);
+    }
+
+    userRoleFilterBtns.forEach(btn => {
+      btn.addEventListener('click', function() {
+        userRoleFilterBtns.forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        activeUserRole = this.dataset.role;
+        filterUsers();
+      });
+    });
+
+    // 3. Live Listings Search
+    const listingFilterInput = document.getElementById('listingFilterInput');
+    const listingRows = document.querySelectorAll('.listing-row');
+
+    if (listingFilterInput) {
+      listingFilterInput.addEventListener('input', function() {
+        const q = this.value.toLowerCase().trim();
+        listingRows.forEach(row => {
+          const rowSearch = row.dataset.search || '';
+          row.style.display = (!q || rowSearch.includes(q)) ? '' : 'none';
+        });
+      });
+    }
+
+    // 4. Live Bookings Search & Status Filter
+    const bookingFilterInput = document.getElementById('bookingFilterInput');
+    const bookingStatusBtns = document.querySelectorAll('.booking-status-filter-btn');
+    const bookingRows = document.querySelectorAll('.booking-row');
+    let activeBookingStatus = 'all';
+
+    function filterBookings() {
+      const q = (bookingFilterInput ? bookingFilterInput.value : '').toLowerCase().trim();
+      bookingRows.forEach(row => {
+        const rowSearch = row.dataset.search || '';
+        const rowStatus = row.dataset.status || '';
+        const rowPayment = row.dataset.payment || '';
+
+        let matchesStatus = true;
+        if (activeBookingStatus === 'paid') {
+          matchesStatus = (rowPayment === 'paid');
+        } else if (activeBookingStatus !== 'all') {
+          matchesStatus = (rowStatus === activeBookingStatus);
+        }
+
+        const matchesQuery = !q || rowSearch.includes(q);
+
+        if (matchesStatus && matchesQuery) {
+          row.style.display = '';
+        } else {
+          row.style.display = 'none';
+        }
+      });
+    }
+
+    if (bookingFilterInput) {
+      bookingFilterInput.addEventListener('input', filterBookings);
+    }
+
+    bookingStatusBtns.forEach(btn => {
+      btn.addEventListener('click', function() {
+        bookingStatusBtns.forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        activeBookingStatus = this.dataset.status;
+        filterBookings();
+      });
+    });
+
+    // 5. Live Reviews Search
+    const reviewFilterInput = document.getElementById('reviewFilterInput');
+    const reviewRows = document.querySelectorAll('.review-row');
+
+    if (reviewFilterInput) {
+      reviewFilterInput.addEventListener('input', function() {
+        const q = this.value.toLowerCase().trim();
+        reviewRows.forEach(row => {
+          const rowSearch = row.dataset.search || '';
+          row.style.display = (!q || rowSearch.includes(q)) ? '' : 'none';
+        });
+      });
+    }
+  });
+</script>

@@ -24,7 +24,8 @@ module.exports.bookingSchema = Joi.object({
   booking: Joi.object({
     checkIn: Joi.date().required(),
     checkOut: Joi.date().required(),
-    totalPrice: Joi.number().required(),
+    guests: Joi.number().min(1).max(20).optional(),
+    totalPrice: Joi.number().optional(),
   }).required()
 });
 

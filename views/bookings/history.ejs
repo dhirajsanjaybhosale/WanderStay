@@ -39,10 +39,41 @@
               <div class="ticket-body">
                 <div class="d-flex flex-column flex-md-row justify-content-between align-items-start gap-2 mb-2">
                   <div>
-                    <span class="badge badge-status <%= booking.status === 'confirmed' ? 'badge-confirmed' : 'badge-cancelled' %> mb-2">
-                      <i class="fa-solid <%= booking.status === 'confirmed' ? 'fa-circle-check' : 'fa-circle-xmark' %> me-1"></i>
-                      <%= booking.status %>
-                    </span>
+                    <div class="d-flex flex-wrap gap-2 align-items-center mb-2">
+                      <% if (booking.status === 'confirmed') { %>
+                        <span class="badge badge-status badge-confirmed">
+                          <i class="fa-solid fa-circle-check me-1"></i> Confirmed
+                        </span>
+                      <% } else if (booking.status === 'pending') { %>
+                        <span class="badge bg-warning-subtle text-warning border border-warning rounded-pill px-3 py-1">
+                          <i class="fa-solid fa-hourglass-half me-1"></i> Pending Payment
+                        </span>
+                      <% } else { %>
+                        <span class="badge badge-status badge-cancelled">
+                          <i class="fa-solid fa-circle-xmark me-1"></i> <%= booking.status %>
+                        </span>
+                      <% } %>
+
+                      <!-- Payment Status Badge -->
+                      <% if (booking.paymentStatus === 'paid') { %>
+                        <span class="badge bg-success-subtle text-success rounded-pill px-2 py-1">
+                          <i class="fa-solid fa-shield-check me-1"></i> Paid
+                        </span>
+                      <% } else if (booking.paymentStatus === 'refunded') { %>
+                        <span class="badge bg-info-subtle text-info rounded-pill px-2 py-1">
+                          <i class="fa-solid fa-rotate-left me-1"></i> Refunded
+                        </span>
+                      <% } else if (booking.paymentStatus === 'failed') { %>
+                        <span class="badge bg-danger-subtle text-danger rounded-pill px-2 py-1">
+                          <i class="fa-solid fa-triangle-exclamation me-1"></i> Payment Failed
+                        </span>
+                      <% } else { %>
+                        <span class="badge bg-warning-subtle text-warning rounded-pill px-2 py-1">
+                          <i class="fa-solid fa-credit-card me-1"></i> Unpaid
+                        </span>
+                      <% } %>
+                    </div>
+
                     <h4 class="fw-bold mb-1">
                       <a href="/listings/<%= booking.listing._id %>" class="text-decoration-none text-reset">
                         <%= booking.listing.title %>
@@ -61,28 +92,49 @@
                 </div>
 
                 <div class="row g-2 p-3 bg-body-tertiary rounded-3 small mb-3 border border-theme">
-                  <div class="col-sm-4">
+                  <div class="col-sm-3">
                     <span class="text-muted">Dates:</span>
                     <strong class="d-block"><%= new Date(booking.checkIn).toLocaleDateString() %> — <%= new Date(booking.checkOut).toLocaleDateString() %></strong>
                   </div>
-                  <div class="col-sm-4">
-                    <span class="text-muted">Duration:</span>
-                    <strong class="d-block"><%= booking.nights %> <%= booking.nights === 1 ? 'night' : 'nights' %></strong>
+                  <div class="col-sm-3">
+                    <span class="text-muted">Guests & Duration:</span>
+                    <strong class="d-block"><%= booking.guests || 1 %> <%= (booking.guests === 1) ? 'guest' : 'guests' %> • <%= booking.nights %> <%= booking.nights === 1 ? 'night' : 'nights' %></strong>
                   </div>
-                  <div class="col-sm-4">
-                    <span class="text-muted">Booking Reference:</span>
-                    <strong class="d-block">#<%= booking._id.toString().slice(-8).toUpperCase() %></strong>
+                  <div class="col-sm-3">
+                    <span class="text-muted">Reference:</span>
+                    <strong class="d-block font-monospace">#<%= booking._id.toString().slice(-8).toUpperCase() %></strong>
+                  </div>
+                  <div class="col-sm-3">
+                    <span class="text-muted">Payment:</span>
+                    <strong class="d-block text-capitalize"><%= booking.paymentStatus || 'pending' %></strong>
                   </div>
                 </div>
 
                 <div class="d-flex flex-wrap gap-2 justify-content-end">
-                  <a href="/bookings/<%= booking._id %>/confirmation" class="btn btn-outline-secondary btn-sm rounded-pill px-3">
-                    <i class="fa-solid fa-receipt me-1"></i> Receipt
+                  <% if (booking.status === 'pending' || booking.paymentStatus === 'pending' || booking.paymentStatus === 'failed') { %>
+                    <a href="/bookings/<%= booking._id %>/checkout" class="btn btn-primary btn-sm rounded-pill px-4 fw-semibold">
+                      <i class="fa-solid fa-credit-card me-1"></i> Complete Payment
+                    </a>
+                  <% } %>
+
+                  <% if (booking.status === 'confirmed' || booking.paymentStatus === 'paid') { %>
+                    <a href="/bookings/<%= booking._id %>/invoice" class="btn btn-outline-primary btn-sm rounded-pill px-3 fw-semibold" title="Download Official Invoice PDF">
+                      <i class="fa-solid fa-file-invoice-dollar me-1"></i> Download Invoice
+                    </a>
+                  <% } %>
+
+                  <a href="/bookings/<%= booking._id %>" class="btn btn-light border btn-sm rounded-pill px-3 fw-semibold">
+                    <i class="fa-solid fa-receipt me-1"></i> Details
                   </a>
-                  <a href="/listings/<%= booking.listing._id %>" class="btn btn-outline-primary btn-sm rounded-pill px-3">
-                    View Property
+
+                  <a href="/messages/new?listingId=<%= booking.listing._id %>&bookingId=<%= booking._id %>" class="btn btn-outline-secondary btn-sm rounded-pill px-3">
+                    <i class="fa-regular fa-message me-1"></i> Message Host
                   </a>
-                  <% if (booking.status === 'confirmed') { %>
+                  <a href="/listings/<%= booking.listing._id %>" class="btn btn-outline-secondary btn-sm rounded-pill px-3">
+                    View Stay
+                  </a>
+
+                  <% if (booking.status === 'confirmed' || booking.status === 'pending') { %>
                     <form action="/bookings/<%= booking._id %>/cancel" method="POST" onsubmit="return confirm('Are you sure you want to cancel this booking?');">
                       <button type="submit" class="btn btn-outline-danger btn-sm rounded-pill px-3">
                         <i class="fa-solid fa-ban me-1"></i> Cancel

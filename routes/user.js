@@ -38,6 +38,18 @@ router
 router.get("/logout", userController.logout);
 
 
+// ================== PASSWORD RESET ==================
+router
+  .route("/forgot-password")
+  .get(userController.renderForgotPassword)
+  .post(wrapAsync(userController.forgotPassword));
+
+router
+  .route("/reset-password/:token")
+  .get(wrapAsync(userController.renderResetPassword))
+  .post(wrapAsync(userController.resetPassword));
+
+
 // ================== PROFILE MANAGEMENT ==================
 const multer = require("multer");
 const { storage } = require("../cloudConfig.js");

@@ -1,6 +1,12 @@
 
 const User = require("../models/user");
 const bcrypt = require("bcrypt");
+const crypto = require("crypto");
+const {
+  sendWelcomeEmail,
+  sendPasswordResetEmail,
+  sendPasswordChangedEmail
+} = require("../utils/emailService");
 
 // ================== RENDER SIGNUP ==================
 module.exports.renderSignup = (req, res) => {
@@ -50,6 +56,11 @@ module.exports.signup = async (req, res, next) => {
         console.log('USER LOGGED IN SUCCESSFULLY');
         resolve();
       });
+    });
+
+    // Trigger welcome email asynchronously (never blocks registration)
+    sendWelcomeEmail(savedUser).catch(err => {
+      console.error('Welcome email dispatch error:', err.message);
     });
 
     if (assignedRole === 'host') {
@@ -263,11 +274,111 @@ module.exports.updatePassword = async (req, res) => {
     const user = await User.findById(req.user._id);
     await user.changePassword(currentPassword, newPassword);
 
+    // Send security alert email
+    sendPasswordChangedEmail(user).catch(err => {
+      console.error('Password changed security email error:', err.message);
+    });
+
     req.flash("success", "✓ Password updated successfully!");
     res.redirect("/profile#security");
   } catch (err) {
     console.error("Password change error:", err);
     req.flash("error", `⚠ ${err.message || "Unable to change password. Please check your current password."}`);
     res.redirect("/profile#security");
+  }
+};
+
+// ================== FORGOT & RESET PASSWORD ==================
+module.exports.renderForgotPassword = (req, res) => {
+  res.render("users/forgot.ejs");
+};
+
+module.exports.forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      req.flash("error", "Please provide a valid email address.");
+      return res.redirect("/forgot-password");
+    }
+
+    const user = await User.findOne({ email: email.trim().toLowerCase() });
+    if (!user) {
+      // Security: Do not reveal whether user exists
+      req.flash("success", "If an account matches that email, a password reset link has been dispatched.");
+      return res.redirect("/login");
+    }
+
+    const token = crypto.randomBytes(32).toString("hex");
+    user.resetPasswordToken = token;
+    user.resetPasswordExpires = Date.now() + 3600000; // 1 hour validity
+    await user.save();
+
+    const resetUrl = `${req.protocol}://${req.get("host")}/reset-password/${token}`;
+    await sendPasswordResetEmail({ user, resetUrl });
+
+    req.flash("success", "If an account matches that email, a password reset link has been dispatched.");
+    res.redirect("/login");
+  } catch (err) {
+    console.error("Forgot password error:", err);
+    req.flash("error", "Unable to process password reset. Please try again.");
+    res.redirect("/forgot-password");
+  }
+};
+
+module.exports.renderResetPassword = async (req, res) => {
+  const { token } = req.params;
+  const user = await User.findOne({
+    resetPasswordToken: token,
+    resetPasswordExpires: { $gt: Date.now() }
+  });
+
+  if (!user) {
+    req.flash("error", "Password reset token is invalid or has expired. Please request a new one.");
+    return res.redirect("/forgot-password");
+  }
+
+  res.render("users/reset.ejs", { token });
+};
+
+module.exports.resetPassword = async (req, res) => {
+  try {
+    const { token } = req.params;
+    const { password, confirmPassword } = req.body;
+
+    if (!password || password.length < 6) {
+      req.flash("error", "Password must be at least 6 characters long.");
+      return res.redirect(`/reset-password/${token}`);
+    }
+
+    if (password !== confirmPassword) {
+      req.flash("error", "Passwords do not match.");
+      return res.redirect(`/reset-password/${token}`);
+    }
+
+    const user = await User.findOne({
+      resetPasswordToken: token,
+      resetPasswordExpires: { $gt: Date.now() }
+    });
+
+    if (!user) {
+      req.flash("error", "Password reset token is invalid or has expired.");
+      return res.redirect("/forgot-password");
+    }
+
+    await user.setPassword(password);
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpires = undefined;
+    await user.save();
+
+    sendPasswordChangedEmail(user).catch(err => {
+      console.error("Password change notification error:", err.message);
+    });
+
+    req.flash("success", "✓ Your password has been successfully reset. Please log in with your new password.");
+    res.redirect("/login");
+  } catch (err) {
+    console.error("Reset password error:", err);
+    req.flash("error", "An error occurred while resetting your password.");
+    res.redirect("/forgot-password");
   }
 };

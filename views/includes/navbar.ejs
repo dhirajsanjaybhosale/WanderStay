@@ -40,6 +40,9 @@
         </a>
 
         <% if (user) { %>
+          <a class="nav-link-item" href="/messages">
+            <i class="fa-regular fa-message me-1 text-primary"></i>Messages
+          </a>
           <a class="nav-link-item" href="/wishlist">
             <i class="fa-regular fa-heart me-1 text-danger"></i>Wishlist
           </a>
@@ -49,14 +52,94 @@
               <i class="fa-solid fa-house-chimney me-1 text-success"></i>Host Panel
             </a>
           <% } else if (user.role === 'admin') { %>
-            <a class="nav-link-item nav-host-badge" href="/dashboard/admin">
-              <i class="fa-solid fa-shield-halved me-1 text-primary"></i>Admin
+            <a class="nav-link-item nav-host-badge" href="/admin">
+              <i class="fa-solid fa-shield-halved me-1 text-primary"></i>Admin Portal
             </a>
           <% } else { %>
             <a class="nav-link-item" href="/become-host">
               <i class="fa-solid fa-house-flag me-1 text-primary"></i>Become a Host
             </a>
           <% } %>
+
+          <!-- Notification Bell Dropdown -->
+          <div class="dropdown notif-dropdown-wrapper ms-1">
+            <button 
+              class="notification-bell-btn position-relative" 
+              type="button" 
+              id="notifDropdownBtn" 
+              data-bs-toggle="dropdown" 
+              data-bs-auto-close="outside"
+              aria-expanded="false"
+              aria-label="Notifications"
+            >
+              <i class="fa-regular fa-bell"></i>
+              <% if (typeof unreadNotificationCount !== 'undefined' && unreadNotificationCount > 0) { %>
+                <span class="notif-badge-pill" id="navbarNotifBadge">
+                  <%= unreadNotificationCount > 99 ? '99+' : unreadNotificationCount %>
+                </span>
+              <% } %>
+            </button>
+            <div class="dropdown-menu dropdown-menu-end notification-dropdown-menu" aria-labelledby="notifDropdownBtn">
+              <!-- Header -->
+              <div class="notif-header">
+                <div class="notif-title-wrap">
+                  <h6 class="notif-title-text">Notifications</h6>
+                  <% if (typeof unreadNotificationCount !== 'undefined' && unreadNotificationCount > 0) { %>
+                    <span class="notif-count-chip" id="dropdownUnreadChip"><%= unreadNotificationCount %> unread</span>
+                  <% } %>
+                </div>
+                <% if (typeof unreadNotificationCount !== 'undefined' && unreadNotificationCount > 0) { %>
+                  <form action="/notifications/read-all" method="POST" class="m-0" id="markAllReadForm">
+                    <button type="submit" class="notif-mark-all-btn" title="Mark all as read">
+                      <i class="fa-solid fa-check-double"></i> Mark all read
+                    </button>
+                  </form>
+                <% } %>
+              </div>
+
+              <!-- Notifications List Container -->
+              <div class="notif-list-container" id="notifListContainer">
+                <% if (typeof recentNotifications !== 'undefined' && recentNotifications.length > 0) { %>
+                  <% recentNotifications.forEach(notif => { 
+                       const meta = (typeof getNotificationMeta === 'function') ? getNotificationMeta(notif.type) : { icon: 'fa-solid fa-bell', color: '#6B7280', bg: '#F3F4F6', label: 'Notification' };
+                  %>
+                    <a href="/notifications/<%= notif._id %>/open" class="notif-item <%= !notif.isRead ? 'unread' : '' %>" data-notif-id="<%= notif._id %>">
+                      <div class="notif-icon-avatar" style="background-color: <%= meta.bg %>; color: <%= meta.color %>;">
+                        <i class="<%= meta.icon %>"></i>
+                      </div>
+                      <div class="notif-body">
+                        <div class="notif-item-title"><%= notif.title %></div>
+                        <div class="notif-item-msg"><%= notif.message %></div>
+                        <div class="notif-item-time">
+                          <i class="fa-regular fa-clock"></i>
+                          <span><%= new Date(notif.createdAt).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) %></span>
+                        </div>
+                      </div>
+                      <% if (!notif.isRead) { %>
+                        <div class="notif-unread-dot" title="Unread"></div>
+                      <% } %>
+                    </a>
+                  <% }); %>
+                <% } else { %>
+                  <div class="notif-empty-state">
+                    <div class="notif-empty-icon">
+                      <i class="fa-regular fa-bell-slash"></i>
+                    </div>
+                    <div class="notif-empty-title">All caught up!</div>
+                    <p class="notif-empty-desc">No new notifications right now.</p>
+                  </div>
+                <% } %>
+              </div>
+
+              <!-- Footer -->
+              <div class="notif-footer">
+                <a href="/notifications" class="notif-view-all-link">
+                  <span>View all notifications</span>
+                  <i class="fa-solid fa-arrow-right"></i>
+                </a>
+              </div>
+            </div>
+          </div>
 
           <!-- User Menu Dropdown -->
           <div class="dropdown ms-2">
@@ -109,12 +192,21 @@
                 <li><a class="dropdown-item rounded-3" href="/dashboard/host"><i class="fa-solid fa-house-chimney-user me-2 text-success"></i>Host Dashboard</a></li>
                 <li><a class="dropdown-item rounded-3" href="/listings/new"><i class="fa-solid fa-circle-plus me-2 text-primary"></i>Add New Listing</a></li>
               <% } else if (user.role === 'admin') { %>
-                <li><a class="dropdown-item rounded-3" href="/dashboard/admin"><i class="fa-solid fa-shield-halved me-2 text-primary"></i>Admin Dashboard</a></li>
+                <li><a class="dropdown-item rounded-3" href="/admin"><i class="fa-solid fa-shield-halved me-2 text-primary"></i>Admin Portal</a></li>
               <% } else { %>
                 <li><a class="dropdown-item rounded-3" href="/become-host"><i class="fa-solid fa-house-flag me-2 text-primary"></i>Become a Host</a></li>
               <% } %>
               
               <li><a class="dropdown-item rounded-3" href="/bookings/history"><i class="fa-solid fa-suitcase me-2 text-muted"></i>My Bookings</a></li>
+              <li>
+                <a class="dropdown-item rounded-3 d-flex align-items-center justify-content-between" href="/notifications">
+                  <span><i class="fa-regular fa-bell me-2 text-warning"></i>Notifications</span>
+                  <% if (typeof unreadNotificationCount !== 'undefined' && unreadNotificationCount > 0) { %>
+                    <span class="badge bg-danger rounded-pill"><%= unreadNotificationCount %></span>
+                  <% } %>
+                </a>
+              </li>
+              <li><a class="dropdown-item rounded-3" href="/messages"><i class="fa-regular fa-message me-2 text-primary"></i>Messages</a></li>
               <li><a class="dropdown-item rounded-3" href="/wishlist"><i class="fa-regular fa-heart me-2 text-muted"></i>Wishlist</a></li>
               <li><a class="dropdown-item rounded-3" href="/profile#security"><i class="fa-solid fa-gear me-2 text-muted"></i>Account Settings</a></li>
               <li><hr class="dropdown-divider"></li>
@@ -133,8 +225,18 @@
         </button>
       </div>
 
-      <!-- Mobile Right Controls: Dark Mode + Drawer Toggle -->
+      <!-- Mobile Right Controls: Bell + Dark Mode + Drawer Toggle -->
       <div class="d-flex d-lg-none align-items-center gap-2">
+        <% if (user) { %>
+          <a href="/notifications" class="notification-bell-btn position-relative" aria-label="Notifications" style="width: 38px; height: 38px;">
+            <i class="fa-regular fa-bell"></i>
+            <% if (typeof unreadNotificationCount !== 'undefined' && unreadNotificationCount > 0) { %>
+              <span class="notif-badge-pill" style="top: -3px; right: -3px;">
+                <%= unreadNotificationCount > 99 ? '99+' : unreadNotificationCount %>
+              </span>
+            <% } %>
+          </a>
+        <% } %>
         <button id="theme-toggle-mobile" class="theme-toggle-btn" title="Toggle theme" aria-label="Toggle theme">
           <i class="fa-solid fa-moon theme-icon"></i>
         </button>
@@ -242,6 +344,19 @@
         </a>
 
         <% if (user) { %>
+          <a href="/notifications" class="mobile-nav-item d-flex align-items-center justify-content-between">
+            <div class="d-flex align-items-center gap-2">
+              <i class="fa-regular fa-bell text-warning"></i>
+              <span>Notifications</span>
+            </div>
+            <% if (typeof unreadNotificationCount !== 'undefined' && unreadNotificationCount > 0) { %>
+              <span class="badge bg-danger rounded-pill"><%= unreadNotificationCount %></span>
+            <% } %>
+          </a>
+          <a href="/messages" class="mobile-nav-item">
+            <i class="fa-regular fa-message text-primary"></i>
+            <span>Messages</span>
+          </a>
           <a href="/wishlist" class="mobile-nav-item">
             <i class="fa-regular fa-heart text-danger"></i>
             <span>Saved Wishlist</span>
@@ -265,9 +380,9 @@
               <span>Add New Listing</span>
             </a>
           <% } else if (user.role === 'admin') { %>
-            <a href="/dashboard/admin" class="mobile-nav-item">
+            <a href="/admin" class="mobile-nav-item">
               <i class="fa-solid fa-shield-halved text-primary"></i>
-              <span>Admin Dashboard</span>
+              <span>Admin Portal</span>
             </a>
           <% } else { %>
             <a href="/become-host" class="mobile-nav-item">

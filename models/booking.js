@@ -28,10 +28,35 @@ const bookingSchema = new Schema({
     type: Number,
     required: true,
   },
+  guests: {
+    type: Number,
+    default: 1,
+    min: 1,
+  },
   status: {
     type: String,
-    enum: ['confirmed', 'cancelled', 'completed'],
-    default: 'confirmed',
+    enum: ['pending', 'confirmed', 'cancelled', 'completed'],
+    default: 'pending',
+  },
+  paymentStatus: {
+    type: String,
+    enum: ['pending', 'paid', 'failed', 'refunded'],
+    default: 'pending',
+  },
+  razorpayOrderId: {
+    type: String,
+    default: '',
+  },
+  razorpayPaymentId: {
+    type: String,
+    default: '',
+  },
+  razorpaySignature: {
+    type: String,
+    default: '',
+  },
+  paidAt: {
+    type: Date,
   },
   createdAt: {
     type: Date,

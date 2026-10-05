@@ -55,6 +55,12 @@ router.post(
 );
 
 
+// ================== AVAILABILITY & CALENDAR ==================
+router.get("/:id/availability", wrapAsync(listingController.getAvailability));
+router.post("/:id/block-dates", isLoggedIn, isOwner, wrapAsync(listingController.blockDates));
+router.post("/:id/unblock-dates/:blockId", isLoggedIn, isOwner, wrapAsync(listingController.unblockDates));
+router.delete("/:id/blocked-dates/:blockId", isLoggedIn, isOwner, wrapAsync(listingController.unblockDates));
+
 // ================== EDIT FORM ==================
 router.get(
   "/:id/edit",

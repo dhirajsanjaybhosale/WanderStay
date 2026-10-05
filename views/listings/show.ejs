@@ -75,21 +75,33 @@
           <!-- Left Details Column -->
           <div class="col-lg-7 col-xl-8">
             <!-- Host Information Card -->
-            <div class="host-card">
-              <img
-                src="<%= (listing.owner && listing.owner.avatar) || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80' %>"
-                alt="Host avatar" class="host-avatar" />
-              <div>
-                <h5 class="fw-bold mb-1">Hosted by <%= listing.owner && (listing.owner.firstName ?
-                    (listing.owner.firstName + ' ' + listing.owner.lastName) : listing.owner.username) ?
-                    (listing.owner.firstName ? (listing.owner.firstName + ' ' + listing.owner.lastName) :
-                    listing.owner.username) : 'WanderStay Host' %>
-                </h5>
-                <div class="small text-muted">
-                  <i class="fa-solid fa-medal text-primary me-1"></i>Superhost • <%= (listing.owner &&
-                    listing.owner.bio) ? listing.owner.bio : 'Experienced host dedicated to memorable guest stays.' %>
+            <div class="host-card d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3">
+              <div class="d-flex align-items-center gap-3">
+                <img
+                  src="<%= (listing.owner && listing.owner.avatar) || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80' %>"
+                  alt="Host avatar" class="host-avatar" />
+                <div>
+                  <h5 class="fw-bold mb-1">Hosted by <%= listing.owner && (listing.owner.firstName ?
+                      (listing.owner.firstName + ' ' + listing.owner.lastName) : listing.owner.username) ?
+                      (listing.owner.firstName ? (listing.owner.firstName + ' ' + listing.owner.lastName) :
+                      listing.owner.username) : 'WanderStay Host' %>
+                  </h5>
+                  <div class="small text-muted">
+                    <i class="fa-solid fa-medal text-primary me-1"></i>Superhost • <%= (listing.owner &&
+                      listing.owner.bio) ? listing.owner.bio : 'Experienced host dedicated to memorable guest stays.' %>
+                  </div>
                 </div>
               </div>
+
+              <% if (user && listing.owner && (!user._id.equals(listing.owner._id))) { %>
+                <a href="/messages/new?listingId=<%= listing._id %>" class="btn btn-outline-primary rounded-pill px-4 text-nowrap">
+                  <i class="fa-regular fa-message me-1"></i> Contact Host
+                </a>
+              <% } else if (!user) { %>
+                <a href="/login" class="btn btn-outline-primary rounded-pill px-4 text-nowrap">
+                  <i class="fa-regular fa-message me-1"></i> Contact Host
+                </a>
+              <% } %>
             </div>
 
             <!-- Description -->
@@ -115,6 +127,138 @@
                 <div class="amenity-chip"><i class="fa-solid fa-shield-halved"></i> 24/7 Security</div>
               </div>
             </div>
+
+            <hr class="my-4" />
+
+            <!-- Availability Calendar Section -->
+            <section id="calendar-section" class="mb-4">
+              <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-2 mb-2">
+                <h4 class="fw-bold mb-0">Availability & Dates</h4>
+                <span class="badge bg-primary-subtle text-primary rounded-pill px-3 py-2 align-self-start align-self-sm-center">
+                  <i class="fa-solid fa-calendar-check me-1"></i> Live Real-Time Availability
+                </span>
+              </div>
+              <p class="text-muted small mb-3">
+                Select your travel dates directly on the interactive calendar. Already booked and host-blocked dates are protected and disabled.
+              </p>
+
+              <div class="wander-calendar-card" id="wander-calendar">
+                <div class="cal-header">
+                  <div class="cal-title-wrap">
+                    <h5 class="cal-month-title" id="cal-month-title">Calendar</h5>
+                    <span class="cal-subtitle">Click an available date to begin selection</span>
+                  </div>
+                  <div class="d-flex align-items-center gap-2">
+                    <button type="button" class="cal-nav-btn" id="cal-prev-btn" aria-label="Previous Month">
+                      <i class="fa-solid fa-chevron-left"></i>
+                    </button>
+                    <button type="button" class="cal-nav-btn" id="cal-next-btn" aria-label="Next Month">
+                      <i class="fa-solid fa-chevron-right"></i>
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Weekdays Header -->
+                <div class="cal-weekdays">
+                  <div class="cal-weekday">Su</div>
+                  <div class="cal-weekday">Mo</div>
+                  <div class="cal-weekday">Tu</div>
+                  <div class="cal-weekday">We</div>
+                  <div class="cal-weekday">Th</div>
+                  <div class="cal-weekday">Fr</div>
+                  <div class="cal-weekday">Sa</div>
+                </div>
+
+                <!-- Days Grid -->
+                <div class="cal-grid" id="cal-grid"></div>
+
+                <!-- Selection Status Bar -->
+                <div class="cal-status-bar">
+                  <div class="cal-selected-dates" id="cal-status-text">
+                    Select check-in & check-out dates on the calendar
+                  </div>
+                  <button type="button" class="cal-clear-btn" id="cal-clear-btn" style="display: none;">
+                    Clear dates
+                  </button>
+                </div>
+
+                <!-- Calendar Legend -->
+                <div class="cal-legend">
+                  <div class="cal-legend-item">
+                    <span class="cal-dot available"></span>
+                    <span>Available</span>
+                  </div>
+                  <div class="cal-legend-item">
+                    <span class="cal-dot selected"></span>
+                    <span>Selected Range</span>
+                  </div>
+                  <div class="cal-legend-item">
+                    <span class="cal-dot booked"></span>
+                    <span>Booked</span>
+                  </div>
+                  <div class="cal-legend-item">
+                    <span class="cal-dot blocked"></span>
+                    <span>Unavailable / Blocked</span>
+                  </div>
+                </div>
+
+                <!-- Host Management Section (If owner) -->
+                <% if (user && listing.owner && listing.owner._id && user._id && listing.owner._id.equals(user._id)) { %>
+                  <div class="host-cal-management">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                      <h6 class="fw-bold mb-0 text-primary">
+                        <i class="fa-solid fa-calendar-days me-1"></i> Host Date Controls & Manual Blocking
+                      </h6>
+                      <span class="badge bg-secondary-subtle text-secondary rounded-pill">Host Only</span>
+                    </div>
+
+                    <!-- Block Dates Form -->
+                    <form action="/listings/<%= listing._id %>/block-dates" method="POST" class="row g-2 align-items-end mb-3">
+                      <div class="col-md-4">
+                        <label class="form-label small fw-semibold text-muted">Start Date</label>
+                        <input type="date" name="startDate" class="form-control form-control-sm rounded-3" required />
+                      </div>
+                      <div class="col-md-4">
+                        <label class="form-label small fw-semibold text-muted">End Date</label>
+                        <input type="date" name="endDate" class="form-control form-control-sm rounded-3" required />
+                      </div>
+                      <div class="col-md-4">
+                        <label class="form-label small fw-semibold text-muted">Reason (Optional)</label>
+                        <div class="d-flex gap-2">
+                          <input type="text" name="reason" class="form-control form-control-sm rounded-3" placeholder="Maintenance / Stay" />
+                          <button type="submit" class="btn btn-sm btn-dark rounded-pill px-3 text-nowrap">
+                            <i class="fa-solid fa-lock me-1"></i> Block
+                          </button>
+                        </div>
+                      </div>
+                    </form>
+
+                    <!-- Current Blocked Dates List -->
+                    <% if (blockedDates && blockedDates.length > 0) { %>
+                      <div class="pt-2 border-top">
+                        <span class="small fw-semibold text-muted d-block mb-2">Active Host-Blocked Dates:</span>
+                        <div class="d-flex flex-wrap gap-2">
+                          <% blockedDates.forEach(b => { %>
+                            <div class="host-blocked-chip">
+                              <span>
+                                <i class="fa-solid fa-ban text-danger me-1"></i>
+                                <%= new Date(b.startDate).toLocaleDateString() %> &rarr; <%= new Date(b.endDate).toLocaleDateString() %>
+                                <% if (b.reason) { %><span class="text-muted">(<%= b.reason %>)</span><% } %>
+                              </span>
+                              <form action="/listings/<%= listing._id %>/unblock-dates/<%= b._id %>" method="POST" class="d-inline" onsubmit="return confirm('Unblock these dates?');">
+                                <button type="submit" class="btn btn-link text-danger p-0 ms-1" style="font-size: 0.75rem;" title="Unblock">
+                                  <i class="fa-solid fa-xmark"></i>
+                                </button>
+                              </form>
+                            </div>
+                          <% }) %>
+                        </div>
+                      </div>
+                    <% } %>
+                  </div>
+                <% } %>
+              </div>
+            </section>
 
             <hr class="my-4" />
 
@@ -279,9 +423,12 @@
                   </div>
                 </div>
 
-                <button type="submit" class="btn btn-primary btn-lg w-100 rounded-3 mb-3">
+                <button type="submit" class="btn btn-primary btn-lg w-100 rounded-3 mb-2">
                   <i class="fa-solid fa-bolt me-1"></i> Reserve Now
                 </button>
+                <a href="#calendar-section" class="d-block text-center small text-muted text-decoration-none mb-3">
+                  <i class="fa-regular fa-calendar-check text-primary me-1"></i> View interactive calendar
+                </a>
               </form>
 
               <!-- Price Breakdown Calculator -->
@@ -337,6 +484,11 @@
             geometry: <%- JSON.stringify(listing.geometry || { type: 'Point', coordinates: [77.2090, 28.6139] }) %>
           };
 
+          window.availabilityData = {
+            bookedRanges: <%- JSON.stringify((confirmedBookings || []).map(b => ({ checkIn: b.checkIn, checkOut: b.checkOut, nights: b.nights }))) %>,
+            blockedRanges: <%- JSON.stringify((blockedDates || []).map(b => ({ _id: b._id, startDate: b.startDate, endDate: b.endDate, reason: b.reason }))) %>
+          };
+
           // Real-time booking price calculation
           (function () {
             const checkInInput = document.getElementById('checkInDate');
@@ -346,40 +498,29 @@
             const calcBasePrice = document.getElementById('calc-base-price');
             const calcTotalPrice = document.getElementById('calc-total-price');
 
-            // Default dates: tomorrow to +3 days
-            const today = new Date();
-            const tomorrow = new Date(today);
-            tomorrow.setDate(tomorrow.getDate() + 1);
-            const dayAfter = new Date(today);
-            dayAfter.setDate(dayAfter.getDate() + 4);
-
-            checkInInput.min = tomorrow.toISOString().split('T')[0];
-            checkInInput.value = tomorrow.toISOString().split('T')[0];
-            checkOutInput.min = checkInInput.value;
-            checkOutInput.value = dayAfter.toISOString().split('T')[0];
-
             function updatePrice() {
+              if (!checkInInput || !checkOutInput || !checkInInput.value || !checkOutInput.value) return;
               const d1 = new Date(checkInInput.value);
               const d2 = new Date(checkOutInput.value);
               if (d2 > d1) {
-                const nights = Math.ceil((d2 - d1) / (1000 * 60 * 60 * 24));
+                const nights = Math.max(1, Math.round((d2 - d1) / (1000 * 60 * 60 * 24)));
                 const base = nights * pricePerNight;
                 const total = base + 1250;
-                calcNights.textContent = nights;
-                calcBasePrice.textContent = '₹ ' + base.toLocaleString('en-IN');
-                calcTotalPrice.textContent = '₹ ' + total.toLocaleString('en-IN');
+                if (calcNights) calcNights.textContent = nights;
+                if (calcBasePrice) calcBasePrice.textContent = '₹ ' + base.toLocaleString('en-IN');
+                if (calcTotalPrice) calcTotalPrice.textContent = '₹ ' + total.toLocaleString('en-IN');
               }
             }
 
-            checkInInput.addEventListener('change', () => {
-              checkOutInput.min = checkInInput.value;
-              updatePrice();
-            });
-            checkOutInput.addEventListener('change', updatePrice);
+            window.wanderUpdatePrice = updatePrice;
+
+            if (checkInInput) checkInInput.addEventListener('change', updatePrice);
+            if (checkOutInput) checkOutInput.addEventListener('change', updatePrice);
             updatePrice();
           })();
         </script>
     </div>
+    <script src="/js/calendar.js"></script>
     <script src="/js/map.js"></script>
 
 

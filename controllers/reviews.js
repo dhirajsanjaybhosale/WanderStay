@@ -1,5 +1,6 @@
 const Listing = require("../models/listing");
 const Review = require("../models/review");
+const { createNotification } = require('../utils/notificationHelper');
 
 async function updateAverageRating(listingId) {
   const listing = await Listing.findById(listingId).populate('reviews');
@@ -31,6 +32,23 @@ const createReview = async (req, res) => {
   await listing.save();
 
   await updateAverageRating(listing._id);
+
+  // Dispatch in-app notification to host if not self-review
+  if (listing.owner && !listing.owner.equals(req.user._id)) {
+    const commenterName = req.user.firstName || req.user.username || 'A traveler';
+    const commentSnippet = (newReview.comment || '').length > 50
+      ? (newReview.comment || '').slice(0, 47) + '...'
+      : (newReview.comment || '');
+
+    createNotification({
+      userId: listing.owner,
+      type: 'review_received',
+      title: 'New Review Received',
+      message: `${commenterName} rated "${listing.title}" ${newReview.rating}★: "${commentSnippet}"`,
+      link: `/listings/${listing._id}`
+    });
+  }
+
   req.flash("success", "New Review Created!");
   res.redirect(`/listings/${listing._id}`);
 };
