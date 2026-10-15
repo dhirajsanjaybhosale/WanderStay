@@ -66,7 +66,20 @@
         <div class="d-flex flex-wrap align-items-center justify-content-center justify-content-md-start gap-2 mb-2">
           <h1 class="profile-user-fullname mb-0"><%= user.fullName || user.username %></h1>
           <% if (user.role === 'host') { %>
-            <span class="badge-role-lux role-host"><i class="fa-solid fa-award me-1"></i>Verified Host</span>
+            <% if (user.superhost && user.superhost.isSuperhost) { %>
+              <span class="badge-superhost" data-bs-toggle="tooltip" data-bs-placement="top" title="<%= user.superhost.badgeReason || '⭐ Superhost: High average rating, low cancellation rate, and verified booking completion.' %>">
+                ⭐ Superhost
+              </span>
+            <% } %>
+            <% if (user.hostVerification && user.hostVerification.status === 'verified') { %>
+              <span class="badge-verified-host"><i class="fa-solid fa-circle-check"></i> ✓ Verified Host</span>
+            <% } else if (user.hostVerification && user.hostVerification.status === 'pending') { %>
+              <span class="badge-pending-host"><i class="fa-solid fa-clock"></i> Verification Pending</span>
+            <% } else if (user.hostVerification && user.hostVerification.status === 'rejected') { %>
+              <span class="badge-rejected-host"><i class="fa-solid fa-triangle-exclamation"></i> Verification Rejected</span>
+            <% } else { %>
+              <span class="badge-role-lux role-host"><i class="fa-solid fa-house-chimney me-1"></i>Host</span>
+            <% } %>
           <% } else if (user.role === 'admin') { %>
             <span class="badge-role-lux role-admin"><i class="fa-solid fa-shield-halved me-1"></i>Administrator</span>
           <% } else { %>
@@ -139,61 +152,61 @@
         <ul class="nav flex-column profile-nav-pills gap-1">
           <li class="nav-item">
             <a class="nav-link profile-nav-link active" href="#personal-details" id="navLinkDetails">
-              <i class="fa-regular fa-id-card me-2"></i>Personal Details
+              <i class="fa-regular fa-id-card me-2"></i><%= t('profile.personalDetails') %>
             </a>
           </li>
           <li class="nav-item">
             <a class="nav-link profile-nav-link" href="#account-info" id="navLinkAccount">
-              <i class="fa-solid fa-shield-halved me-2"></i>Account Information
+              <i class="fa-solid fa-shield-halved me-2"></i><%= t('profile.accountInfo') %>
             </a>
           </li>
           <li class="nav-item">
             <a class="nav-link profile-nav-link" href="#security" id="navLinkSecurity">
-              <i class="fa-solid fa-lock me-2"></i>Login & Security
+              <i class="fa-solid fa-lock me-2"></i><%= t('nav.accountSettings') %>
             </a>
           </li>
           <li class="nav-item my-2 border-top"></li>
           <li class="nav-item">
             <a class="nav-link profile-nav-link" href="/trips">
-              <i class="fa-solid fa-plane-departure me-2"></i>My Trips
+              <i class="fa-solid fa-plane-departure me-2"></i><%= t('nav.trips') %>
               <span class="badge bg-light text-dark rounded-pill ms-auto"><%= stats.bookings %></span>
             </a>
           </li>
           <li class="nav-item">
             <a class="nav-link profile-nav-link" href="/wishlist">
-              <i class="fa-regular fa-heart me-2"></i>Wishlist
+              <i class="fa-regular fa-heart me-2"></i><%= t('nav.wishlist') %>
               <span class="badge bg-light text-dark rounded-pill ms-auto"><%= stats.wishlist %></span>
             </a>
           </li>
           <li class="nav-item">
             <a class="nav-link profile-nav-link" href="/bookings/history">
-              <i class="fa-solid fa-suitcase me-2"></i>Bookings History
+              <i class="fa-solid fa-suitcase me-2"></i><%= t('nav.myBookings') %>
             </a>
           </li>
           <% if (user.role === 'host') { %>
             <li class="nav-item">
               <a class="nav-link profile-nav-link text-success" href="/dashboard/host">
-                <i class="fa-solid fa-house-chimney-user me-2"></i>Host Dashboard
-                <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill ms-auto"><%= stats.properties %> Stays</span>
+                <i class="fa-solid fa-house-chimney-user me-2"></i><%= t('nav.hostDashboard') %>
+                <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill ms-auto"><%= stats.properties %> <%= t('profile.listings') %></span>
               </a>
             </li>
           <% } else if (user.role === 'admin') { %>
             <li class="nav-item">
               <a class="nav-link profile-nav-link text-primary" href="/dashboard/admin">
-                <i class="fa-solid fa-gauge-high me-2"></i>Admin Panel
+                <i class="fa-solid fa-gauge-high me-2"></i><%= t('nav.adminPortal') %>
               </a>
             </li>
           <% } else { %>
             <li class="nav-item">
               <a class="nav-link profile-nav-link" href="/become-host">
-                <i class="fa-solid fa-house-flag me-2"></i>Host with Us
+                <i class="fa-solid fa-house-flag me-2"></i><%= t('nav.becomeHost') %>
               </a>
             </li>
           <% } %>
           <li class="nav-item my-2 border-top"></li>
           <li class="nav-item">
             <a class="nav-link profile-nav-link text-danger" href="/logout">
-              <i class="fa-solid fa-arrow-right-from-bracket me-2"></i>Log out
+              <i class="fa-solid fa-arrow-right-from-bracket me-2"></i><%= t('nav.logout') %>
             </a>
           </li>
         </ul>
@@ -202,25 +215,25 @@
       <!-- Quick Profile Stats Widget -->
       <div class="glass-card p-3 mb-4">
         <h6 class="fw-bold mb-3 d-flex align-items-center">
-          <i class="fa-solid fa-chart-pie text-primary me-2"></i>Travel Activity
+          <i class="fa-solid fa-chart-pie text-primary me-2"></i><%= t('profile.travelActivity') %>
         </h6>
         <div class="row g-2 text-center">
           <div class="col-4">
             <div class="p-2 rounded-3 bg-body-tertiary">
               <div class="fs-5 fw-bold text-primary"><%= stats.bookings %></div>
-              <div class="small text-muted" style="font-size: 0.72rem;">Trips</div>
+              <div class="small text-muted" style="font-size: 0.72rem;"><%= t('profile.trips') %></div>
             </div>
           </div>
           <div class="col-4">
             <div class="p-2 rounded-3 bg-body-tertiary">
               <div class="fs-5 fw-bold text-danger"><%= stats.wishlist %></div>
-              <div class="small text-muted" style="font-size: 0.72rem;">Saved</div>
+              <div class="small text-muted" style="font-size: 0.72rem;"><%= t('profile.saved') %></div>
             </div>
           </div>
           <div class="col-4">
             <div class="p-2 rounded-3 bg-body-tertiary">
               <div class="fs-5 fw-bold text-success"><%= stats.properties %></div>
-              <div class="small text-muted" style="font-size: 0.72rem;">Listings</div>
+              <div class="small text-muted" style="font-size: 0.72rem;"><%= t('profile.listings') %></div>
             </div>
           </div>
         </div>
@@ -236,12 +249,12 @@
           <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4 pb-3 border-bottom">
             <div>
               <h3 class="fw-bold mb-1 d-flex align-items-center gap-2">
-                <i class="fa-solid fa-address-card text-primary"></i>Personal Details
+                <i class="fa-solid fa-address-card text-primary"></i><%= t('profile.personalDetails') %>
               </h3>
-              <p class="text-muted small mb-0">Manage your personal information and contact details</p>
+              <p class="text-muted small mb-0"><%= t('profile.managePersonalInfo') %></p>
             </div>
             <button type="button" class="btn btn-outline-primary rounded-pill px-4 btn-sm" id="editProfileToggleBtn">
-              <i class="fa-solid fa-pen-to-square me-1"></i><span id="editBtnLabel">Edit Profile</span>
+              <i class="fa-solid fa-pen-to-square me-1"></i><span id="editBtnLabel"><%= t('profile.editProfile') %></span>
             </button>
           </div>
 
@@ -250,14 +263,14 @@
             <div class="row g-4">
               <div class="col-md-6">
                 <div class="profile-field-item">
-                  <span class="profile-field-label"><i class="fa-regular fa-user me-1 text-muted"></i>Full Name</span>
+                  <span class="profile-field-label"><i class="fa-regular fa-user me-1 text-muted"></i><%= t('forms.fullName') %></span>
                   <div class="profile-field-value"><%= user.fullName || 'Not provided' %></div>
                 </div>
               </div>
 
               <div class="col-md-6">
                 <div class="profile-field-item">
-                  <span class="profile-field-label"><i class="fa-regular fa-envelope me-1 text-muted"></i>Email Address</span>
+                  <span class="profile-field-label"><i class="fa-regular fa-envelope me-1 text-muted"></i><%= t('forms.email') %></span>
                   <div class="profile-field-value d-flex align-items-center gap-2">
                     <%= user.email %>
                     <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill small" style="font-size: 0.65rem;">Verified</span>
@@ -267,14 +280,14 @@
 
               <div class="col-md-6">
                 <div class="profile-field-item">
-                  <span class="profile-field-label"><i class="fa-solid fa-phone me-1 text-muted"></i>Phone Number</span>
+                  <span class="profile-field-label"><i class="fa-solid fa-phone me-1 text-muted"></i><%= t('forms.phone') %></span>
                   <div class="profile-field-value"><%= user.phone || 'Not provided' %></div>
                 </div>
               </div>
 
               <div class="col-md-6">
                 <div class="profile-field-item">
-                  <span class="profile-field-label"><i class="fa-regular fa-calendar me-1 text-muted"></i>Date of Birth</span>
+                  <span class="profile-field-label"><i class="fa-regular fa-calendar me-1 text-muted"></i><%= t('forms.dateOfBirth') %></span>
                   <div class="profile-field-value">
                     <% if (user.dateOfBirth) { %>
                       <%= new Intl.DateTimeFormat('en-US', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(user.dateOfBirth)) %>
@@ -287,28 +300,50 @@
 
               <div class="col-md-6">
                 <div class="profile-field-item">
-                  <span class="profile-field-label"><i class="fa-solid fa-venus-mars me-1 text-muted"></i>Gender</span>
+                  <span class="profile-field-label"><i class="fa-solid fa-venus-mars me-1 text-muted"></i><%= t('forms.gender') %></span>
                   <div class="profile-field-value text-capitalize"><%= user.gender || 'Not specified' %></div>
                 </div>
               </div>
 
               <div class="col-md-6">
                 <div class="profile-field-item">
-                  <span class="profile-field-label"><i class="fa-solid fa-earth-americas me-1 text-muted"></i>Country</span>
+                  <span class="profile-field-label"><i class="fa-solid fa-earth-americas me-1 text-muted"></i><%= t('forms.country') %></span>
                   <div class="profile-field-value"><%= user.country || 'Not specified' %></div>
                 </div>
               </div>
 
               <div class="col-md-6">
                 <div class="profile-field-item">
-                  <span class="profile-field-label"><i class="fa-solid fa-city me-1 text-muted"></i>City</span>
+                  <span class="profile-field-label"><i class="fa-solid fa-city me-1 text-muted"></i><%= t('forms.city') %></span>
                   <div class="profile-field-value"><%= user.city || 'Not specified' %></div>
+                </div>
+              </div>
+
+              <div class="col-md-6">
+                <div class="profile-field-item">
+                  <span class="profile-field-label"><i class="fa-solid fa-globe me-1 text-muted"></i><%= t('profile.languagePreference') %></span>
+                  <div class="profile-field-value">
+                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-3 py-1">
+                      <%= (user.preferredLanguage === 'hi' ? 'हिंदी (Hindi)' : (user.preferredLanguage === 'mr' ? 'मराठी (Marathi)' : 'English (EN)')) %>
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="col-md-6">
+                <div class="profile-field-item">
+                  <span class="profile-field-label"><i class="fa-solid fa-coins me-1 text-muted"></i><%= t('currency.currency') || 'Currency' %></span>
+                  <div class="profile-field-value">
+                    <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3 py-1">
+                      <%= (user.preferredCurrency === 'USD' ? '$ USD - US Dollar' : (user.preferredCurrency === 'EUR' ? '€ EUR - Euro' : (user.preferredCurrency === 'GBP' ? '£ GBP - British Pound' : '₹ INR - Indian Rupee (Base)'))) %>
+                    </span>
+                  </div>
                 </div>
               </div>
 
               <div class="col-12">
                 <div class="profile-field-item">
-                  <span class="profile-field-label"><i class="fa-regular fa-comment-dots me-1 text-muted"></i>Bio</span>
+                  <span class="profile-field-label"><i class="fa-regular fa-comment-dots me-1 text-muted"></i><%= t('forms.bio') %></span>
                   <div class="profile-field-value bio-text-block">
                     <%= user.bio ? user.bio : 'Tell other travelers and hosts about yourself, favorite destinations, and travel passions...' %>
                   </div>
@@ -327,7 +362,7 @@
           >
             <div class="row g-3">
               <div class="col-md-6">
-                <label for="firstName" class="form-label">First Name</label>
+                <label for="firstName" class="form-label"><%= t('forms.firstName') %></label>
                 <div class="input-group">
                   <span class="input-group-text bg-body-tertiary border-end-0"><i class="fa-regular fa-user text-muted"></i></span>
                   <input 
@@ -343,7 +378,7 @@
               </div>
 
               <div class="col-md-6">
-                <label for="lastName" class="form-label">Last Name</label>
+                <label for="lastName" class="form-label"><%= t('forms.lastName') %></label>
                 <div class="input-group">
                   <span class="input-group-text bg-body-tertiary border-end-0"><i class="fa-regular fa-user text-muted"></i></span>
                   <input 
@@ -359,7 +394,7 @@
               </div>
 
               <div class="col-md-6">
-                <label for="emailDisplay" class="form-label">Email Address</label>
+                <label for="emailDisplay" class="form-label"><%= t('forms.email') %></label>
                 <div class="input-group">
                   <span class="input-group-text bg-body-tertiary border-end-0"><i class="fa-regular fa-envelope text-muted"></i></span>
                   <input 
@@ -375,7 +410,7 @@
               </div>
 
               <div class="col-md-6">
-                <label for="phone" class="form-label">Phone Number</label>
+                <label for="phone" class="form-label"><%= t('forms.phone') %></label>
                 <div class="input-group">
                   <span class="input-group-text bg-body-tertiary border-end-0"><i class="fa-solid fa-phone text-muted"></i></span>
                   <input 
@@ -391,7 +426,7 @@
               </div>
 
               <div class="col-md-4">
-                <label for="dateOfBirth" class="form-label">Date of Birth</label>
+                <label for="dateOfBirth" class="form-label"><%= t('forms.dateOfBirth') %></label>
                 <div class="input-group">
                   <span class="input-group-text bg-body-tertiary border-end-0"><i class="fa-regular fa-calendar text-muted"></i></span>
                   <input 
@@ -405,7 +440,7 @@
               </div>
 
               <div class="col-md-4">
-                <label for="gender" class="form-label">Gender</label>
+                <label for="gender" class="form-label"><%= t('forms.gender') %></label>
                 <div class="input-group">
                   <span class="input-group-text bg-body-tertiary border-end-0"><i class="fa-solid fa-venus-mars text-muted"></i></span>
                   <select class="form-select border-start-0" id="gender" name="gender">
@@ -419,7 +454,7 @@
               </div>
 
               <div class="col-md-4">
-                <label for="city" class="form-label">City</label>
+                <label for="city" class="form-label"><%= t('forms.city') %></label>
                 <div class="input-group">
                   <span class="input-group-text bg-body-tertiary border-end-0"><i class="fa-solid fa-city text-muted"></i></span>
                   <input 
@@ -434,7 +469,7 @@
               </div>
 
               <div class="col-md-6">
-                <label for="country" class="form-label">Country</label>
+                <label for="country" class="form-label"><%= t('forms.country') %></label>
                 <div class="input-group">
                   <span class="input-group-text bg-body-tertiary border-end-0"><i class="fa-solid fa-earth-americas text-muted"></i></span>
                   <input 
@@ -448,14 +483,41 @@
                 </div>
               </div>
 
+              <div class="col-md-6">
+                <label for="preferredLanguage" class="form-label"><i class="fa-solid fa-globe text-primary me-1"></i><%= t('profile.languagePreference') %></label>
+                <div class="input-group">
+                  <span class="input-group-text bg-body-tertiary border-end-0"><i class="fa-solid fa-language text-muted"></i></span>
+                  <select class="form-select border-start-0" id="preferredLanguage" name="preferredLanguage">
+                    <option value="en" <%= (user.preferredLanguage === 'en' || !user.preferredLanguage) ? 'selected' : '' %>>English (EN)</option>
+                    <option value="hi" <%= user.preferredLanguage === 'hi' ? 'selected' : '' %>>हिंदी (Hindi)</option>
+                    <option value="mr" <%= user.preferredLanguage === 'mr' ? 'selected' : '' %>>मराठी (Marathi)</option>
+                  </select>
+                </div>
+                <div class="form-text small text-muted"><%= t('profile.selectLanguage') %></div>
+              </div>
+
+              <div class="col-md-6">
+                <label for="preferredCurrency" class="form-label"><i class="fa-solid fa-coins text-success me-1"></i><%= t('currency.currency') || 'Currency Preference' %></label>
+                <div class="input-group">
+                  <span class="input-group-text bg-body-tertiary border-end-0"><i class="fa-solid fa-money-bill-wave text-muted"></i></span>
+                  <select class="form-select border-start-0" id="preferredCurrency" name="preferredCurrency">
+                    <option value="INR" <%= (user.preferredCurrency === 'INR' || !user.preferredCurrency) ? 'selected' : '' %>>₹ INR - Indian Rupee (Base)</option>
+                    <option value="USD" <%= user.preferredCurrency === 'USD' ? 'selected' : '' %>>$ USD - US Dollar</option>
+                    <option value="EUR" <%= user.preferredCurrency === 'EUR' ? 'selected' : '' %>>€ EUR - Euro</option>
+                    <option value="GBP" <%= user.preferredCurrency === 'GBP' ? 'selected' : '' %>>£ GBP - British Pound</option>
+                  </select>
+                </div>
+                <div class="form-text small text-muted">Prices are displayed in your chosen currency; bookings are charged in INR.</div>
+              </div>
+
               <div class="col-12">
-                <label for="bio" class="form-label">Bio / About You</label>
+                <label for="bio" class="form-label"><%= t('forms.bio') %></label>
                 <textarea 
                   class="form-control" 
                   id="bio" 
                   name="bio" 
                   rows="3" 
-                  placeholder="Tell us about yourself, your favorite travel styles, and what you love most about exploring..."
+                  placeholder="Tell us about yourself, your favorite travel styles, and what you love most about exploring..." 
                   maxlength="500"
                 ><%= user.bio || '' %></textarea>
                 <div class="d-flex justify-content-between form-text small text-muted">
@@ -465,9 +527,9 @@
               </div>
 
               <div class="col-12 d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
-                <button type="button" class="btn btn-outline-secondary rounded-pill px-4" id="cancelEditProfileBtn">Cancel</button>
+                <button type="button" class="btn btn-outline-secondary rounded-pill px-4" id="cancelEditProfileBtn"><%= t('buttons.cancel') %></button>
                 <button type="submit" class="btn btn-primary rounded-pill px-4">
-                  <i class="fa-solid fa-check me-1"></i>Save Changes
+                  <i class="fa-solid fa-check me-1"></i><%= t('buttons.saveChanges') %>
                 </button>
               </div>
             </div>
@@ -480,15 +542,15 @@
         <div class="glass-card p-4 p-md-5">
           <div class="mb-4 pb-3 border-bottom">
             <h3 class="fw-bold mb-1 d-flex align-items-center gap-2">
-              <i class="fa-solid fa-shield-cat text-primary"></i>Account Information
+              <i class="fa-solid fa-shield-cat text-primary"></i><%= t('profile.accountInfo') %>
             </h3>
-            <p class="text-muted small mb-0">Overview of your WanderStay membership details and verification status</p>
+            <p class="text-muted small mb-0"><%= t('profile.accountInfoDesc') %></p>
           </div>
 
           <div class="row g-4">
             <div class="col-md-6">
               <div class="account-spec-box p-3 rounded-4 bg-body-tertiary">
-                <div class="small text-muted fw-bold mb-1">ACCOUNT TYPE</div>
+                <div class="small text-muted fw-bold mb-1"><%= t('profile.accountType').toUpperCase() %></div>
                 <div class="d-flex align-items-center justify-content-between">
                   <span class="fs-5 fw-bold text-capitalize"><%= user.role %> Account</span>
                   <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill">Active</span>
@@ -507,7 +569,7 @@
 
             <div class="col-md-6">
               <div class="account-spec-box p-3 rounded-4 bg-body-tertiary">
-                <div class="small text-muted fw-bold mb-1">MEMBER SINCE</div>
+                <div class="small text-muted fw-bold mb-1"><%= t('profile.memberSince').toUpperCase() %></div>
                 <div class="fs-5 fw-bold"><%= user.memberSince %></div>
                 <div class="small text-muted mt-2">
                   <i class="fa-solid fa-circle-check text-success me-1"></i>Account registered and confirmed
@@ -517,23 +579,98 @@
 
             <div class="col-md-6">
               <div class="account-spec-box p-3 rounded-4 bg-body-tertiary">
-                <div class="small text-muted fw-bold mb-1">VERIFICATION STATUS</div>
-                <div class="d-flex align-items-center gap-2">
-                  <i class="fa-solid fa-certificate text-primary fs-5"></i>
-                  <span class="fs-6 fw-bold">Verified WanderStay Member</span>
-                </div>
-                <div class="small text-muted mt-2">Email verified: <%= user.email %></div>
+                <div class="small text-muted fw-bold mb-1"><%= t('profile.verificationStatus').toUpperCase() %></div>
+                <% if (user.role === 'host') { %>
+                  <% if (user.hostVerification && user.hostVerification.status === 'verified') { %>
+                    <div class="d-flex align-items-center gap-2">
+                      <i class="fa-solid fa-circle-check text-success fs-5"></i>
+                      <span class="fs-6 fw-bold text-success">✓ Verified Host</span>
+                    </div>
+                    <div class="small text-muted mt-2">Identity verified by WanderStay Administration</div>
+                  <% } else if (user.hostVerification && user.hostVerification.status === 'pending') { %>
+                    <div class="d-flex align-items-center gap-2">
+                      <i class="fa-solid fa-hourglass-half text-warning fs-5"></i>
+                      <span class="fs-6 fw-bold text-warning">Verification In Review</span>
+                    </div>
+                    <div class="small text-muted mt-2">Submitted on <%= user.hostVerification.submittedAt ? new Date(user.hostVerification.submittedAt).toLocaleDateString() : 'recently' %></div>
+                  <% } else if (user.hostVerification && user.hostVerification.status === 'rejected') { %>
+                    <div class="d-flex align-items-center gap-2">
+                      <i class="fa-solid fa-triangle-exclamation text-danger fs-5"></i>
+                      <span class="fs-6 fw-bold text-danger">Verification Rejected</span>
+                    </div>
+                    <div class="small text-danger mt-2"><%= user.hostVerification.rejectionReason || 'Please resubmit your documents' %></div>
+                  <% } else { %>
+                    <div class="d-flex align-items-center gap-2">
+                      <i class="fa-solid fa-shield-halved text-muted fs-5"></i>
+                      <span class="fs-6 fw-bold">Unverified Host</span>
+                    </div>
+                    <div class="small text-muted mt-2">
+                      <a href="/dashboard/host#verification-section" class="text-primary fw-semibold text-decoration-none">
+                        Submit verification in Host Dashboard &rarr;
+                      </a>
+                    </div>
+                  <% } %>
+                <% } else { %>
+                  <div class="d-flex align-items-center gap-2">
+                    <i class="fa-solid fa-certificate text-primary fs-5"></i>
+                    <span class="fs-6 fw-bold">Verified WanderStay Member</span>
+                  </div>
+                  <div class="small text-muted mt-2">Email verified: <%= user.email %></div>
+                <% } %>
               </div>
             </div>
 
+            <% if (user.role === 'host') { %>
+              <div class="col-md-6">
+                <div class="account-spec-box p-3 rounded-4 bg-body-tertiary">
+                  <div class="small text-muted fw-bold mb-1">SUPERHOST RECOGNITION</div>
+                  <% if (user.superhost && user.superhost.isSuperhost) { %>
+                    <div class="d-flex align-items-center gap-2">
+                      <span class="badge-superhost badge-superhost-lg" data-bs-toggle="tooltip" data-bs-placement="top" title="<%= user.superhost.badgeReason || '⭐ Superhost: Stellar ratings, low cancellations, and exceptional guest hospitality.' %>">
+                        ⭐ Superhost
+                      </span>
+                    </div>
+                    <div class="small text-muted mt-2">
+                      <%= user.superhost.metrics ? `${user.superhost.metrics.completedBookings || 0} completed stays • ${user.superhost.metrics.averageRating || 0}★ rating • ${user.superhost.metrics.cancellationRate || 0}% cancellations` : 'Demonstrates exceptional hospitality and stellar guest feedback.' %>
+                    </div>
+                  <% } else { %>
+                    <div class="d-flex align-items-center gap-2">
+                      <i class="fa-regular fa-star text-muted fs-5"></i>
+                      <span class="fs-6 fw-bold text-muted">Standard Host</span>
+                    </div>
+                    <div class="small text-muted mt-2">
+                      <a href="/dashboard/host#superhost-section" class="text-primary fw-semibold text-decoration-none">
+                        Check Superhost progress in Host Dashboard &rarr;
+                      </a>
+                    </div>
+                  <% } %>
+                </div>
+              </div>
+            <% } %>
+
             <div class="col-md-6">
               <div class="account-spec-box p-3 rounded-4 bg-body-tertiary">
-                <div class="small text-muted fw-bold mb-1">SECURITY HEALTH</div>
+                <div class="small text-muted fw-bold mb-1"><%= t('profile.securityHealth').toUpperCase() %></div>
                 <div class="d-flex align-items-center gap-2">
                   <i class="fa-solid fa-lock text-success fs-5"></i>
                   <span class="fs-6 fw-bold">Password Protected</span>
                 </div>
                 <div class="small text-muted mt-2">Encrypted with industry-standard bcrypt hashing.</div>
+              </div>
+            </div>
+
+            <div class="col-md-6">
+              <div class="account-spec-box p-3 rounded-4 bg-body-tertiary">
+                <div class="small text-muted fw-bold mb-1"><%= t('profile.languagePreference').toUpperCase() %></div>
+                <div class="d-flex align-items-center justify-content-between">
+                  <span class="fs-6 fw-bold"><i class="fa-solid fa-globe text-primary me-1"></i><%= (currentLang === 'hi' ? 'हिंदी (Hindi)' : (currentLang === 'mr' ? 'मराठी (Marathi)' : 'English (EN)')) %></span>
+                  <div class="btn-group btn-group-sm">
+                    <a href="/set-language?lang=en&returnUrl=/profile" class="btn <%= currentLang === 'en' ? 'btn-primary' : 'btn-outline-secondary' %> btn-xs py-0 px-2 rounded-start-pill">EN</a>
+                    <a href="/set-language?lang=hi&returnUrl=/profile" class="btn <%= currentLang === 'hi' ? 'btn-primary' : 'btn-outline-secondary' %> btn-xs py-0 px-2">हिंदी</a>
+                    <a href="/set-language?lang=mr&returnUrl=/profile" class="btn <%= currentLang === 'mr' ? 'btn-primary' : 'btn-outline-secondary' %> btn-xs py-0 px-2 rounded-end-pill">मराठी</a>
+                  </div>
+                </div>
+                <div class="small text-muted mt-2"><%= t('profile.selectLanguage') %></div>
               </div>
             </div>
           </div>

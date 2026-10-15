@@ -1,0 +1,276 @@
+<% 
+  const prefix = typeof idPrefix !== 'undefined' ? idPrefix : 'filter';
+  const fId = typeof formId !== 'undefined' ? formId : 'filterForm';
+  const selAms = (typeof selectedAmenities !== 'undefined' && Array.isArray(selectedAmenities)) ? selectedAmenities : [];
+  const amList = (typeof allAmenities !== 'undefined' && Array.isArray(allAmenities)) ? allAmenities : [];
+  const catList = (typeof categories !== 'undefined' && Array.isArray(categories)) ? categories : [];
+  const propList = (typeof propertyTypes !== 'undefined' && Array.isArray(propertyTypes)) ? propertyTypes : [];
+%>
+
+<form id="<%= fId %>" action="/listings" method="GET" class="filter-form-inner">
+  <!-- Retain current sort & reset page to 1 on filter submission -->
+  <input type="hidden" name="sortBy" value="<%= typeof sortBy !== 'undefined' ? sortBy : 'recommended' %>">
+
+  <!-- Destination / Keyword -->
+  <div class="filter-section">
+    <label for="<%= prefix %>-dest" class="filter-section-title">
+      <span><i class="fa-solid fa-location-dot text-primary me-1"></i> <%= t('search.destination') %></span>
+    </label>
+    <div class="input-group input-group-sm">
+      <span class="input-group-text bg-body-tertiary border-end-0 text-muted">
+        <i class="fa-solid fa-magnifying-glass"></i>
+      </span>
+      <input 
+        type="search" 
+        name="q" 
+        id="<%= prefix %>-dest" 
+        class="form-control border-start-0" 
+        placeholder="<%= t('search.cityPlaceholder') %>" 
+        value="<%= typeof searchQuery !== 'undefined' ? searchQuery : '' %>"
+        autocomplete="off"
+      />
+    </div>
+  </div>
+
+  <!-- Category -->
+  <div class="filter-section">
+    <label for="<%= prefix %>-cat" class="filter-section-title">
+      <span><i class="fa-solid fa-compass text-primary me-1"></i> <%= t('filters.allCategories') %></span>
+      <% if (currentCategory) { %>
+        <span class="badge bg-primary-subtle text-primary rounded-pill small">Selected</span>
+      <% } %>
+    </label>
+    <select name="category" id="<%= prefix %>-cat" class="form-select form-select-sm">
+      <option value=""><%= t('filters.allCategories') %></option>
+      <% catList.forEach(c => { %>
+        <option value="<%= c %>" <%= currentCategory === c ? 'selected' : '' %>><%= c %></option>
+      <% }) %>
+    </select>
+  </div>
+
+  <!-- Price Range -->
+  <div class="filter-section">
+    <div class="filter-section-title">
+      <span><i class="fa-solid fa-tag text-primary me-1"></i> <%= t('filters.priceRange') %></span>
+    </div>
+    <div class="filter-price-grid">
+      <div class="filter-price-box">
+        <label for="<%= prefix %>-minPrice"><%= t('filters.minPrice') %></label>
+        <div class="filter-price-input-wrap">
+          <span class="filter-price-currency">&#8377;</span>
+          <input 
+            type="number" 
+            name="minPrice" 
+            id="<%= prefix %>-minPrice" 
+            class="filter-price-input" 
+            placeholder="<%= dbMinPrice || 500 %>" 
+            value="<%= minPrice || '' %>"
+            min="0"
+            step="100"
+          />
+        </div>
+      </div>
+      <div class="filter-price-box">
+        <label for="<%= prefix %>-maxPrice"><%= t('filters.maxPrice') %></label>
+        <div class="filter-price-input-wrap">
+          <span class="filter-price-currency">&#8377;</span>
+          <input 
+            type="number" 
+            name="maxPrice" 
+            id="<%= prefix %>-maxPrice" 
+            class="filter-price-input" 
+            placeholder="<%= dbMaxPrice || 25000 %>" 
+            value="<%= maxPrice || '' %>"
+            min="0"
+            step="500"
+          />
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Minimum Guest Rating -->
+  <div class="filter-section">
+    <div class="filter-section-title">
+      <span><i class="fa-solid fa-star text-warning me-1"></i> <%= t('filters.minRating') %></span>
+    </div>
+    <input type="hidden" name="minRating" id="<%= prefix %>-minRating" value="<%= minRating || '' %>">
+    <div class="filter-rating-pill-group">
+      <button 
+        type="button" 
+        class="filter-rating-btn rating-btn-select <%= !minRating ? 'active' : '' %>" 
+        data-val="" 
+        data-target="<%= prefix %>-minRating"
+      ><%= t('filters.anyRating') %></button>
+      <button 
+        type="button" 
+        class="filter-rating-btn rating-btn-select <%= minRating === '4' ? 'active' : '' %>" 
+        data-val="4" 
+        data-target="<%= prefix %>-minRating"
+      >4.0+ <i class="fa-solid fa-star text-warning small"></i></button>
+      <button 
+        type="button" 
+        class="filter-rating-btn rating-btn-select <%= minRating === '4.5' ? 'active' : '' %>" 
+        data-val="4.5" 
+        data-target="<%= prefix %>-minRating"
+      >4.5+ <i class="fa-solid fa-star text-warning small"></i></button>
+      <button 
+        type="button" 
+        class="filter-rating-btn rating-btn-select <%= minRating === '4.8' ? 'active' : '' %>" 
+        data-val="4.8" 
+        data-target="<%= prefix %>-minRating"
+      >4.8+ <i class="fa-solid fa-star text-warning small"></i></button>
+    </div>
+  </div>
+
+  <!-- Rooms & Capacity (Guests, Bedrooms, Bathrooms) -->
+  <div class="filter-section">
+    <div class="filter-section-title">
+      <span><i class="fa-solid fa-people-roof text-primary me-1"></i> <%= t('search.guests') %></span>
+    </div>
+
+    <!-- Guests -->
+    <div class="filter-counter-row">
+      <div class="filter-counter-label">
+        <i class="fa-solid fa-user-group me-1.5 text-muted"></i><%= t('search.guests') %>
+      </div>
+      <select name="guests" class="filter-counter-select">
+        <option value="" <%= !guests ? 'selected' : '' %>><%= t('filters.anyRating') %></option>
+        <option value="1" <%= guests === '1' ? 'selected' : '' %>>1+ <%= t('search.guests') %></option>
+        <option value="2" <%= guests === '2' ? 'selected' : '' %>>2+ <%= t('search.guests') %></option>
+        <option value="4" <%= guests === '4' ? 'selected' : '' %>>4+ <%= t('search.guests') %></option>
+        <option value="6" <%= guests === '6' ? 'selected' : '' %>>6+ <%= t('search.guests') %></option>
+        <option value="8" <%= guests === '8' ? 'selected' : '' %>>8+ <%= t('search.guests') %></option>
+      </select>
+    </div>
+
+    <!-- Bedrooms -->
+    <div class="filter-counter-row">
+      <div class="filter-counter-label">
+        <i class="fa-solid fa-bed me-1.5 text-muted"></i>Bedrooms
+      </div>
+      <select name="bedrooms" class="filter-counter-select">
+        <option value="" <%= !bedrooms ? 'selected' : '' %>><%= t('filters.anyRating') %></option>
+        <option value="1" <%= bedrooms === '1' ? 'selected' : '' %>>1+ Bed</option>
+        <option value="2" <%= bedrooms === '2' ? 'selected' : '' %>>2+ Beds</option>
+        <option value="3" <%= bedrooms === '3' ? 'selected' : '' %>>3+ Beds</option>
+        <option value="4" <%= bedrooms === '4' ? 'selected' : '' %>>4+ Beds</option>
+      </select>
+    </div>
+
+    <!-- Bathrooms -->
+    <div class="filter-counter-row">
+      <div class="filter-counter-label">
+        <i class="fa-solid fa-bath me-1.5 text-muted"></i>Bathrooms
+      </div>
+      <select name="bathrooms" class="filter-counter-select">
+        <option value="" <%= !bathrooms ? 'selected' : '' %>><%= t('filters.anyRating') %></option>
+        <option value="1" <%= bathrooms === '1' ? 'selected' : '' %>>1+ Bath</option>
+        <option value="2" <%= bathrooms === '2' ? 'selected' : '' %>>2+ Baths</option>
+        <option value="3" <%= bathrooms === '3' ? 'selected' : '' %>>3+ Baths</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Property Type -->
+  <div class="filter-section">
+    <label for="<%= prefix %>-propType" class="filter-section-title">
+      <span><i class="fa-solid fa-hotel text-primary me-1"></i> <%= t('filters.propertyType') %></span>
+    </label>
+    <select name="propertyType" id="<%= prefix %>-propType" class="form-select form-select-sm">
+      <option value=""><%= t('filters.allPropertyTypes') %></option>
+      <% propList.forEach(pt => { %>
+        <option value="<%= pt %>" <%= propertyType === pt ? 'selected' : '' %>><%= pt %></option>
+      <% }) %>
+    </select>
+  </div>
+
+  <!-- Trust & Booking Options -->
+  <div class="filter-section">
+    <div class="filter-section-title">
+      <span><i class="fa-solid fa-shield-halved text-success me-1"></i> Booking & Trust</span>
+    </div>
+
+    <!-- Host Verification -->
+    <div class="filter-toggle-card">
+      <div class="filter-toggle-info">
+        <div class="filter-toggle-icon bg-success-subtle text-success">
+          <i class="fa-solid fa-circle-check"></i>
+        </div>
+        <div>
+          <div class="filter-toggle-text"><%= t('filters.verifiedHostOnly') %></div>
+          <div class="text-muted" style="font-size: 0.72rem;"><%= t('filters.verifiedHostDesc') %></div>
+        </div>
+      </div>
+      <div class="form-check form-switch m-0">
+        <input 
+          class="form-check-input" 
+          type="checkbox" 
+          role="switch" 
+          name="hostVerification" 
+          value="verified" 
+          id="<%= prefix %>-verified"
+          <%= hostVerification === 'verified' ? 'checked' : '' %>
+        >
+      </div>
+    </div>
+
+    <!-- Instant Book -->
+    <div class="filter-toggle-card">
+      <div class="filter-toggle-info">
+        <div class="filter-toggle-icon bg-warning-subtle text-warning">
+          <i class="fa-solid fa-bolt"></i>
+        </div>
+        <div>
+          <div class="filter-toggle-text"><%= t('filters.instantBookOnly') %></div>
+          <div class="text-muted" style="font-size: 0.72rem;"><%= t('filters.instantBookDesc') %></div>
+        </div>
+      </div>
+      <div class="form-check form-switch m-0">
+        <input 
+          class="form-check-input" 
+          type="checkbox" 
+          role="switch" 
+          name="instantBook" 
+          value="true" 
+          id="<%= prefix %>-instant"
+          <%= instantBook === 'true' ? 'checked' : '' %>
+        >
+      </div>
+    </div>
+  </div>
+
+  <!-- Amenities -->
+  <div class="filter-section">
+    <div class="filter-section-title">
+      <span><i class="fa-solid fa-list-check text-primary me-1"></i> <%= t('filters.amenities') %></span>
+      <% if (selAms.length > 0) { %>
+        <span class="badge bg-primary-subtle text-primary rounded-pill small"><%= selAms.length %> selected</span>
+      <% } %>
+    </div>
+    <div class="filter-amenities-grid">
+      <% amList.forEach((am, idx) => { %>
+        <label class="filter-amenity-checkbox-label" for="<%= prefix %>-am-<%= idx %>">
+          <input 
+            type="checkbox" 
+            name="amenities" 
+            value="<%= am.name %>" 
+            id="<%= prefix %>-am-<%= idx %>"
+            <%= selAms.includes(am.name) ? 'checked' : '' %>
+          >
+          <span class="text-truncate" title="<%= am.name %>"><%= am.name %></span>
+        </label>
+      <% }) %>
+    </div>
+  </div>
+
+  <!-- Action Buttons -->
+  <div class="filter-actions-footer">
+    <a href="/listings" class="btn btn-outline-secondary btn-sm flex-fill rounded-pill">
+      <%= t('filters.resetFilters') %>
+    </a>
+    <button type="submit" class="btn btn-primary btn-sm flex-fill rounded-pill fw-semibold">
+      <i class="fa-solid fa-sliders me-1"></i> <%= t('filters.applyFilters') %>
+    </button>
+  </div>
+</form>

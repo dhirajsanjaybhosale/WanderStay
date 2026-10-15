@@ -8,7 +8,7 @@
         <div class="brand-icon mx-auto mb-2" style="width: 48px; height: 48px; font-size: 1.3rem;">
           <i class="fa-solid fa-pen-to-square"></i>
         </div>
-        <h2 class="fw-bold mb-1">Edit Listing</h2>
+        <h2 class="fw-bold mb-1"><%= t('forms.editListing') %></h2>
         <p class="text-muted small">Update your property details, pricing, and photos</p>
       </div>
 
@@ -16,7 +16,7 @@
 
         <!-- Title -->
         <div class="mb-3">
-          <label for="title" class="form-label">Property Title</label>
+          <label for="title" class="form-label"><%= t('forms.propertyTitle') %></label>
           <input 
             name="listing[title]" 
             id="title"
@@ -30,7 +30,7 @@
 
         <!-- Description -->
         <div class="mb-3">
-          <label for="description" class="form-label">Description</label>
+          <label for="description" class="form-label"><%= t('forms.description') %></label>
           <textarea 
             name="listing[description]" 
             id="description"
@@ -66,7 +66,7 @@
         <!-- Price & Category -->
         <div class="row g-3 mb-3">
           <div class="col-md-6">
-            <label for="price" class="form-label">Price per Night (₹ INR)</label>
+            <label for="price" class="form-label"><%= t('forms.pricePerNight') %></label>
             <div class="input-group">
               <span class="input-group-text bg-body-tertiary text-body fw-bold border-theme">&#8377;</span>
               <input 
@@ -82,7 +82,7 @@
           </div>
 
           <div class="col-md-6">
-            <label for="category" class="form-label">Category</label>
+            <label for="category" class="form-label"><%= t('forms.category') %></label>
             <select name="listing[category]" id="category" class="form-select" required>
               <option value="" disabled <%= !listing.category ? 'selected' : '' %>>Select category</option>
               <option value="Beach" <%= listing.category === 'Beach' ? 'selected' : '' %>>🏖 Beach</option>
@@ -98,10 +98,13 @@
           </div>
         </div>
 
+        <!-- Host Dynamic Pricing Management Section -->
+        <%- include("../includes/host-pricing-section.ejs") %>
+
         <!-- Location & Country -->
         <div class="row g-3 mb-4">
           <div class="col-md-7">
-            <label for="location" class="form-label">Location / City</label>
+            <label for="location" class="form-label"><%= t('forms.location') %></label>
             <input 
               type="text" 
               value="<%= listing.location %>" 
@@ -114,7 +117,7 @@
           </div>
 
           <div class="col-md-5">
-            <label for="country" class="form-label">Country</label>
+            <label for="country" class="form-label"><%= t('forms.country') %></label>
             <input 
               type="text" 
               value="<%= listing.country %>" 
@@ -127,12 +130,93 @@
           </div>
         </div>
 
+        <!-- Available Amenities Selection -->
+        <div class="mb-4">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <label class="form-label fw-bold mb-0">
+              <i class="fa-solid fa-list-check text-primary me-1"></i> Property Amenities
+            </label>
+            <span class="text-muted small">Update amenities offered at your space</span>
+          </div>
+          
+          <div class="amenity-select-grid">
+            <% const amenitiesList = (typeof allAmenities !== 'undefined' && allAmenities) ? allAmenities : []; %>
+            <% const currentAmenities = (listing && Array.isArray(listing.amenities)) ? listing.amenities : []; %>
+            <% amenitiesList.forEach((amenity, idx) => { %>
+              <% const isChecked = currentAmenities.includes(amenity.name); %>
+              <div class="amenity-checkbox-wrapper">
+                <input 
+                  type="checkbox" 
+                  name="listing[amenities][]" 
+                  value="<%= amenity.name %>" 
+                  id="amenity_edit_<%= idx %>" 
+                  class="btn-check" 
+                  <%= isChecked ? 'checked' : '' %>
+                />
+                <label class="amenity-select-label" for="amenity_edit_<%= idx %>">
+                  <div class="d-flex justify-content-between align-items-center w-100">
+                    <i class="<%= amenity.icon %> amenity-select-icon"></i>
+                    <span class="amenity-select-check-indicator"><i class="fa-solid fa-check"></i></span>
+                  </div>
+                  <div class="amenity-select-title"><%= amenity.name %></div>
+                </label>
+              </div>
+            <% }) %>
+          </div>
+        </div>
+
+        <!-- Cancellation Policy Selection -->
+        <div class="mb-4">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <label class="form-label fw-bold mb-0">
+              <i class="fa-solid fa-clock-rotate-left text-primary me-1"></i> Cancellation Policy *
+            </label>
+            <span class="text-muted small">Choose the refund rules for guest cancellations</span>
+          </div>
+
+          <% const currentPolicy = listing.cancellationPolicy || 'Flexible'; %>
+          <div class="row g-2">
+            <div class="col-md-4">
+              <input type="radio" class="btn-check" name="listing[cancellationPolicy]" id="policy_flexible" value="Flexible" <%= currentPolicy === 'Flexible' ? 'checked' : '' %>>
+              <label class="btn btn-outline-secondary w-100 text-start p-3 rounded-4 h-100" for="policy_flexible">
+                <div class="d-flex align-items-center justify-content-between mb-1">
+                  <span class="fw-bold text-success"><i class="fa-solid fa-feather-pointed me-1"></i> Flexible</span>
+                  <span class="badge bg-success-subtle text-success rounded-pill px-2 py-0.5 small">Popular</span>
+                </div>
+                <div class="small text-muted" style="font-size: 0.76rem;">100% refund up to 24h before check-in. 50% refund within 24h.</div>
+              </label>
+            </div>
+
+            <div class="col-md-4">
+              <input type="radio" class="btn-check" name="listing[cancellationPolicy]" id="policy_moderate" value="Moderate" <%= currentPolicy === 'Moderate' ? 'checked' : '' %>>
+              <label class="btn btn-outline-secondary w-100 text-start p-3 rounded-4 h-100" for="policy_moderate">
+                <div class="d-flex align-items-center justify-content-between mb-1">
+                  <span class="fw-bold text-warning-emphasis"><i class="fa-solid fa-scale-balanced me-1"></i> Moderate</span>
+                  <span class="badge bg-warning-subtle text-warning-emphasis rounded-pill px-2 py-0.5 small">Balanced</span>
+                </div>
+                <div class="small text-muted" style="font-size: 0.76rem;">100% refund up to 5 days before check-in. 50% up to 24h.</div>
+              </label>
+            </div>
+
+            <div class="col-md-4">
+              <input type="radio" class="btn-check" name="listing[cancellationPolicy]" id="policy_strict" value="Strict" <%= currentPolicy === 'Strict' ? 'checked' : '' %>>
+              <label class="btn btn-outline-secondary w-100 text-start p-3 rounded-4 h-100" for="policy_strict">
+                <div class="d-flex align-items-center justify-content-between mb-1">
+                  <span class="fw-bold text-danger"><i class="fa-solid fa-shield-halved me-1"></i> Strict</span>
+                  <span class="badge bg-danger-subtle text-danger rounded-pill px-2 py-0.5 small">Protection</span>
+                </div>
+                <div class="small text-muted" style="font-size: 0.76rem;">Full refund within 48h of booking & 14+ days before arrival. 50% up to 7 days.</div>
+              </label>
+            </div>
+          </div>
+        </div>
+
         <!-- Submit Button -->
         <div class="d-flex gap-2">
           <button type="submit" class="btn btn-primary btn-lg flex-grow-1 rounded-pill">
-            <i class="fa-solid fa-check me-1"></i> Save Changes
+            <i class="fa-solid fa-check me-1"></i> <%= t('buttons.saveChanges') %>
           </button>
-          <a href="/listings/<%= listing._id %>" class="btn btn-outline-secondary btn-lg rounded-pill px-4">Cancel</a>
+          <a href="/listings/<%= listing._id %>" class="btn btn-outline-secondary btn-lg rounded-pill px-4"><%= t('buttons.cancel') %></a>
         </div>
       </form>
     </div>

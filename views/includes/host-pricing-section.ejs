@@ -1,0 +1,424 @@
+<%
+  const pricingData = (typeof listing !== 'undefined' && listing && listing.pricing) ? listing.pricing : {};
+  const weekendPriceVal = (pricingData.weekendPrice !== null && pricingData.weekendPrice !== undefined) ? pricingData.weekendPrice : '';
+  const baseGuestsVal = (pricingData.baseGuests !== null && pricingData.baseGuests !== undefined) ? pricingData.baseGuests : ((typeof listing !== 'undefined' && listing && listing.guests) ? listing.guests : 2);
+  const extraGuestFeeVal = (pricingData.extraGuestFee !== null && pricingData.extraGuestFee !== undefined && pricingData.extraGuestFee > 0) ? pricingData.extraGuestFee : '';
+  const seasonalList = (Array.isArray(pricingData.seasonalPricing)) ? pricingData.seasonalPricing : [];
+  const holidayList = (Array.isArray(pricingData.holidayPricing)) ? pricingData.holidayPricing : [];
+
+  function toDateInput(d) {
+    if (!d) return '';
+    try {
+      const dt = new Date(d);
+      if (isNaN(dt.getTime())) return '';
+      return dt.toISOString().split('T')[0];
+    } catch (e) {
+      return '';
+    }
+  }
+%>
+
+<div class="card border border-theme rounded-4 mb-4 shadow-xs overflow-hidden" id="dynamicPricingSection">
+  <div class="card-header bg-body-tertiary border-bottom border-theme py-3 px-4 d-flex justify-content-between align-items-center">
+    <div class="d-flex align-items-center gap-2">
+      <div class="badge-icon-sm bg-primary-subtle text-primary rounded-3 p-2">
+        <i class="fa-solid fa-chart-line fs-5"></i>
+      </div>
+      <div>
+        <h5 class="fw-bold mb-0 text-body">Dynamic & Smart Pricing</h5>
+        <span class="text-muted small">Optional custom rates for weekends, seasons, holidays, and extra guests</span>
+      </div>
+    </div>
+    <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle rounded-pill px-2.5 py-1 small">
+      Optional
+    </span>
+  </div>
+
+  <div class="card-body p-4">
+    <!-- Notice Banner -->
+    <div class="alert alert-light border border-theme rounded-3 py-2 px-3 mb-4 d-flex align-items-center gap-2 small">
+      <i class="fa-solid fa-circle-info text-primary fs-6"></i>
+      <div class="text-secondary">
+        If any dynamic fields are left empty, your <strong>Standard Base Price</strong> will apply. Calculations are done securely on our backend.
+      </div>
+    </div>
+
+    <!-- 1. Weekend Pricing & Extra Guest Fees -->
+    <div class="row g-3 mb-4">
+      <div class="col-md-4">
+        <label for="weekendPrice" class="form-label fw-semibold text-body">
+          <i class="fa-solid fa-champagne-glasses text-warning me-1"></i> Weekend Night Price (₹)
+        </label>
+        <div class="input-group">
+          <span class="input-group-text bg-body-tertiary text-body fw-bold border-theme">&#8377;</span>
+          <input 
+            type="number" 
+            name="listing[pricing][weekendPrice]" 
+            id="weekendPrice" 
+            class="form-control" 
+            placeholder="e.g. 3500" 
+            min="0"
+            value="<%= weekendPriceVal %>"
+          />
+        </div>
+        <div class="form-text small text-muted">Applied on Friday & Saturday nights. Leave blank to use standard rate.</div>
+      </div>
+
+      <div class="col-md-4">
+        <label for="baseGuests" class="form-label fw-semibold text-body">
+          <i class="fa-solid fa-users text-primary me-1"></i> Included Base Guests
+        </label>
+        <input 
+          type="number" 
+          name="listing[pricing][baseGuests]" 
+          id="baseGuests" 
+          class="form-control" 
+          placeholder="2" 
+          min="1"
+          max="20"
+          value="<%= baseGuestsVal %>"
+        />
+        <div class="form-text small text-muted">Guests covered under base nightly price.</div>
+      </div>
+
+      <div class="col-md-4">
+        <label for="extraGuestFee" class="form-label fw-semibold text-body">
+          <i class="fa-solid fa-user-plus text-success me-1"></i> Extra Guest Fee (₹ / night)
+        </label>
+        <div class="input-group">
+          <span class="input-group-text bg-body-tertiary text-body fw-bold border-theme">&#8377;</span>
+          <input 
+            type="number" 
+            name="listing[pricing][extraGuestFee]" 
+            id="extraGuestFee" 
+            class="form-control" 
+            placeholder="e.g. 500" 
+            min="0"
+            value="<%= extraGuestFeeVal %>"
+          />
+        </div>
+        <div class="form-text small text-muted">Fee per guest per night beyond base guests.</div>
+      </div>
+    </div>
+
+    <hr class="my-4 border-theme opacity-50">
+
+    <!-- 2. Seasonal Pricing Periods -->
+    <div class="mb-4">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <div>
+          <label class="form-label fw-bold mb-0 text-body">
+            <i class="fa-solid fa-cloud-sun text-warning me-1"></i> Seasonal Pricing Periods
+          </label>
+          <div class="text-muted small">Override rates during peak or off-peak seasons (e.g. Summer Vacation, Monsoon)</div>
+        </div>
+        <button type="button" class="btn btn-outline-primary btn-sm rounded-pill px-3" id="addSeasonalBtn">
+          <i class="fa-solid fa-plus me-1"></i> Add Seasonal Rate
+        </button>
+      </div>
+
+      <div id="seasonalContainer" class="d-flex flex-column gap-2 mt-3">
+        <% if (seasonalList.length === 0) { %>
+          <div class="text-muted small fst-italic p-3 bg-body-tertiary rounded-3 text-center" id="emptySeasonalMsg">
+            No seasonal pricing rules configured. Your standard rate applies throughout the year.
+          </div>
+        <% } %>
+
+        <% seasonalList.forEach((season, sIdx) => { %>
+          <div class="p-3 bg-body-tertiary rounded-3 border border-theme seasonal-row position-relative">
+            <div class="row g-2 align-items-center">
+              <div class="col-md-3">
+                <label class="small text-muted mb-1 d-block">Period Name</label>
+                <input 
+                  type="text" 
+                  name="listing[pricing][seasonalPricing][<%= sIdx %>][name]" 
+                  class="form-control form-control-sm" 
+                  placeholder="e.g. Summer Peak" 
+                  value="<%= season.name || '' %>"
+                  required
+                />
+              </div>
+              <div class="col-md-3">
+                <label class="small text-muted mb-1 d-block">Start Date</label>
+                <input 
+                  type="date" 
+                  name="listing[pricing][seasonalPricing][<%= sIdx %>][startDate]" 
+                  class="form-control form-control-sm" 
+                  value="<%= toDateInput(season.startDate) %>"
+                  required
+                />
+              </div>
+              <div class="col-md-3">
+                <label class="small text-muted mb-1 d-block">End Date</label>
+                <input 
+                  type="date" 
+                  name="listing[pricing][seasonalPricing][<%= sIdx %>][endDate]" 
+                  class="form-control form-control-sm" 
+                  value="<%= toDateInput(season.endDate) %>"
+                  required
+                />
+              </div>
+              <div class="col-md-2">
+                <label class="small text-muted mb-1 d-block">Rate / Night (₹)</label>
+                <input 
+                  type="number" 
+                  name="listing[pricing][seasonalPricing][<%= sIdx %>][price]" 
+                  class="form-control form-control-sm" 
+                  placeholder="3800" 
+                  min="0"
+                  value="<%= season.price %>"
+                  required
+                />
+              </div>
+              <div class="col-md-1 text-end pt-3">
+                <button type="button" class="btn btn-outline-danger btn-sm remove-row-btn" title="Remove period">
+                  <i class="fa-solid fa-trash-can"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        <% }) %>
+      </div>
+    </div>
+
+    <hr class="my-4 border-theme opacity-50">
+
+    <!-- 3. Holiday Pricing Periods -->
+    <div class="mb-3">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <div>
+          <label class="form-label fw-bold mb-0 text-body">
+            <i class="fa-solid fa-holly-berry text-danger me-1"></i> Holiday & Festival Pricing
+          </label>
+          <div class="text-muted small">Special holiday premium rates (e.g. Diwali, Christmas, New Year's Eve)</div>
+        </div>
+        <button type="button" class="btn btn-outline-danger btn-sm rounded-pill px-3" id="addHolidayBtn">
+          <i class="fa-solid fa-plus me-1"></i> Add Holiday Rate
+        </button>
+      </div>
+
+      <div id="holidayContainer" class="d-flex flex-column gap-2 mt-3">
+        <% if (holidayList.length === 0) { %>
+          <div class="text-muted small fst-italic p-3 bg-body-tertiary rounded-3 text-center" id="emptyHolidayMsg">
+            No holiday rates configured.
+          </div>
+        <% } %>
+
+        <% holidayList.forEach((holiday, hIdx) => { %>
+          <div class="p-3 bg-body-tertiary rounded-3 border border-theme holiday-row position-relative">
+            <div class="row g-2 align-items-center">
+              <div class="col-md-3">
+                <label class="small text-muted mb-1 d-block">Holiday Name</label>
+                <input 
+                  type="text" 
+                  name="listing[pricing][holidayPricing][<%= hIdx %>][name]" 
+                  class="form-control form-control-sm" 
+                  placeholder="e.g. New Year Week" 
+                  value="<%= holiday.name || '' %>"
+                  required
+                />
+              </div>
+              <div class="col-md-3">
+                <label class="small text-muted mb-1 d-block">Start Date</label>
+                <input 
+                  type="date" 
+                  name="listing[pricing][holidayPricing][<%= hIdx %>][startDate]" 
+                  class="form-control form-control-sm" 
+                  value="<%= toDateInput(holiday.startDate) %>"
+                  required
+                />
+              </div>
+              <div class="col-md-3">
+                <label class="small text-muted mb-1 d-block">End Date</label>
+                <input 
+                  type="date" 
+                  name="listing[pricing][holidayPricing][<%= hIdx %>][endDate]" 
+                  class="form-control form-control-sm" 
+                  value="<%= toDateInput(holiday.endDate) %>"
+                  required
+                />
+              </div>
+              <div class="col-md-2">
+                <label class="small text-muted mb-1 d-block">Rate / Night (₹)</label>
+                <input 
+                  type="number" 
+                  name="listing[pricing][holidayPricing][<%= hIdx %>][price]" 
+                  class="form-control form-control-sm" 
+                  placeholder="4500" 
+                  min="0"
+                  value="<%= holiday.price %>"
+                  required
+                />
+              </div>
+              <div class="col-md-1 text-end pt-3">
+                <button type="button" class="btn btn-outline-danger btn-sm remove-row-btn" title="Remove holiday">
+                  <i class="fa-solid fa-trash-can"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        <% }) %>
+      </div>
+    </div>
+
+    <!-- Explanatory Pricing Rule Order Note -->
+    <div class="mt-3 p-3 bg-primary-subtle border border-primary-subtle rounded-3 small text-primary-emphasis d-flex align-items-start gap-2">
+      <i class="fa-solid fa-shield-halved mt-1"></i>
+      <div>
+        <strong>Predictable Hierarchy:</strong> Holiday dates take top priority &gt; Seasonal date overrides &gt; Weekend rates (Friday/Saturday) &gt; Standard weekday base price. Extra guest fees are applied transparently per guest above your included base.
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  (function() {
+    let seasonalIndex = <%= seasonalList.length %>;
+    let holidayIndex = <%= holidayList.length %>;
+
+    const seasonalContainer = document.getElementById('seasonalContainer');
+    const holidayContainer = document.getElementById('holidayContainer');
+    const addSeasonalBtn = document.getElementById('addSeasonalBtn');
+    const addHolidayBtn = document.getElementById('addHolidayBtn');
+    const emptySeasonalMsg = document.getElementById('emptySeasonalMsg');
+    const emptyHolidayMsg = document.getElementById('emptyHolidayMsg');
+
+    // Add Seasonal row
+    if (addSeasonalBtn && seasonalContainer) {
+      addSeasonalBtn.addEventListener('click', function() {
+        if (emptySeasonalMsg) emptySeasonalMsg.style.display = 'none';
+
+        const row = document.createElement('div');
+        row.className = 'p-3 bg-body-tertiary rounded-3 border border-theme seasonal-row position-relative';
+        row.innerHTML = `
+          <div class="row g-2 align-items-center">
+            <div class="col-md-3">
+              <label class="small text-muted mb-1 d-block">Period Name</label>
+              <input 
+                type="text" 
+                name="listing[pricing][seasonalPricing][${seasonalIndex}][name]" 
+                class="form-control form-control-sm" 
+                placeholder="e.g. Monsoon Rate" 
+                required
+              />
+            </div>
+            <div class="col-md-3">
+              <label class="small text-muted mb-1 d-block">Start Date</label>
+              <input 
+                type="date" 
+                name="listing[pricing][seasonalPricing][${seasonalIndex}][startDate]" 
+                class="form-control form-control-sm" 
+                required
+              />
+            </div>
+            <div class="col-md-3">
+              <label class="small text-muted mb-1 d-block">End Date</label>
+              <input 
+                type="date" 
+                name="listing[pricing][seasonalPricing][${seasonalIndex}][endDate]" 
+                class="form-control form-control-sm" 
+                required
+              />
+            </div>
+            <div class="col-md-2">
+              <label class="small text-muted mb-1 d-block">Rate / Night (₹)</label>
+              <input 
+                type="number" 
+                name="listing[pricing][seasonalPricing][${seasonalIndex}][price]" 
+                class="form-control form-control-sm" 
+                placeholder="3200" 
+                min="0"
+                required
+              />
+            </div>
+            <div class="col-md-1 text-end pt-3">
+              <button type="button" class="btn btn-outline-danger btn-sm remove-row-btn" title="Remove period">
+                <i class="fa-solid fa-trash-can"></i>
+              </button>
+            </div>
+          </div>
+        `;
+        seasonalContainer.appendChild(row);
+        seasonalIndex++;
+      });
+    }
+
+    // Add Holiday row
+    if (addHolidayBtn && holidayContainer) {
+      addHolidayBtn.addEventListener('click', function() {
+        if (emptyHolidayMsg) emptyHolidayMsg.style.display = 'none';
+
+        const row = document.createElement('div');
+        row.className = 'p-3 bg-body-tertiary rounded-3 border border-theme holiday-row position-relative';
+        row.innerHTML = `
+          <div class="row g-2 align-items-center">
+            <div class="col-md-3">
+              <label class="small text-muted mb-1 d-block">Holiday Name</label>
+              <input 
+                type="text" 
+                name="listing[pricing][holidayPricing][${holidayIndex}][name]" 
+                class="form-control form-control-sm" 
+                placeholder="e.g. Diwali Weekend" 
+                required
+              />
+            </div>
+            <div class="col-md-3">
+              <label class="small text-muted mb-1 d-block">Start Date</label>
+              <input 
+                type="date" 
+                name="listing[pricing][holidayPricing][${holidayIndex}][startDate]" 
+                class="form-control form-control-sm" 
+                required
+              />
+            </div>
+            <div class="col-md-3">
+              <label class="small text-muted mb-1 d-block">End Date</label>
+              <input 
+                type="date" 
+                name="listing[pricing][holidayPricing][${holidayIndex}][endDate]" 
+                class="form-control form-control-sm" 
+                required
+              />
+            </div>
+            <div class="col-md-2">
+              <label class="small text-muted mb-1 d-block">Rate / Night (₹)</label>
+              <input 
+                type="number" 
+                name="listing[pricing][holidayPricing][${holidayIndex}][price]" 
+                class="form-control form-control-sm" 
+                placeholder="4200" 
+                min="0"
+                required
+              />
+            </div>
+            <div class="col-md-1 text-end pt-3">
+              <button type="button" class="btn btn-outline-danger btn-sm remove-row-btn" title="Remove holiday">
+                <i class="fa-solid fa-trash-can"></i>
+              </button>
+            </div>
+          </div>
+        `;
+        holidayContainer.appendChild(row);
+        holidayIndex++;
+      });
+    }
+
+    // Delegate remove button events
+    document.addEventListener('click', function(e) {
+      const removeBtn = e.target.closest('.remove-row-btn');
+      if (removeBtn) {
+        const row = removeBtn.closest('.seasonal-row, .holiday-row');
+        if (row) {
+          const parent = row.parentElement;
+          row.remove();
+          if (parent.id === 'seasonalContainer' && parent.querySelectorAll('.seasonal-row').length === 0) {
+            if (emptySeasonalMsg) emptySeasonalMsg.style.display = 'block';
+          }
+          if (parent.id === 'holidayContainer' && parent.querySelectorAll('.holiday-row').length === 0) {
+            if (emptyHolidayMsg) emptyHolidayMsg.style.display = 'block';
+          }
+        }
+      }
+    });
+  })();
+</script>

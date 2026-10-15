@@ -26,6 +26,16 @@ const userSchema = new Schema({
       enum: ['guest','host','admin'],
       default: 'guest'
     },
+    preferredLanguage: {
+      type: String,
+      enum: ['en', 'hi', 'mr'],
+      default: 'en'
+    },
+    preferredCurrency: {
+      type: String,
+      enum: ['INR', 'USD', 'EUR', 'GBP'],
+      default: 'INR'
+    },
     isSuspended: {
       type: Boolean,
       default: false
@@ -70,6 +80,78 @@ const userSchema = new Schema({
     resetPasswordExpires: {
       type: Date
     },
+    isEmailVerified: {
+      type: Boolean,
+      default: true
+    },
+    isPhoneVerified: {
+      type: Boolean,
+      default: false
+    },
+    hostVerification: {
+      status: {
+        type: String,
+        enum: ['unverified', 'pending', 'verified', 'rejected'],
+        default: 'unverified',
+        index: true
+      },
+      legalName: {
+        type: String,
+        default: ''
+      },
+      documentType: {
+        type: String,
+        enum: ['passport', 'national_id', 'drivers_license', 'government_id', 'business_license', 'other', ''],
+        default: ''
+      },
+      documentNumber: {
+        type: String,
+        default: ''
+      },
+      documentUrl: {
+        type: String,
+        default: ''
+      },
+      submittedAt: {
+        type: Date
+      },
+      reviewedAt: {
+        type: Date
+      },
+      reviewedBy: {
+        type: Schema.Types.ObjectId,
+        ref: 'User'
+      },
+      rejectionReason: {
+        type: String,
+        default: ''
+      },
+      notes: {
+        type: String,
+        default: ''
+      }
+    },
+    superhost: {
+      isSuperhost: {
+        type: Boolean,
+        default: false,
+        index: true
+      },
+      badgeReason: {
+        type: String,
+        default: ''
+      },
+      evaluatedAt: {
+        type: Date
+      },
+      metrics: {
+        completedBookings: { type: Number, default: 0 },
+        averageRating: { type: Number, default: 0 },
+        cancellationRate: { type: Number, default: 0 },
+        responseRate: { type: Number, default: 100 },
+        totalReviews: { type: Number, default: 0 }
+      }
+    },
     hash: {
         type: String,
         required: true
@@ -82,6 +164,16 @@ const userSchema = new Schema({
     timestamps: true,
     toJSON: { virtuals: true },
     toObject: { virtuals: true }
+});
+
+// Virtual for Verified Host Status
+userSchema.virtual('isVerifiedHost').get(function() {
+    return this.role === 'host' && this.hostVerification && this.hostVerification.status === 'verified';
+});
+
+// Virtual for Data-Driven Superhost Status
+userSchema.virtual('isSuperhost').get(function() {
+    return this.role === 'host' && this.superhost && this.superhost.isSuperhost === true;
 });
 
 // Virtual for Full Name

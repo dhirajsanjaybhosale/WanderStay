@@ -403,7 +403,7 @@ async function sendHostBookingNotificationEmail({ booking, listing, host, guest 
 // ============================================================================
 // 5. BOOKING CANCELLATION EMAIL (TO GUEST AND/OR HOST)
 // ============================================================================
-async function sendBookingCancellationEmail({ booking, listing, recipientUser, isHost = false, refundAmount = 0 }) {
+async function sendBookingCancellationEmail({ booking, listing, recipientUser, isHost = false, refundAmount = 0, refundPercentage = 0, policyName = 'Flexible', explanation = '' }) {
   if (!recipientUser || !recipientUser.email || !booking || !listing) return;
 
   const recipientName = recipientUser.fullName || recipientUser.username || 'User';
@@ -432,13 +432,26 @@ async function sendBookingCancellationEmail({ booking, listing, recipientUser, i
         <span class="info-label">Booking Status:</span>
         <span class="info-val" style="color: #DC2626;">Cancelled</span>
       </div>
-      ${!isHost && refundAmount > 0 ? `
+      ${!isHost ? `
         <div class="info-row">
-          <span class="info-label">Refund Initiated:</span>
-          <span class="info-val" style="color: #059669; font-weight: 700;">₹${Number(refundAmount).toLocaleString('en-IN')} (Full Refund)</span>
+          <span class="info-label">Cancellation Policy:</span>
+          <span class="info-val">${policyName}</span>
         </div>
+        ${refundAmount > 0 ? `
+          <div class="info-row">
+            <span class="info-label">Refund Initiated:</span>
+            <span class="info-val" style="color: #059669; font-weight: 700;">₹${Number(refundAmount).toLocaleString('en-IN')} (${refundPercentage}% Refund)</span>
+          </div>
+        ` : `
+          <div class="info-row">
+            <span class="info-label">Refund Status:</span>
+            <span class="info-val" style="color: #6B7280;">₹0 (Non-refundable per policy rules)</span>
+          </div>
+        `}
       ` : ''}
     </div>
+
+    ${explanation ? `<p class="text-content" style="font-size: 13px; color: #4B5563;"><em>${explanation}</em></p>` : ''}
 
     ${isHost ? `
       <p class="text-content">

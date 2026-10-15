@@ -1,6 +1,7 @@
 const Booking = require('../models/booking');
 const Listing = require('../models/listing');
-const { createRazorpayOrder, verifyPaymentSignature } = require('../razorpayConfig');
+const Coupon = require('../models/coupon');
+const { createRazorpayOrder, verifyPaymentSignature, processRazorpayRefund } = require('../razorpayConfig');
 const { generateBookingInvoice } = require('../utils/invoiceGenerator');
 const {
   sendBookingConfirmationEmail,
@@ -9,6 +10,9 @@ const {
   sendBookingCancellationEmail
 } = require('../utils/emailService');
 const { createNotification } = require('../utils/notificationHelper');
+const { syncHostSuperhostStatus } = require('../utils/superhostHelper');
+const { calculateRefund, getCancellationPolicy, CANCELLATION_POLICIES } = require('../utils/cancellationHelper');
+const { calculateListingPricing } = require('../utils/pricingHelper');
 
 module.exports.createBooking = async (req, res) => {
   const { id } = req.params;
@@ -87,11 +91,18 @@ module.exports.createBooking = async (req, res) => {
     return res.redirect(`/listings/${id}`);
   }
 
-  const nights = Math.round((checkOutDate - checkInDate) / (1000 * 60 * 60 * 24));
   const numGuests = Math.max(1, parseInt(guests, 10) || 1);
-  const cleaningFee = 500;
-  const serviceFee = 750;
-  const totalPrice = (nights * listing.price) + cleaningFee + serviceFee;
+
+  // Securely calculate pricing via dynamic pricing engine
+  const pricingResult = calculateListingPricing({
+    listing,
+    checkIn: checkInDate,
+    checkOut: checkOutDate,
+    guests: numGuests
+  });
+
+  const nights = pricingResult.nights;
+  const totalPrice = pricingResult.totalPrice;
 
   // Create Razorpay Order server-side
   const { order } = await createRazorpayOrder({
@@ -111,7 +122,11 @@ module.exports.createBooking = async (req, res) => {
     checkOut: checkOutDate,
     nights,
     guests: numGuests,
+    originalPrice: totalPrice,
+    priceBreakdown: pricingResult,
+    discountAmount: 0,
     totalPrice,
+    cancellationPolicy: listing.cancellationPolicy || 'Flexible',
     status: 'pending',
     paymentStatus: 'pending',
     razorpayOrderId: order.id
@@ -163,6 +178,147 @@ module.exports.renderCheckout = async (req, res) => {
     booking,
     listing: booking.listing,
     razorpayKeyId
+  });
+};
+
+// Apply Promo Coupon securely at checkout
+module.exports.applyCoupon = async (req, res) => {
+  const { bookingId } = req.params;
+  const { code } = req.body;
+
+  if (!code || typeof code !== 'string' || !code.trim()) {
+    return res.status(400).json({ success: false, message: 'Please provide a valid coupon code.' });
+  }
+
+  const cleanCode = code.trim().toUpperCase();
+  const booking = await Booking.findById(bookingId).populate('listing');
+
+  if (!booking) {
+    return res.status(404).json({ success: false, message: 'Booking reservation not found.' });
+  }
+
+  if (!booking.guest.equals(req.user._id)) {
+    return res.status(403).json({ success: false, message: 'Unauthorized access to reservation.' });
+  }
+
+  if (booking.status !== 'pending' || booking.paymentStatus === 'paid') {
+    return res.status(400).json({ success: false, message: 'Coupons cannot be applied to this reservation status.' });
+  }
+
+  const coupon = await Coupon.findOne({ code: cleanCode });
+  if (!coupon) {
+    return res.status(404).json({ success: false, message: 'Coupon code not found. Please verify the code.' });
+  }
+
+  const baseAmount = booking.originalPrice || booking.totalPrice;
+
+  // Validate eligibility securely on server
+  const eligibility = coupon.validateEligibility({
+    userId: req.user._id,
+    bookingAmount: baseAmount,
+  });
+
+  if (!eligibility.valid) {
+    return res.status(400).json({ success: false, message: eligibility.message });
+  }
+
+  // Calculate discount securely on the server
+  const discount = coupon.calculateDiscount(baseAmount);
+  const finalTotal = Math.max(0, baseAmount - discount);
+
+  // Update or generate Razorpay order with the discounted total amount
+  let newOrderId = booking.razorpayOrderId;
+  try {
+    const { order } = await createRazorpayOrder({
+      amount: finalTotal,
+      currency: 'INR',
+      receipt: `rcpt_${booking._id.toString().slice(-8)}`,
+      notes: {
+        bookingId: booking._id.toString(),
+        couponCode: coupon.code,
+        discount: discount.toString(),
+      },
+    });
+    newOrderId = order.id;
+  } catch (rzpErr) {
+    console.error('Razorpay order update with coupon notice:', rzpErr.message);
+  }
+
+  booking.originalPrice = baseAmount;
+  booking.discountAmount = discount;
+  booking.totalPrice = finalTotal;
+  booking.razorpayOrderId = newOrderId;
+  booking.coupon = {
+    code: coupon.code,
+    couponId: coupon._id,
+    discountType: coupon.discountType,
+    discountValue: coupon.discountValue,
+  };
+
+  await booking.save();
+
+  return res.json({
+    success: true,
+    message: `Coupon "${coupon.code}" applied! You saved ₹${discount.toLocaleString('en-IN')}.`,
+    originalPrice: baseAmount,
+    discountAmount: discount,
+    totalPrice: finalTotal,
+    coupon: {
+      code: coupon.code,
+      discountType: coupon.discountType,
+      discountValue: coupon.discountValue,
+      description: coupon.description,
+    },
+    razorpayOrderId: newOrderId,
+  });
+};
+
+// Remove applied coupon and restore original price
+module.exports.removeCoupon = async (req, res) => {
+  const { bookingId } = req.params;
+  const booking = await Booking.findById(bookingId);
+
+  if (!booking) {
+    return res.status(404).json({ success: false, message: 'Booking reservation not found.' });
+  }
+
+  if (!booking.guest.equals(req.user._id)) {
+    return res.status(403).json({ success: false, message: 'Unauthorized access to reservation.' });
+  }
+
+  if (booking.status !== 'pending' || booking.paymentStatus === 'paid') {
+    return res.status(400).json({ success: false, message: 'Cannot modify this reservation.' });
+  }
+
+  const originalAmount = booking.originalPrice || booking.totalPrice;
+
+  // Restore Razorpay order with full original amount
+  let newOrderId = booking.razorpayOrderId;
+  try {
+    const { order } = await createRazorpayOrder({
+      amount: originalAmount,
+      currency: 'INR',
+      receipt: `rcpt_${booking._id.toString().slice(-8)}`,
+    });
+    newOrderId = order.id;
+  } catch (rzpErr) {
+    console.error('Razorpay order restore notice:', rzpErr.message);
+  }
+
+  booking.totalPrice = originalAmount;
+  booking.discountAmount = 0;
+  booking.coupon = { code: '', couponId: null, discountType: '', discountValue: 0 };
+  booking.razorpayOrderId = newOrderId;
+
+  await booking.save();
+
+  return res.json({
+    success: true,
+    message: 'Coupon removed successfully.',
+    originalPrice: originalAmount,
+    discountAmount: 0,
+    totalPrice: originalAmount,
+    razorpayOrderId: newOrderId,
   });
 };
 
@@ -242,6 +398,25 @@ module.exports.verifyPayment = async (req, res) => {
   booking.paidAt = new Date();
   await booking.save();
 
+  // If a coupon was applied, record usage history and increment usedCount
+  if (booking.coupon && booking.coupon.couponId) {
+    try {
+      await Coupon.findByIdAndUpdate(booking.coupon.couponId, {
+        $inc: { usedCount: 1 },
+        $push: {
+          usageHistory: {
+            user: booking.guest,
+            booking: booking._id,
+            discountAmount: booking.discountAmount || 0,
+            usedAt: new Date(),
+          },
+        },
+      });
+    } catch (couponLogErr) {
+      console.error('Coupon usage update notice:', couponLogErr.message);
+    }
+  }
+
   // Asynchronously dispatch notifications (Safe, never blocks or crashes payment)
   Booking.findById(booking._id)
     .populate({ path: 'listing', populate: { path: 'owner' } })
@@ -299,6 +474,12 @@ module.exports.verifyPayment = async (req, res) => {
             link: '/dashboards/host'
           });
         }
+
+        // Recalculate Superhost status for Host
+        if (populated.listing && populated.listing.owner) {
+          syncHostSuperhostStatus(populated.listing.owner._id || populated.listing.owner)
+            .catch(err => console.error('Superhost sync error:', err.message));
+        }
       }
     })
     .catch(err => console.error('Notification dispatch error:', err.message));
@@ -343,84 +524,232 @@ module.exports.bookingHistory = async (req, res) => {
   res.render('bookings/history.ejs', { bookings });
 };
 
+// Real-time cancellation preview for frontend modals
+module.exports.cancellationPreview = async (req, res) => {
+  const { bookingId } = req.params;
+  const booking = await Booking.findById(bookingId).populate('listing');
+
+  if (!booking) {
+    return res.status(404).json({ success: false, message: 'Booking reservation not found.' });
+  }
+
+  const isGuest = booking.guest.equals(req.user._id);
+  const isAdmin = req.user.role === 'admin';
+  if (!isGuest && !isAdmin) {
+    return res.status(403).json({ success: false, message: 'Unauthorized access to reservation.' });
+  }
+
+  const refundCalc = calculateRefund({
+    booking,
+    listing: booking.listing,
+    cancellationTime: new Date()
+  });
+
+  return res.json({
+    success: true,
+    bookingId: booking._id,
+    listingTitle: booking.listing ? booking.listing.title : 'WanderStay Property',
+    checkIn: booking.checkIn,
+    checkOut: booking.checkOut,
+    totalPaid: refundCalc.totalPaid,
+    isPaid: refundCalc.isPaid,
+    policyName: refundCalc.policyName,
+    policy: refundCalc.policy,
+    hoursUntilCheckIn: refundCalc.hoursUntilCheckIn,
+    daysUntilCheckIn: refundCalc.daysUntilCheckIn,
+    refundPercentage: refundCalc.refundPercentage,
+    refundAmount: refundCalc.refundAmount,
+    nonRefundableAmount: refundCalc.nonRefundableAmount,
+    explanation: refundCalc.explanation
+  });
+};
+
 module.exports.cancelBooking = async (req, res) => {
   const { bookingId } = req.params;
-  const booking = await Booking.findById(bookingId);
+  const { reason } = req.body;
+  const booking = await Booking.findById(bookingId).populate('listing');
+
   if (!booking) {
-    req.flash('error', 'Booking not found');
+    req.flash('error', 'Booking record not found.');
     return res.redirect('/bookings/history');
   }
-  if (!booking.guest.equals(req.user._id)) {
+
+  // 1. Check booking ownership
+  const isGuest = booking.guest.equals(req.user._id);
+  const isAdmin = req.user.role === 'admin';
+  if (!isGuest && !isAdmin) {
     req.flash('error', 'You do not have permission to cancel this booking.');
     return res.redirect('/bookings/history');
   }
-  if (booking.status === 'cancelled') {
-    req.flash('error', 'Booking is already cancelled.');
+
+  // 2. Check booking status
+  if (booking.status === 'cancelled' || booking.status === 'refunded' || booking.status === 'refund_pending') {
+    req.flash('error', 'This reservation is already cancelled.');
     return res.redirect('/bookings/history');
   }
 
-  const wasPaid = booking.paymentStatus === 'paid';
-  booking.status = 'cancelled';
-  if (wasPaid) {
-    booking.paymentStatus = 'refunded';
+  if (booking.status === 'completed') {
+    req.flash('error', 'Completed stays cannot be cancelled.');
+    return res.redirect('/bookings/history');
   }
+
+  // 3. Check cancellation rules
+  const refundCalc = calculateRefund({
+    booking,
+    listing: booking.listing,
+    cancellationTime: new Date()
+  });
+
+  // 4. Calculate refund if payment exists
+  const wasPaid = booking.paymentStatus === 'paid';
+  const refundAmount = wasPaid ? refundCalc.refundAmount : 0;
+  const refundPercentage = wasPaid ? refundCalc.refundPercentage : 0;
+  const cancellationReason = (reason && reason.trim()) ? reason.trim() : (isAdmin ? 'Cancelled by administration' : 'Guest requested cancellation');
+
+  // 5. Update booking status
+  booking.status = (wasPaid && refundAmount > 0) ? 'refund_pending' : 'cancelled';
+  booking.cancellation = {
+    cancelledAt: new Date(),
+    cancelledBy: req.user._id,
+    reason: cancellationReason,
+    policyApplied: refundCalc.policyName,
+    refundPercentage,
+    refundAmount,
+    refundStatus: (wasPaid && refundAmount > 0) ? 'pending' : 'none',
+    refundId: '',
+    explanation: refundCalc.explanation
+  };
+
+  let refundGatewaySucceeded = false;
+  let gatewayErrorMsg = null;
+
+  // 6. Process refund through existing payment provider if supported
+  if (wasPaid && refundAmount > 0) {
+    // Initial status is refund_pending while awaiting gateway confirmation
+    booking.paymentStatus = 'refund_pending';
+    booking.status = 'refund_pending';
+    booking.cancellation.refundStatus = 'pending';
+
+    if (booking.razorpayPaymentId) {
+      try {
+        const refundResult = await processRazorpayRefund({
+          paymentId: booking.razorpayPaymentId,
+          amount: refundAmount,
+          notes: {
+            bookingId: booking._id.toString(),
+            policy: refundCalc.policyName,
+            refundPercentage: `${refundPercentage}%`,
+            reason: cancellationReason
+          }
+        });
+
+        // Do not claim a refund succeeded until payment provider confirmation is received.
+        if (refundResult && refundResult.refund && (refundResult.refund.status === 'processed' || refundResult.refund.id)) {
+          refundGatewaySucceeded = true;
+          booking.status = 'refunded';
+          booking.paymentStatus = 'refunded';
+          booking.cancellation.refundStatus = 'processed';
+          booking.cancellation.refundId = refundResult.refund.id;
+          booking.cancellation.explanation = `${refundCalc.explanation} (Payment provider confirmed refund ID: ${refundResult.refund.id})`;
+        }
+      } catch (gatewayErr) {
+        gatewayErrorMsg = gatewayErr.message;
+        console.error('Payment provider refund processing notice:', gatewayErr.message);
+        // Do not claim a refund succeeded until payment provider confirmation is received.
+        booking.status = 'refund_pending';
+        booking.paymentStatus = 'refund_pending';
+        booking.cancellation.refundStatus = 'pending';
+        booking.cancellation.explanation = `${refundCalc.explanation} (Pending gateway confirmation: ${gatewayErr.message})`;
+      }
+    }
+  }
+
+  // 7. Update availability (booking.status is 'cancelled', freeing calendar dates)
   await booking.save();
 
-  // Asynchronously dispatch cancellation emails
+  // 8. Notify guest and host
   Booking.findById(booking._id)
     .populate({ path: 'listing', populate: { path: 'owner' } })
     .populate('guest')
     .then(populated => {
       if (populated) {
-        // Send cancellation notice to Guest
+        // Send email to Guest
         sendBookingCancellationEmail({
           booking: populated,
           listing: populated.listing,
           recipientUser: populated.guest,
           isHost: false,
-          refundAmount: wasPaid ? populated.totalPrice : 0
+          refundAmount,
+          refundPercentage,
+          policyName: refundCalc.policyName,
+          explanation: refundCalc.explanation
         }).catch(err => console.error('Guest cancellation email error:', err.message));
 
-        // Send cancellation notice to Host
+        // Send email to Host
         if (populated.listing && populated.listing.owner) {
           sendBookingCancellationEmail({
             booking: populated,
             listing: populated.listing,
             recipientUser: populated.listing.owner,
             isHost: true,
-            refundAmount: 0
+            refundAmount: 0,
+            refundPercentage: 0,
+            policyName: refundCalc.policyName,
+            explanation: `${populated.guest ? (populated.guest.fullName || populated.guest.username) : 'Guest'} cancelled reservation.`
           }).catch(err => console.error('Host cancellation email error:', err.message));
         }
 
-        // --- In-App Notifications ---
-        // 1. Cancellation notice for Guest
+        // In-App Notification for Guest
+        let guestMsg = `Reservation #${populated._id.toString().slice(-6).toUpperCase()} at "${populated.listing ? populated.listing.title : 'WanderStay Property'}" was cancelled.`;
+        if (wasPaid && refundAmount > 0) {
+          if (refundGatewaySucceeded) {
+            guestMsg += ` A ${refundPercentage}% refund of ₹${refundAmount.toLocaleString('en-IN')} has been processed to your original payment method.`;
+          } else {
+            guestMsg += ` A ${refundPercentage}% refund of ₹${refundAmount.toLocaleString('en-IN')} is currently pending gateway processing.`;
+          }
+        } else if (wasPaid) {
+          guestMsg += ` In accordance with the ${refundCalc.policyName} policy, this reservation was non-refundable.`;
+        }
+
         createNotification({
           userId: populated.guest._id,
           type: 'booking_cancelled',
           title: 'Booking Cancelled',
-          message: `Your reservation #${populated._id.toString().slice(-6).toUpperCase()} at "${populated.listing ? populated.listing.title : 'WanderStay Property'}" has been cancelled.`,
-          link: '/bookings/history'
+          message: guestMsg,
+          link: `/bookings/${populated._id}`
         });
 
-        // 2. Cancellation notice for Host
+        // In-App Notification for Host
         if (populated.listing && populated.listing.owner) {
           createNotification({
             userId: populated.listing.owner._id,
             type: 'booking_cancelled',
             title: 'Reservation Cancelled',
-            message: `${populated.guest.username || 'A guest'} cancelled reservation #${populated._id.toString().slice(-6).toUpperCase()} at "${populated.listing.title}".`,
+            message: `${populated.guest ? (populated.guest.fullName || populated.guest.username) : 'A traveler'} cancelled reservation #${populated._id.toString().slice(-6).toUpperCase()} at "${populated.listing.title}". The dates are now available again.`,
             link: '/dashboards/host'
           });
+
+          // Recalculate Superhost metrics for host
+          syncHostSuperhostStatus(populated.listing.owner._id || populated.listing.owner)
+            .catch(err => console.error('Superhost sync error:', err.message));
         }
       }
     })
     .catch(err => console.error('Cancellation notification error:', err.message));
 
-  if (wasPaid) {
-    req.flash('success', 'Booking cancelled successfully. A full refund has been initiated according to cancellation rules. The dates are now available again.');
+  // User feedback message
+  if (wasPaid && refundAmount > 0) {
+    if (refundGatewaySucceeded) {
+      req.flash('success', `Reservation cancelled. A ${refundPercentage}% refund of ₹${refundAmount.toLocaleString('en-IN')} has been processed by the payment provider.`);
+    } else {
+      req.flash('info', `Reservation cancelled. Your refund of ₹${refundAmount.toLocaleString('en-IN')} (${refundPercentage}%) is pending payment provider confirmation.`);
+    }
+  } else if (wasPaid) {
+    req.flash('warning', `Reservation cancelled. In accordance with the ${refundCalc.policyName} cancellation policy, no refund is eligible for this timeline.`);
   } else {
-    req.flash('success', 'Booking cancelled successfully. The dates are now available again.');
+    req.flash('success', 'Reservation cancelled successfully. The calendar dates are now open again.');
   }
+
   res.redirect('/bookings/history');
 };
 
@@ -478,5 +807,15 @@ module.exports.bookingDetails = async (req, res) => {
     return res.redirect('/bookings/history');
   }
 
-  res.render('bookings/show.ejs', { booking });
+  const refundPreview = calculateRefund({
+    booking,
+    listing: booking.listing,
+    cancellationTime: new Date()
+  });
+
+  res.render('bookings/show.ejs', {
+    booking,
+    refundPreview,
+    cancellationPolicy: refundPreview.policy
+  });
 };

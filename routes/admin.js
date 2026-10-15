@@ -27,7 +27,22 @@ router.post('/reviews/:id/delete', wrapAsync(adminController.deleteReview)); // 
 // Booking Moderation Routes
 router.post('/bookings/:id/cancel', wrapAsync(adminController.cancelBooking));
 
+// Host Verification Moderation Routes
+router.post('/verifications/:id/approve', wrapAsync(adminController.approveHostVerification));
+router.post('/verifications/:id/reject', wrapAsync(adminController.rejectHostVerification));
+router.post('/verifications/:id/revoke', wrapAsync(adminController.revokeHostVerification));
+
 // Quick Host Provisioning
 router.post('/hosts', wrapAsync(adminController.createHost));
+
+// Superhost Evaluation Routes (Data-driven backend calculation)
+router.post('/superhost/evaluate', wrapAsync(adminController.evaluateSuperhosts));
+router.post('/superhost/evaluate/:id', wrapAsync(adminController.evaluateHostSuperhost));
+
+// Coupon Management Routes
+router.post('/coupons', wrapAsync(adminController.createCoupon));
+router.post('/coupons/:id/toggle', wrapAsync(adminController.toggleCouponStatus));
+router.post('/coupons/:id/delete', wrapAsync(adminController.deleteCoupon));
+router.delete('/coupons/:id', wrapAsync(adminController.deleteCoupon));
 
 module.exports = router;

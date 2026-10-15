@@ -6,14 +6,14 @@
       <div class="mb-3 d-flex justify-content-center">
         <%- include('../components/logo.ejs', { variant: 'icon', size: 'lg' }) %>
       </div>
-      <h2 class="fw-bold">Join WanderStay</h2>
-      <p>Discover unique places, plan trips, and become a host</p>
+      <h2 class="fw-bold"><%= t('forms.joinWanderstay') %></h2>
+      <p><%= t('forms.signupSubtitle') %></p>
     </div>
 
     <form action="/signup" method="POST" novalidate class="needs-validation">
       <!-- Role Picker -->
       <div class="mb-3">
-        <label class="form-label small fw-bold text-muted text-uppercase mb-2">Account Type</label>
+        <label class="form-label small fw-bold text-muted text-uppercase mb-2"><%= t('forms.accountType') %></label>
         <div class="row g-2">
           <div class="col-6">
             <input type="radio" class="btn-check" name="role" id="roleGuest" value="guest" <%= (typeof selectedRole !== 'undefined' && selectedRole === 'host') ? '' : 'checked' %> autocomplete="off">
@@ -21,9 +21,9 @@
               <div>
                 <div class="d-flex align-items-center gap-2 mb-1">
                   <i class="fa-solid fa-compass text-primary"></i>
-                  <span class="fw-bold text-body">Traveler</span>
+                  <span class="fw-bold text-body"><%= t('forms.traveler') %></span>
                 </div>
-                <div class="small text-muted" style="font-size: 0.76rem;">Book stays & explore places</div>
+                <div class="small text-muted" style="font-size: 0.76rem;"><%= t('forms.travelerDesc') %></div>
               </div>
             </label>
           </div>
@@ -33,9 +33,9 @@
               <div>
                 <div class="d-flex align-items-center gap-2 mb-1">
                   <i class="fa-solid fa-house-chimney-user text-primary"></i>
-                  <span class="fw-bold text-body">Host</span>
+                  <span class="fw-bold text-body"><%= t('forms.host') %></span>
                 </div>
-                <div class="small text-muted" style="font-size: 0.76rem;">List homes & host guests</div>
+                <div class="small text-muted" style="font-size: 0.76rem;"><%= t('forms.hostDesc') %></div>
               </div>
             </label>
           </div>
@@ -44,42 +44,42 @@
 
       <div class="row g-2 mb-3">
         <div class="col-6">
-          <label for="firstName" class="form-label">First Name</label>
+          <label for="firstName" class="form-label"><%= t('forms.firstName') %></label>
           <input
             name="firstName"
             id="firstName"
             type="text"
             class="form-control"
-            placeholder="First name"
+            placeholder="<%= t('forms.firstName') %>"
           />
         </div>
         <div class="col-6">
-          <label for="lastName" class="form-label">Last Name</label>
+          <label for="lastName" class="form-label"><%= t('forms.lastName') %></label>
           <input
             name="lastName"
             id="lastName"
             type="text"
             class="form-control"
-            placeholder="Last name"
+            placeholder="<%= t('forms.lastName') %>"
           />
         </div>
       </div>
 
       <div class="mb-3">
-        <label for="username" class="form-label">Username</label>
+        <label for="username" class="form-label"><%= t('forms.username') %></label>
         <input
           name="username"
           id="username"
           type="text"
           class="form-control"
-          placeholder="Choose a username"
+          placeholder="<%= t('forms.chooseUsername') %>"
           required
         />
-        <div class="invalid-feedback">Please choose a username.</div>
+        <div class="invalid-feedback"><%= t('forms.chooseUsername') %></div>
       </div>
 
       <div class="mb-3">
-        <label for="email" class="form-label">Email Address</label>
+        <label for="email" class="form-label"><%= t('forms.email') %></label>
         <input
           name="email"
           id="email"
@@ -92,7 +92,7 @@
       </div>
 
       <div class="mb-4">
-        <label for="password" class="form-label">Password</label>
+        <label for="password" class="form-label"><%= t('forms.password') %></label>
         <input
           name="password"
           id="password"
@@ -106,12 +106,12 @@
       </div>
 
       <button type="submit" class="btn btn-primary btn-lg w-100 rounded-pill mb-3">
-        <i class="fa-solid fa-check me-1"></i> Create Account
+        <i class="fa-solid fa-check me-1"></i> <%= t('forms.createAccount') %>
       </button>
     </form>
 
     <div class="text-center text-muted small mt-3">
-      Already have an account? <a href="/login" class="text-primary fw-bold text-decoration-none">Log in</a>
+      <%= t('forms.alreadyHaveAccount') %> <a href="/login" class="text-primary fw-bold text-decoration-none"><%= t('forms.login') %></a>
     </div>
   </div>
 </div>

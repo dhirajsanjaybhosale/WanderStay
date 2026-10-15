@@ -2,6 +2,7 @@ const User = require('../models/user');
 const Listing = require('../models/listing');
 const Booking = require('../models/booking');
 const Review = require('../models/review');
+const Coupon = require('../models/coupon');
 const { sendBookingCancellationEmail } = require('../utils/emailService');
 const { createNotification } = require('../utils/notificationHelper');
 
@@ -26,7 +27,8 @@ module.exports.dashboard = async (req, res) => {
     pendingBookings,
     cancelledBookings,
     completedBookings,
-    totalReviews
+    totalReviews,
+    totalSuperhosts
   ] = await Promise.all([
     User.countDocuments(),
     User.countDocuments({ role: 'host' }),
@@ -40,7 +42,8 @@ module.exports.dashboard = async (req, res) => {
     Booking.countDocuments({ status: 'pending' }),
     Booking.countDocuments({ status: 'cancelled' }),
     Booking.countDocuments({ status: 'completed' }),
-    Review.countDocuments()
+    Review.countDocuments(),
+    User.countDocuments({ role: 'host', 'superhost.isSuperhost': true })
   ]);
 
   // Live Revenue Calculation (from verified paid bookings)
@@ -90,6 +93,35 @@ module.exports.dashboard = async (req, res) => {
     }
   }
 
+  // Host Verification Requests & Metrics
+  const pendingVerifications = await User.countDocuments({
+    role: 'host',
+    'hostVerification.status': 'pending'
+  });
+  const verifiedHosts = await User.countDocuments({
+    role: 'host',
+    'hostVerification.status': 'verified'
+  });
+
+  const verificationRequests = await User.find({
+    role: 'host',
+    'hostVerification.status': { $in: ['pending', 'verified', 'rejected'] }
+  })
+    .populate('hostVerification.reviewedBy', 'username')
+    .sort({ 'hostVerification.submittedAt': -1 });
+
+  // Coupons & Promo Codes Metrics & List
+  const coupons = await Coupon.find()
+    .populate('createdBy', 'username email')
+    .sort({ createdAt: -1 });
+
+  const totalCoupons = coupons.length;
+  const activeCoupons = coupons.filter(c => c.isActive && (!c.expiryDate || new Date(c.expiryDate) > new Date())).length;
+  const totalRedemptions = coupons.reduce((sum, c) => sum + (c.usedCount || 0), 0);
+  const totalDiscountGiven = coupons.reduce((sum, c) => {
+    return sum + (c.usageHistory || []).reduce((hSum, h) => hSum + (h.discountAmount || 0), 0);
+  }, 0);
+
   // Filter stats object
   const stats = {
     totalUsers,
@@ -107,7 +139,14 @@ module.exports.dashboard = async (req, res) => {
     totalReviews,
     platformAvgRating,
     verifiedRevenue,
-    confirmedVolume
+    confirmedVolume,
+    pendingVerifications,
+    verifiedHosts,
+    totalSuperhosts,
+    totalCoupons,
+    activeCoupons,
+    totalRedemptions,
+    totalDiscountGiven
   };
 
   res.render('admin/dashboard.ejs', {
@@ -117,6 +156,8 @@ module.exports.dashboard = async (req, res) => {
     listings,
     bookings,
     reviews,
+    coupons,
+    verificationRequests,
     reviewToListingMap,
     currentUser: req.user
   });
@@ -363,4 +404,247 @@ module.exports.createHost = async (req, res) => {
     req.flash('error', err.message);
     res.redirect('/admin?tab=users');
   }
+};
+
+/**
+ * Approve Host Verification Request
+ */
+module.exports.approveHostVerification = async (req, res) => {
+  const { id } = req.params;
+  const user = await User.findById(id);
+
+  if (!user) {
+    req.flash('error', 'Host account not found.');
+    return res.redirect('/admin?tab=verifications');
+  }
+
+  if (!user.hostVerification) {
+    user.hostVerification = {};
+  }
+
+  user.hostVerification.status = 'verified';
+  user.hostVerification.reviewedAt = new Date();
+  user.hostVerification.reviewedBy = req.user._id;
+  user.hostVerification.rejectionReason = '';
+  await user.save();
+
+  // Dispatch in-app notification to host
+  createNotification({
+    userId: user._id,
+    type: 'system',
+    title: 'Host Verification Approved! 🎉',
+    message: 'Congratulations! Your identity has been verified by WanderStay Trust & Safety. The "✓ Verified Host" badge is now active across all your listings and public profile.',
+    link: '/dashboard/host#verification-section'
+  });
+
+  req.flash('success', `Host @${user.username} has been verified successfully. The ✓ Verified Host badge is now live.`);
+  res.redirect('/admin?tab=verifications');
+};
+
+/**
+ * Reject Host Verification Request
+ */
+module.exports.rejectHostVerification = async (req, res) => {
+  const { id } = req.params;
+  const { reason } = req.body;
+  const user = await User.findById(id);
+
+  if (!user) {
+    req.flash('error', 'Host account not found.');
+    return res.redirect('/admin?tab=verifications');
+  }
+
+  if (!user.hostVerification) {
+    user.hostVerification = {};
+  }
+
+  const rejectionReason = (reason && reason.trim()) ? reason.trim() : 'Document illegible or information mismatch.';
+  user.hostVerification.status = 'rejected';
+  user.hostVerification.reviewedAt = new Date();
+  user.hostVerification.reviewedBy = req.user._id;
+  user.hostVerification.rejectionReason = rejectionReason;
+  await user.save();
+
+  // Dispatch in-app notification to host
+  createNotification({
+    userId: user._id,
+    type: 'system',
+    title: 'Host Verification Update',
+    message: `Your host verification request was not approved: "${rejectionReason}". You may re-submit with updated documents.`,
+    link: '/dashboard/host#verification-section'
+  });
+
+  req.flash('warning', `Host @${user.username} verification request was rejected.`);
+  res.redirect('/admin?tab=verifications');
+};
+
+/**
+ * Revoke Host Verification
+ */
+module.exports.revokeHostVerification = async (req, res) => {
+  const { id } = req.params;
+  const user = await User.findById(id);
+
+  if (!user) {
+    req.flash('error', 'Host account not found.');
+    return res.redirect('/admin?tab=verifications');
+  }
+
+  if (user.hostVerification) {
+    user.hostVerification.status = 'unverified';
+    user.hostVerification.rejectionReason = 'Verification revoked by administration.';
+    await user.save();
+  }
+
+  createNotification({
+    userId: user._id,
+    type: 'system',
+    title: 'Host Verification Revoked',
+    message: 'Your host verification status has been revoked by administration. Contact support if you believe this is an error.',
+    link: '/dashboard/host#verification-section'
+  });
+
+  req.flash('info', `Host @${user.username} verification has been revoked.`);
+  res.redirect('/admin?tab=verifications');
+};
+
+/**
+ * Trigger Data-Driven Superhost Evaluation for All Hosts
+ */
+module.exports.evaluateSuperhosts = async (req, res) => {
+  const { syncAllHostsSuperhostStatus } = require('../utils/superhostHelper');
+  const results = await syncAllHostsSuperhostStatus();
+  const superhostCount = results.filter(r => r.evaluation && r.evaluation.qualifies).length;
+  req.flash('success', `Superhost status recalculated across all ${results.length} host accounts. ${superhostCount} host(s) qualify as Superhost.`);
+  res.redirect('/admin?tab=users');
+};
+
+/**
+ * Trigger Superhost Evaluation for a Single Host
+ */
+module.exports.evaluateHostSuperhost = async (req, res) => {
+  const { id } = req.params;
+  const { syncHostSuperhostStatus } = require('../utils/superhostHelper');
+  const result = await syncHostSuperhostStatus(id);
+
+  if (!result) {
+    req.flash('error', 'Host account not found or user is not a host.');
+  } else if (result.evaluation.qualifies) {
+    req.flash('success', `Host @${result.user.username} meets all criteria and is awarded ⭐ Superhost! (${result.evaluation.badgeReason})`);
+  } else {
+    req.flash('info', `Host @${result.user.username} does not currently qualify for Superhost: ${result.evaluation.badgeReason}`);
+  }
+  res.redirect('/admin?tab=users');
+};
+
+/**
+ * Create New Coupon / Promo Code
+ */
+module.exports.createCoupon = async (req, res) => {
+  try {
+    const {
+      code,
+      discountType,
+      discountValue,
+      maxDiscount,
+      minBookingAmount,
+      startDate,
+      expiryDate,
+      usageLimit,
+      perUserLimit,
+      isActive,
+      description
+    } = req.body;
+
+    if (!code || !code.trim()) {
+      req.flash('error', 'Coupon code is required.');
+      return res.redirect('/admin?tab=coupons');
+    }
+
+    const cleanCode = code.trim().toUpperCase();
+
+    // Check if code already exists
+    const existing = await Coupon.findOne({ code: cleanCode });
+    if (existing) {
+      req.flash('error', `A coupon with code "${cleanCode}" already exists.`);
+      return res.redirect('/admin?tab=coupons');
+    }
+
+    const parsedDiscountValue = Number(discountValue);
+    if (isNaN(parsedDiscountValue) || parsedDiscountValue <= 0) {
+      req.flash('error', 'Discount value must be greater than zero.');
+      return res.redirect('/admin?tab=coupons');
+    }
+
+    if (discountType === 'percentage' && parsedDiscountValue > 100) {
+      req.flash('error', 'Percentage discount cannot exceed 100%.');
+      return res.redirect('/admin?tab=coupons');
+    }
+
+    if (!expiryDate) {
+      req.flash('error', 'Expiry date is required.');
+      return res.redirect('/admin?tab=coupons');
+    }
+
+    const newCoupon = new Coupon({
+      code: cleanCode,
+      discountType: discountType === 'fixed' ? 'fixed' : 'percentage',
+      discountValue: parsedDiscountValue,
+      maxDiscount: maxDiscount && Number(maxDiscount) > 0 ? Number(maxDiscount) : null,
+      minBookingAmount: minBookingAmount && Number(minBookingAmount) > 0 ? Number(minBookingAmount) : 0,
+      startDate: startDate ? new Date(startDate) : new Date(),
+      expiryDate: new Date(expiryDate),
+      usageLimit: usageLimit && Number(usageLimit) > 0 ? Number(usageLimit) : null,
+      perUserLimit: perUserLimit && Number(perUserLimit) > 0 ? Number(perUserLimit) : 1,
+      isActive: isActive === 'on' || isActive === true || isActive === 'true',
+      description: description ? description.trim() : '',
+      createdBy: req.user._id
+    });
+
+    await newCoupon.save();
+
+    req.flash('success', `Coupon "${cleanCode}" created successfully!`);
+    res.redirect('/admin?tab=coupons');
+  } catch (err) {
+    console.error('Error creating coupon:', err);
+    req.flash('error', `Failed to create coupon: ${err.message}`);
+    res.redirect('/admin?tab=coupons');
+  }
+};
+
+/**
+ * Toggle Coupon Active Status
+ */
+module.exports.toggleCouponStatus = async (req, res) => {
+  const { id } = req.params;
+  const coupon = await Coupon.findById(id);
+
+  if (!coupon) {
+    req.flash('error', 'Coupon not found.');
+    return res.redirect('/admin?tab=coupons');
+  }
+
+  coupon.isActive = !coupon.isActive;
+  await coupon.save();
+
+  req.flash('success', `Coupon "${coupon.code}" is now ${coupon.isActive ? 'active' : 'inactive'}.`);
+  res.redirect('/admin?tab=coupons');
+};
+
+/**
+ * Delete Coupon
+ */
+module.exports.deleteCoupon = async (req, res) => {
+  const { id } = req.params;
+  const coupon = await Coupon.findById(id);
+
+  if (!coupon) {
+    req.flash('error', 'Coupon not found.');
+    return res.redirect('/admin?tab=coupons');
+  }
+
+  await Coupon.findByIdAndDelete(id);
+
+  req.flash('success', `Coupon "${coupon.code}" deleted successfully.`);
+  res.redirect('/admin?tab=coupons');
 };

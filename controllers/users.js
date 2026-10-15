@@ -158,7 +158,7 @@ module.exports.renderProfile = async (req, res) => {
 // ================== UPDATE PROFILE DETAILS ==================
 module.exports.updateProfile = async (req, res) => {
   try {
-    const { firstName, lastName, phone, dateOfBirth, gender, country, city, bio } = req.body;
+    const { firstName, lastName, phone, dateOfBirth, gender, country, city, bio, preferredLanguage, preferredCurrency } = req.body;
 
     const updateData = {
       firstName: typeof firstName === 'string' ? firstName.trim() : '',
@@ -169,6 +169,31 @@ module.exports.updateProfile = async (req, res) => {
       city: typeof city === 'string' ? city.trim() : '',
       bio: typeof bio === 'string' ? bio.trim() : ''
     };
+
+    if (preferredLanguage && ['en', 'hi', 'mr'].includes(preferredLanguage)) {
+      updateData.preferredLanguage = preferredLanguage;
+      if (req.session) {
+        req.session.lang = preferredLanguage;
+      }
+      res.cookie('wanderstay_lang', preferredLanguage, {
+        maxAge: 365 * 24 * 60 * 60 * 1000,
+        httpOnly: false,
+        sameSite: 'lax',
+      });
+    }
+
+    if (preferredCurrency && ['INR', 'USD', 'EUR', 'GBP'].includes(preferredCurrency.toUpperCase())) {
+      const normalizedCurr = preferredCurrency.toUpperCase();
+      updateData.preferredCurrency = normalizedCurr;
+      if (req.session) {
+        req.session.currency = normalizedCurr;
+      }
+      res.cookie('wanderstay_currency', normalizedCurr, {
+        maxAge: 365 * 24 * 60 * 60 * 1000,
+        httpOnly: false,
+        sameSite: 'lax',
+      });
+    }
 
     if (dateOfBirth && dateOfBirth.trim() !== '') {
       updateData.dateOfBirth = new Date(dateOfBirth);
@@ -189,6 +214,8 @@ module.exports.updateProfile = async (req, res) => {
       req.user.city = updatedUser.city;
       req.user.country = updatedUser.country;
       req.user.bio = updatedUser.bio;
+      req.user.preferredLanguage = updatedUser.preferredLanguage;
+      req.user.preferredCurrency = updatedUser.preferredCurrency;
     }
 
     req.flash("success", "✓ Profile updated successfully");

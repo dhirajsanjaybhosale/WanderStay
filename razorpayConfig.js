@@ -94,8 +94,53 @@ function verifyPaymentSignature({ razorpay_order_id, razorpay_payment_id, razorp
   return isValid;
 }
 
+/**
+ * Issues a refund for a Razorpay payment or generates a structured mock refund.
+ * @param {Object} opts - { paymentId, amount (in rupees), notes }
+ * @returns {Promise<{ refund: Object, isMock: boolean }>}
+ */
+async function processRazorpayRefund({ paymentId, amount, notes = {} }) {
+  if (!paymentId) {
+    throw new Error('Payment ID is required to process a refund.');
+  }
+
+  const rzp = getRazorpayInstance();
+  const amountInPaise = Math.round(Number(amount) * 100);
+  const key_id = process.env.RAZORPAY_KEY_ID || '';
+
+  // If live or real test API keys are available, call Razorpay API
+  if (rzp && key_id && !key_id.includes('mock') && !key_id.includes('placeholder')) {
+    try {
+      const refund = await rzp.payments.refund(paymentId, {
+        amount: amountInPaise,
+        notes
+      });
+      return { refund, isMock: false };
+    } catch (err) {
+      console.error('⚠️ Razorpay API refund error:', err.message);
+      throw err;
+    }
+  }
+
+  // Simulated test mode refund
+  const mockRefundId = `rfnd_sim_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+  return {
+    refund: {
+      id: mockRefundId,
+      payment_id: paymentId,
+      amount: amountInPaise,
+      currency: 'INR',
+      status: 'processed',
+      created_at: Math.floor(Date.now() / 1000)
+    },
+    isMock: true
+  };
+}
+
 module.exports = {
   getRazorpayInstance,
   createRazorpayOrder,
-  verifyPaymentSignature
+  verifyPaymentSignature,
+  processRazorpayRefund
 };
+

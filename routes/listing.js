@@ -55,6 +55,9 @@ router.post(
 );
 
 
+// ================== DYNAMIC PRICING QUOTE ==================
+router.get("/:id/pricing/quote", wrapAsync(listingController.getPricingQuote));
+
 // ================== AVAILABILITY & CALENDAR ==================
 router.get("/:id/availability", wrapAsync(listingController.getAvailability));
 router.post("/:id/block-dates", isLoggedIn, isOwner, wrapAsync(listingController.blockDates));

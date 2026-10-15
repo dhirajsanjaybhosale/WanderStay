@@ -6,28 +6,28 @@
       <div class="mb-3 d-flex justify-content-center">
         <%- include('../components/logo.ejs', { variant: 'icon', size: 'lg' }) %>
       </div>
-      <h2 class="fw-bold">Welcome Back</h2>
-      <p>Log in to manage your bookings, wishlist, and listings</p>
+      <h2 class="fw-bold"><%= t('forms.welcomeBack') %></h2>
+      <p><%= t('forms.loginSubtitle') %></p>
     </div>
 
     <form action="/login" method="POST" novalidate class="needs-validation">
       <div class="mb-3">
-        <label for="username" class="form-label">Username or Email</label>
+        <label for="username" class="form-label"><%= t('forms.usernameOrEmail') %></label>
         <input
           name="username"
           id="username"
           type="text"
           class="form-control"
-          placeholder="Enter your username or email"
+          placeholder="<%= t('forms.usernamePlaceholder') %>"
           required
         />
-        <div class="invalid-feedback">Please enter your username or email.</div>
+        <div class="invalid-feedback"><%= t('forms.usernamePlaceholder') %></div>
       </div>
 
       <div class="mb-4">
         <div class="d-flex justify-content-between align-items-center mb-1">
-          <label for="password" class="form-label mb-0">Password</label>
-          <a href="/forgot-password" class="small text-primary text-decoration-none fw-semibold">Forgot password?</a>
+          <label for="password" class="form-label mb-0"><%= t('forms.password') %></label>
+          <a href="/forgot-password" class="small text-primary text-decoration-none fw-semibold"><%= t('forms.forgotPassword') %></a>
         </div>
         <input
           name="password"
@@ -41,12 +41,12 @@
       </div>
 
       <button type="submit" class="btn btn-primary btn-lg w-100 rounded-pill mb-3">
-        <i class="fa-solid fa-arrow-right-to-bracket me-1"></i> Log In
+        <i class="fa-solid fa-arrow-right-to-bracket me-1"></i> <%= t('forms.login') %>
       </button>
     </form>
 
     <div class="text-center text-muted small mt-3">
-      Don't have an account? <a href="/signup" class="text-primary fw-bold text-decoration-none">Sign up</a>
+      <%= t('forms.dontHaveAccount') %> <a href="/signup" class="text-primary fw-bold text-decoration-none"><%= t('forms.signup') %></a>
     </div>
   </div>
 </div>

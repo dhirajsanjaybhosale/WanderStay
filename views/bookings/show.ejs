@@ -2,7 +2,7 @@
 
 <% 
   const isPaid = (booking.paymentStatus === 'paid' || booking.status === 'confirmed');
-  const isCancelled = booking.status === 'cancelled';
+  const isCancelled = (booking.status === 'cancelled' || booking.status === 'refunded' || booking.status === 'refund_pending');
   const host = booking.listing ? booking.listing.owner : null;
   const guest = booking.guest;
   const pricePerNight = booking.listing ? booking.listing.price : Math.round((booking.totalPrice - 1250) / (booking.nights || 1));
@@ -33,9 +33,21 @@
           <span class="badge badge-status badge-confirmed">
             <i class="fa-solid fa-circle-check me-1"></i> Confirmed
           </span>
+        <% } else if (booking.status === 'completed') { %>
+          <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-3 py-1">
+            <i class="fa-solid fa-flag-checkered me-1"></i> Completed
+          </span>
         <% } else if (booking.status === 'cancelled') { %>
           <span class="badge badge-status badge-cancelled">
             <i class="fa-solid fa-ban me-1"></i> Cancelled
+          </span>
+        <% } else if (booking.status === 'refund_pending') { %>
+          <span class="badge bg-warning-subtle text-warning border border-warning-subtle rounded-pill px-3 py-1">
+            <i class="fa-solid fa-clock-rotate-left me-1"></i> Refund Pending
+          </span>
+        <% } else if (booking.status === 'refunded') { %>
+          <span class="badge bg-info-subtle text-info border border-info-subtle rounded-pill px-3 py-1">
+            <i class="fa-solid fa-rotate-left me-1"></i> Refunded
           </span>
         <% } else { %>
           <span class="badge bg-warning-subtle text-warning border border-warning rounded-pill px-3 py-1">
@@ -45,7 +57,11 @@
 
         <% if (booking.paymentStatus === 'paid') { %>
           <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2.5 py-1">
-            <i class="fa-solid fa-shield-check me-1"></i> Payment Verified
+            <i class="fa-solid fa-shield-check me-1"></i> Paid
+          </span>
+        <% } else if (booking.paymentStatus === 'refund_pending') { %>
+          <span class="badge bg-warning-subtle text-warning border border-warning-subtle rounded-pill px-2.5 py-1">
+            <i class="fa-solid fa-hourglass-half me-1"></i> Refund Pending
           </span>
         <% } else if (booking.paymentStatus === 'refunded') { %>
           <span class="badge bg-info-subtle text-info border border-info-subtle rounded-pill px-2.5 py-1">
@@ -56,8 +72,8 @@
             <i class="fa-solid fa-triangle-exclamation me-1"></i> Payment Failed
           </span>
         <% } else { %>
-          <span class="badge bg-warning-subtle text-warning border border-warning-subtle rounded-pill px-2.5 py-1">
-            <i class="fa-solid fa-hourglass-half me-1"></i> Unpaid
+          <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle rounded-pill px-2.5 py-1">
+            <i class="fa-solid fa-credit-card me-1"></i> Unpaid
           </span>
         <% } %>
       </div>
@@ -207,10 +223,44 @@
         </div>
 
         <div class="d-flex flex-column gap-2.5 py-2 border-bottom mb-3 small">
-          <div class="d-flex justify-content-between">
-            <span class="text-muted">₹<%= pricePerNight.toLocaleString('en-IN') %> × <%= booking.nights %> nights</span>
-            <span class="fw-semibold">₹<%= subtotal.toLocaleString('en-IN') %></span>
-          </div>
+          <% const pb = booking.priceBreakdown; %>
+          <% if (pb && pb.isDynamicPricingActive) { %>
+            <% if (pb.weekdayNights > 0) { %>
+              <div class="d-flex justify-content-between">
+                <span class="text-muted">₹<%= pb.weekdayRate.toLocaleString('en-IN') %> × <%= pb.weekdayNights %> weekday <%= pb.weekdayNights === 1 ? 'night' : 'nights' %></span>
+                <span class="fw-semibold">₹<%= pb.weekdayTotal.toLocaleString('en-IN') %></span>
+              </div>
+            <% } %>
+            <% if (pb.weekendNights > 0) { %>
+              <div class="d-flex justify-content-between text-warning-emphasis">
+                <span><i class="fa-solid fa-champagne-glasses me-1"></i>₹<%= pb.weekendRate.toLocaleString('en-IN') %> × <%= pb.weekendNights %> weekend <%= pb.weekendNights === 1 ? 'night' : 'nights' %></span>
+                <span class="fw-semibold">₹<%= pb.weekendTotal.toLocaleString('en-IN') %></span>
+              </div>
+            <% } %>
+            <% if (pb.seasonalNights > 0) { %>
+              <div class="d-flex justify-content-between text-primary">
+                <span><i class="fa-solid fa-cloud-sun me-1"></i><%= pb.seasonalName || 'Seasonal' %>: ₹<%= pb.seasonalRate.toLocaleString('en-IN') %> × <%= pb.seasonalNights %> <%= pb.seasonalNights === 1 ? 'night' : 'nights' %></span>
+                <span class="fw-semibold">₹<%= pb.seasonalTotal.toLocaleString('en-IN') %></span>
+              </div>
+            <% } %>
+            <% if (pb.holidayNights > 0) { %>
+              <div class="d-flex justify-content-between text-danger">
+                <span><i class="fa-solid fa-holly-berry me-1"></i><%= pb.holidayName || 'Holiday' %>: ₹<%= pb.holidayRate.toLocaleString('en-IN') %> × <%= pb.holidayNights %> <%= pb.holidayNights === 1 ? 'night' : 'nights' %></span>
+                <span class="fw-semibold">₹<%= pb.holidayTotal.toLocaleString('en-IN') %></span>
+              </div>
+            <% } %>
+            <% if (pb.extraGuestTotal > 0) { %>
+              <div class="d-flex justify-content-between text-success">
+                <span><i class="fa-solid fa-user-plus me-1"></i><%= pb.extraGuests %> extra <%= pb.extraGuests === 1 ? 'guest' : 'guests' %> × <%= booking.nights %> nts (@₹<%= pb.extraGuestFeePerNight %>/nt)</span>
+                <span class="fw-semibold">₹<%= pb.extraGuestTotal.toLocaleString('en-IN') %></span>
+              </div>
+            <% } %>
+          <% } else { %>
+            <div class="d-flex justify-content-between">
+              <span class="text-muted">₹<%= pricePerNight.toLocaleString('en-IN') %> × <%= booking.nights %> nights</span>
+              <span class="fw-semibold">₹<%= subtotal.toLocaleString('en-IN') %></span>
+            </div>
+          <% } %>
           <div class="d-flex justify-content-between">
             <span class="text-muted">Standard Cleaning Fee</span>
             <span class="fw-semibold">₹<%= cleaningFee.toLocaleString('en-IN') %></span>
@@ -220,8 +270,8 @@
             <span class="fw-semibold">₹<%= serviceFee.toLocaleString('en-IN') %></span>
           </div>
           <div class="d-flex justify-content-between">
-            <span class="text-muted">Promotional Discount</span>
-            <span class="fw-semibold text-success">₹0.00</span>
+            <span class="text-muted">Promotional Discount <%= (booking.coupon && booking.coupon.code) ? `(${booking.coupon.code})` : '' %></span>
+            <span class="fw-semibold text-success"><%= booking.discountAmount > 0 ? `-₹${Number(booking.discountAmount).toLocaleString('en-IN')}` : '₹0.00' %></span>
           </div>
         </div>
 
@@ -273,24 +323,132 @@
 
       <!-- Cancellation & Actions Card -->
       <div class="glass-card rounded-4 p-4 border">
-        <h6 class="fw-bold mb-2">Cancellation Policy</h6>
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <h6 class="fw-bold mb-0">Cancellation Policy</h6>
+          <span class="badge <%= (cancellationPolicy && cancellationPolicy.badgeClass) || 'bg-success-subtle text-success' %> rounded-pill px-2.5 py-1">
+            <%= (cancellationPolicy && cancellationPolicy.name) || 'Flexible' %>
+          </span>
+        </div>
+        
         <p class="text-muted small mb-3">
-          Free cancellation is available in accordance with WanderStay's standard reservation terms. If cancelled, a full refund is automatically issued to your original payment method.
+          <%= (cancellationPolicy && cancellationPolicy.summary) || 'Free cancellation available.' %>
         </p>
 
-        <% if (!isCancelled) { %>
-          <form action="/bookings/<%= booking._id %>/cancel" method="POST" onsubmit="return confirm('Are you sure you want to cancel this booking? If paid, a full refund will be initiated.');">
-            <button type="submit" class="btn btn-outline-danger w-100 rounded-pill btn-sm py-2 fw-semibold">
-              <i class="fa-solid fa-ban me-1"></i> Cancel Reservation
-            </button>
-          </form>
+        <% if (!isCancelled && booking.status !== 'completed') { %>
+          <div class="p-3 rounded-3 bg-body-tertiary border mb-3 small">
+            <div class="text-muted mb-1">Estimated Refund If Cancelled Now:</div>
+            <div class="d-flex justify-content-between align-items-center">
+              <span class="fw-bold fs-6 <%= refundPreview && refundPreview.refundAmount > 0 ? 'text-success' : 'text-muted' %>">
+                ₹<%= refundPreview ? Number(refundPreview.refundAmount).toLocaleString('en-IN') : 0 %>
+                <span class="small fw-normal text-muted">(<%= refundPreview ? refundPreview.refundPercentage : 0 %>%)</span>
+              </span>
+              <span class="small text-muted"><%= refundPreview ? refundPreview.hoursUntilCheckIn : 0 %> hrs to check-in</span>
+            </div>
+            <% if (refundPreview && refundPreview.explanation) { %>
+              <div class="small text-muted mt-1.5" style="font-size: 0.75rem; line-height: 1.35;">
+                <i class="fa-solid fa-circle-info me-1 text-primary"></i><%= refundPreview.explanation %>
+              </div>
+            <% } %>
+          </div>
+
+          <button type="button" class="btn btn-outline-danger w-100 rounded-pill btn-sm py-2 fw-semibold" data-bs-toggle="modal" data-bs-target="#cancelModal">
+            <i class="fa-solid fa-ban me-1"></i> Cancel Reservation
+          </button>
+        <% } else if (isCancelled) { %>
+          <div class="alert alert-danger mb-0 small rounded-3 p-3">
+            <div class="fw-bold mb-1"><i class="fa-solid fa-circle-xmark me-1"></i> Reservation Cancelled</div>
+            <% if (booking.cancellation && booking.cancellation.cancelledAt) { %>
+              <div class="text-muted small mb-1">
+                Cancelled on <%= new Date(booking.cancellation.cancelledAt).toLocaleDateString() %>
+                <% if (booking.cancellation.reason) { %> &bull; Reason: "<%= booking.cancellation.reason %>"<% } %>
+              </div>
+            <% } %>
+            <% if (booking.cancellation && booking.cancellation.refundAmount > 0) { %>
+              <div class="d-flex justify-content-between align-items-center mt-2 pt-2 border-top border-danger-subtle">
+                <span>Refund Processed:</span>
+                <span class="fw-bold text-success fs-6">₹<%= Number(booking.cancellation.refundAmount).toLocaleString('en-IN') %> (<%= booking.cancellation.refundPercentage %>%)</span>
+              </div>
+              <% if (booking.cancellation.refundId) { %>
+                <div class="small font-monospace text-muted mt-1" style="font-size: 0.72rem;">Refund Ref: <%= booking.cancellation.refundId %></div>
+              <% } %>
+            <% } else if (booking.paymentStatus === 'refund_pending') { %>
+              <div class="small text-warning fw-semibold mt-1">
+                <i class="fa-solid fa-hourglass-half me-1"></i> Refund pending gateway settlement.
+              </div>
+            <% } else { %>
+              <div class="small text-muted mt-1">No refund was eligible based on cancellation timing.</div>
+            <% } %>
+          </div>
         <% } else { %>
-          <div class="alert alert-danger mb-0 small rounded-3 p-2 text-center">
-            <i class="fa-solid fa-circle-info me-1"></i> This reservation has been cancelled.
+          <div class="alert alert-secondary mb-0 small rounded-3 p-2 text-center">
+            <i class="fa-solid fa-flag-checkered me-1"></i> This stay has been completed.
           </div>
         <% } %>
       </div>
 
+    </div>
+  </div>
+</div>
+
+<!-- Cancellation Confirmation Modal -->
+<div class="modal fade" id="cancelModal" tabindex="-1" aria-labelledby="cancelModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg rounded-4">
+      <div class="modal-header border-bottom-0 pb-0">
+        <h5 class="modal-title fw-bold text-danger" id="cancelModalLabel">
+          <i class="fa-solid fa-triangle-exclamation me-2"></i>Cancel Reservation?
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form action="/bookings/<%= booking._id %>/cancel" method="POST">
+        <div class="modal-body pt-2">
+          <p class="text-muted small mb-3">
+            Are you sure you want to cancel your stay at <strong><%= booking.listing ? booking.listing.title : 'this property' %></strong>?
+          </p>
+
+          <div class="p-3 bg-body-tertiary rounded-3 border mb-3 small">
+            <div class="d-flex justify-content-between mb-1">
+              <span class="text-muted">Policy Applied:</span>
+              <span class="fw-semibold"><%= (cancellationPolicy && cancellationPolicy.name) || 'Flexible' %></span>
+            </div>
+            <div class="d-flex justify-content-between mb-1">
+              <span class="text-muted">Total Paid:</span>
+              <span class="fw-semibold">₹<%= Number(booking.totalPrice).toLocaleString('en-IN') %></span>
+            </div>
+            <div class="d-flex justify-content-between mb-1">
+              <span class="text-muted">Calculated Refund:</span>
+              <span class="fw-bold text-success fs-6">₹<%= refundPreview ? Number(refundPreview.refundAmount).toLocaleString('en-IN') : 0 %> (<%= refundPreview ? refundPreview.refundPercentage : 0 %>%)</span>
+            </div>
+            <% if (refundPreview && refundPreview.nonRefundableAmount > 0) { %>
+              <div class="d-flex justify-content-between mb-1">
+                <span class="text-muted">Non-refundable Portion:</span>
+                <span class="text-danger fw-semibold">₹<%= Number(refundPreview.nonRefundableAmount).toLocaleString('en-IN') %></span>
+              </div>
+            <% } %>
+            <% if (refundPreview && refundPreview.explanation) { %>
+              <div class="text-muted small mt-2 pt-2 border-top" style="font-size: 0.75rem;">
+                <i class="fa-solid fa-circle-info me-1 text-primary"></i><%= refundPreview.explanation %>
+              </div>
+            <% } %>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Reason for Cancellation (Optional)</label>
+            <textarea name="reason" class="form-control rounded-3" rows="2" placeholder="Help the host understand why plans changed..."></textarea>
+          </div>
+
+          <div class="small text-muted">
+            <i class="fa-solid fa-shield-check text-success me-1"></i>
+            Eligible refunds are processed directly back to your original payment method. The reservation dates will be freed for other travelers.
+          </div>
+        </div>
+        <div class="modal-footer border-top-0 pt-0">
+          <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Keep Booking</button>
+          <button type="submit" class="btn btn-danger rounded-pill px-4">
+            <i class="fa-solid fa-ban me-1"></i> Confirm Cancellation
+          </button>
+        </div>
+      </form>
     </div>
   </div>
 </div>

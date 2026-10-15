@@ -44,13 +44,25 @@
                         <span class="badge badge-status badge-confirmed">
                           <i class="fa-solid fa-circle-check me-1"></i> Confirmed
                         </span>
+                      <% } else if (booking.status === 'completed') { %>
+                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-3 py-1">
+                          <i class="fa-solid fa-flag-checkered me-1"></i> Completed
+                        </span>
                       <% } else if (booking.status === 'pending') { %>
                         <span class="badge bg-warning-subtle text-warning border border-warning rounded-pill px-3 py-1">
                           <i class="fa-solid fa-hourglass-half me-1"></i> Pending Payment
                         </span>
+                      <% } else if (booking.status === 'refund_pending') { %>
+                        <span class="badge bg-warning-subtle text-warning border border-warning-subtle rounded-pill px-3 py-1">
+                          <i class="fa-solid fa-clock-rotate-left me-1"></i> Refund Pending
+                        </span>
+                      <% } else if (booking.status === 'refunded') { %>
+                        <span class="badge bg-info-subtle text-info border border-info-subtle rounded-pill px-3 py-1">
+                          <i class="fa-solid fa-rotate-left me-1"></i> Refunded
+                        </span>
                       <% } else { %>
                         <span class="badge badge-status badge-cancelled">
-                          <i class="fa-solid fa-circle-xmark me-1"></i> <%= booking.status %>
+                          <i class="fa-solid fa-circle-xmark me-1"></i> Cancelled
                         </span>
                       <% } %>
 
@@ -58,6 +70,10 @@
                       <% if (booking.paymentStatus === 'paid') { %>
                         <span class="badge bg-success-subtle text-success rounded-pill px-2 py-1">
                           <i class="fa-solid fa-shield-check me-1"></i> Paid
+                        </span>
+                      <% } else if (booking.paymentStatus === 'refund_pending') { %>
+                        <span class="badge bg-warning-subtle text-warning rounded-pill px-2 py-1">
+                          <i class="fa-solid fa-hourglass-half me-1"></i> Refund Pending
                         </span>
                       <% } else if (booking.paymentStatus === 'refunded') { %>
                         <span class="badge bg-info-subtle text-info rounded-pill px-2 py-1">
@@ -68,7 +84,7 @@
                           <i class="fa-solid fa-triangle-exclamation me-1"></i> Payment Failed
                         </span>
                       <% } else { %>
-                        <span class="badge bg-warning-subtle text-warning rounded-pill px-2 py-1">
+                        <span class="badge bg-secondary-subtle text-secondary rounded-pill px-2 py-1">
                           <i class="fa-solid fa-credit-card me-1"></i> Unpaid
                         </span>
                       <% } %>
@@ -135,11 +151,9 @@
                   </a>
 
                   <% if (booking.status === 'confirmed' || booking.status === 'pending') { %>
-                    <form action="/bookings/<%= booking._id %>/cancel" method="POST" onsubmit="return confirm('Are you sure you want to cancel this booking?');">
-                      <button type="submit" class="btn btn-outline-danger btn-sm rounded-pill px-3">
-                        <i class="fa-solid fa-ban me-1"></i> Cancel
-                      </button>
-                    </form>
+                    <button type="button" class="btn btn-outline-danger btn-sm rounded-pill px-3 open-cancel-modal-btn" data-booking-id="<%= booking._id %>">
+                      <i class="fa-solid fa-ban me-1"></i> Cancel
+                    </button>
                   <% } %>
                 </div>
               </div>
@@ -150,3 +164,120 @@
     </div>
   <% } %>
 </div>
+
+<!-- Dynamic Cancellation Modal for History -->
+<div class="modal fade" id="historyCancelModal" tabindex="-1" aria-labelledby="historyCancelModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg rounded-4">
+      <div class="modal-header border-bottom-0 pb-0">
+        <h5 class="modal-title fw-bold text-danger" id="historyCancelModalLabel">
+          <i class="fa-solid fa-triangle-exclamation me-2"></i>Cancel Reservation?
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form id="historyCancelForm" method="POST" action="">
+        <div class="modal-body pt-2">
+          <p class="text-muted small mb-3">
+            Review the cancellation policy and estimated refund before confirming:
+          </p>
+
+          <div id="cancelModalLoading" class="text-center py-3">
+            <span class="spinner-border spinner-border-sm text-primary me-2"></span>
+            <span class="small text-muted">Calculating policy rules &amp; refund eligibility...</span>
+          </div>
+
+          <div id="cancelModalContent" class="d-none">
+            <div class="p-3 bg-body-tertiary rounded-3 border mb-3 small">
+              <div class="d-flex justify-content-between mb-1">
+                <span class="text-muted">Stay:</span>
+                <span class="fw-semibold text-truncate ms-2" id="modalListingTitle" style="max-width: 250px;"></span>
+              </div>
+              <div class="d-flex justify-content-between mb-1">
+                <span class="text-muted">Policy:</span>
+                <span class="badge bg-light text-dark border" id="modalPolicyBadge"></span>
+              </div>
+              <div class="d-flex justify-content-between mb-1">
+                <span class="text-muted">Total Paid:</span>
+                <span class="fw-semibold" id="modalTotalPaid"></span>
+              </div>
+              <div class="d-flex justify-content-between mb-1">
+                <span class="text-muted">Estimated Refund:</span>
+                <span class="fw-bold text-success fs-6" id="modalRefundAmount"></span>
+              </div>
+              <div class="text-muted small mt-2 pt-2 border-top" id="modalExplanation" style="font-size: 0.75rem;"></div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label small fw-semibold">Reason for Cancellation (Optional)</label>
+              <textarea name="reason" class="form-control rounded-3" rows="2" placeholder="Help the host understand why plans changed..."></textarea>
+            </div>
+
+            <div class="small text-muted">
+              <i class="fa-solid fa-shield-check text-success me-1"></i>
+              Refunds are issued directly to your original payment method. The reservation dates will be freed immediately.
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer border-top-0 pt-0">
+          <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Keep Booking</button>
+          <button type="submit" class="btn btn-danger rounded-pill px-4" id="modalConfirmBtn" disabled>
+            <i class="fa-solid fa-ban me-1"></i> Confirm Cancellation
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const cancelModalEl = document.getElementById('historyCancelModal');
+    if (!cancelModalEl) return;
+    const cancelModal = new bootstrap.Modal(cancelModalEl);
+    const cancelForm = document.getElementById('historyCancelForm');
+    const loadingEl = document.getElementById('cancelModalLoading');
+    const contentEl = document.getElementById('cancelModalContent');
+    const titleEl = document.getElementById('modalListingTitle');
+    const policyEl = document.getElementById('modalPolicyBadge');
+    const paidEl = document.getElementById('modalTotalPaid');
+    const refundEl = document.getElementById('modalRefundAmount');
+    const expEl = document.getElementById('modalExplanation');
+    const confirmBtn = document.getElementById('modalConfirmBtn');
+
+    document.querySelectorAll('.open-cancel-modal-btn').forEach(btn => {
+      btn.addEventListener('click', async function() {
+        const bookingId = this.dataset.bookingId;
+        cancelForm.action = `/bookings/${bookingId}/cancel`;
+
+        loadingEl.classList.remove('d-none');
+        contentEl.classList.add('d-none');
+        confirmBtn.disabled = true;
+
+        cancelModal.show();
+
+        try {
+          const res = await fetch(`/bookings/${bookingId}/cancellation-preview`);
+          const data = await res.json();
+
+          if (res.ok && data.success) {
+            titleEl.textContent = data.listingTitle;
+            policyEl.textContent = `${data.policyName} Policy`;
+            paidEl.textContent = `₹${Number(data.totalPaid).toLocaleString('en-IN')}`;
+            refundEl.textContent = `₹${Number(data.refundAmount).toLocaleString('en-IN')} (${data.refundPercentage}%)`;
+            expEl.textContent = data.explanation;
+
+            loadingEl.classList.add('d-none');
+            contentEl.classList.remove('d-none');
+            confirmBtn.disabled = false;
+          } else {
+            loadingEl.innerHTML = `<span class="text-danger small">${data.message || 'Error loading refund details.'}</span>`;
+            confirmBtn.disabled = false;
+          }
+        } catch (err) {
+          loadingEl.innerHTML = `<span class="text-danger small">Network error loading refund preview. You can still confirm cancellation.</span>`;
+          confirmBtn.disabled = false;
+        }
+      });
+    });
+  });
+</script>

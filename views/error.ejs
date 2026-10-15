@@ -16,20 +16,20 @@
           </div>
 
           <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill px-3 py-1 fw-bold mb-3">
-            ERROR 404 • ROUTE NOT FOUND
+            <%= t('errors.routeNotFound') %>
           </span>
 
-          <h1 class="display-6 fw-bold mb-3">Looks like you've wandered off.</h1>
+          <h1 class="display-6 fw-bold mb-3"><%= t('errors.pageNotFound') %></h1>
           <p class="text-muted fs-6 mb-4 max-w-500 mx-auto leading-relaxed">
-            The path you followed doesn't lead to a destination on our map. It may have been moved, renamed, or retired.
+            <%= t('errors.pageNotFoundDesc') %>
           </p>
 
           <div class="d-flex flex-wrap justify-content-center gap-3">
             <a href="/" class="btn btn-primary btn-lg rounded-pill px-5 fw-semibold">
-              <i class="fa-solid fa-house me-2"></i>Return Home
+              <i class="fa-solid fa-house me-2"></i><%= t('buttons.returnHome') %>
             </a>
             <a href="/listings" class="btn btn-outline-secondary btn-lg rounded-pill px-4 fw-semibold">
-              <i class="fa-solid fa-compass me-2"></i>Explore Stays
+              <i class="fa-solid fa-compass me-2"></i><%= t('buttons.exploreStays') %>
             </a>
           </div>
         <% } else { %>
@@ -42,23 +42,23 @@
             ERROR <%= statusCode %> • TEMPORARY EXPEDITION GLITCH
           </span>
 
-          <h1 class="display-6 fw-bold mb-3">Temporary trail interruption.</h1>
+          <h1 class="display-6 fw-bold mb-3"><%= t('errors.somethingWentWrong') %></h1>
           <p class="text-muted fs-6 mb-4 max-w-500 mx-auto leading-relaxed">
-            <%= (err && err.message) ? err.message : "We encountered an unexpected situation while navigating to this page. Please try again in a moment." %>
+            <%= (err && err.message) ? err.message : t('errors.somethingWentWrongDesc') %>
           </p>
 
           <div class="d-flex flex-wrap justify-content-center gap-3">
             <a href="/" class="btn btn-primary btn-lg rounded-pill px-5 fw-semibold">
-              <i class="fa-solid fa-house me-2"></i>Return Home
+              <i class="fa-solid fa-house me-2"></i><%= t('buttons.returnHome') %>
             </a>
             <button onclick="window.location.reload()" class="btn btn-outline-secondary btn-lg rounded-pill px-4 fw-semibold">
-              <i class="fa-solid fa-rotate-right me-2"></i>Try Again
+              <i class="fa-solid fa-rotate-right me-2"></i><%= t('buttons.tryAgain') %>
             </button>
           </div>
         <% } %>
 
         <div class="mt-4 pt-3 border-top text-muted small">
-          Need assistance? <a href="/listings" class="text-primary text-decoration-none">Search all WanderStay accommodations</a>
+          <%= t('errors.needAssistance') %> <a href="/listings" class="text-primary text-decoration-none"><%= t('search.searchStays') %></a>
         </div>
       </div>
     </div>

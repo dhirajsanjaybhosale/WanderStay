@@ -18,6 +18,9 @@ const ExpressError = require("./utils/ExpressError");
 const session = require("express-session");
 const MongoStore = require("connect-mongo").default;
 const flash = require("connect-flash");
+const cookieParser = require("cookie-parser");
+const { i18nMiddleware, setLanguageHandler } = require("./utils/i18n");
+const { currencyMiddleware, setCurrencyHandler } = require("./utils/currency");
 
 const passport = require("passport");
 const LocalStrategy = require("passport-local");
@@ -75,6 +78,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(methodOverride("_method"));
 app.use(express.static(path.join(__dirname, "public")));
+app.use(cookieParser(SECRET));
 
 /* =======================
    SESSION CONFIG
@@ -105,6 +109,8 @@ app.use(session(sessionOptions));
 app.use(flash());
 app.use(passport.initialize());
 app.use(passport.session());
+app.use(i18nMiddleware);
+app.use(currencyMiddleware);
 
 app.use(async (req, res, next) => {
   res.locals.success = req.flash("success");
@@ -184,6 +190,11 @@ passport.deserializeUser(async (id, done) => {
 /* =======================
    ROUTE HANDLERS
 ======================= */
+app.post("/set-language", setLanguageHandler);
+app.get("/set-language", setLanguageHandler);
+app.post("/set-currency", setCurrencyHandler);
+app.get("/set-currency", setCurrencyHandler);
+
 app.use("/admin", adminRouter);
 app.use("/listings", listingRouter);
 app.use("/listings/:id/reviews", reviewRouter);
@@ -228,6 +239,7 @@ app.all("*", (req, res, next) => {
 });
 
 app.use((err, req, res, next) => {
+  console.error("❌ Express Error Handler:", err.stack || err);
   const { statusCode = 500, message = "Something went wrong!" } = err;
   res.status(statusCode).render("error.ejs", { err: { statusCode, message } });
 });

@@ -6,16 +6,16 @@
     <div>
       <div class="d-flex align-items-center gap-2 mb-1">
         <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-3 py-1">
-          <i class="fa-solid fa-bell me-1"></i>Activity Center
+          <i class="fa-solid fa-bell me-1"></i><%= t('notifications.activityCenter') %>
         </span>
         <% if (unreadCount > 0) { %>
           <span class="badge bg-danger rounded-pill px-2 py-1">
-            <%= unreadCount %> unread
+            <%= unreadCount %> <%= t('notifications.unread') %>
           </span>
         <% } %>
       </div>
-      <h1 class="h3 fw-bold mb-1">Notifications</h1>
-      <p class="text-muted small mb-0">Stay informed about your reservations, payments, messages, and property updates.</p>
+      <h1 class="h3 fw-bold mb-1"><%= t('notifications.notifications') %></h1>
+      <p class="text-muted small mb-0"><%= t('notifications.stayInformed') %></p>
     </div>
 
     <!-- Actions -->
@@ -24,13 +24,13 @@
         <form action="/notifications/read-all" method="POST" class="m-0">
           <button type="submit" class="btn btn-outline-secondary btn-sm rounded-pill px-3 shadow-sm d-inline-flex align-items-center gap-2">
             <i class="fa-solid fa-check-double text-success"></i>
-            <span>Mark all as read</span>
+            <span><%= t('notifications.markAllRead') %></span>
           </button>
         </form>
       <% } %>
       <a href="/listings" class="btn btn-primary btn-sm rounded-pill px-3 shadow-sm d-inline-flex align-items-center gap-2">
         <i class="fa-solid fa-compass"></i>
-        <span>Explore Stays</span>
+        <span><%= t('buttons.exploreStays') %></span>
       </a>
     </div>
   </div>
@@ -39,14 +39,14 @@
   <div class="d-flex align-items-center gap-2 mb-4 p-1 bg-body-tertiary rounded-pill d-inline-flex border">
     <a href="/notifications" class="notif-filter-tab <%= activeFilter === 'all' ? 'active' : '' %>">
       <i class="fa-solid fa-inbox"></i>
-      <span>All</span>
+      <span><%= t('notifications.all') %></span>
       <span class="badge <%= activeFilter === 'all' ? 'bg-white text-dark' : 'bg-secondary-subtle text-secondary' %> rounded-pill ms-1">
         <%= notifications ? notifications.length : 0 %>
       </span>
     </a>
     <a href="/notifications?filter=unread" class="notif-filter-tab <%= activeFilter === 'unread' ? 'active' : '' %>">
       <i class="fa-solid fa-envelope"></i>
-      <span>Unread</span>
+      <span><%= t('notifications.unread') %></span>
       <% if (unreadCount > 0) { %>
         <span class="badge <%= activeFilter === 'unread' ? 'bg-white text-danger' : 'bg-danger text-white' %> rounded-pill ms-1">
           <%= unreadCount %>

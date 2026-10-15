@@ -13,8 +13,8 @@
   <div class="row g-4 g-lg-5">
     <!-- Left Column: Checkout Details & Payment Action -->
     <div class="col-lg-7">
-      <h2 class="fw-bold mb-1">Confirm and Pay</h2>
-      <p class="text-muted mb-4">Complete your secure payment via Razorpay to confirm your reservation.</p>
+      <h2 class="fw-bold mb-1"><%= t('booking.confirmAndPay') %></h2>
+      <p class="text-muted mb-4"><%= t('booking.confirmAndPayDesc') %></p>
 
       <!-- Alert placeholder for interactive feedback -->
       <div id="payment-alert" class="alert d-none mb-4 rounded-3" role="alert"></div>
@@ -44,25 +44,25 @@
 
       <!-- Trip Details Card -->
       <div class="glass-card rounded-4 p-4 mb-4">
-        <h5 class="fw-bold mb-3">Your Trip Details</h5>
+        <h5 class="fw-bold mb-3"><%= t('booking.yourTripDetails') %></h5>
         
         <div class="row g-3 py-2 border-bottom">
           <div class="col-sm-6">
-            <span class="text-muted small d-block">Dates</span>
+            <span class="text-muted small d-block"><%= t('booking.dates') %></span>
             <div class="fw-semibold">
               <%= new Date(booking.checkIn).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) %> &mdash; 
               <%= new Date(booking.checkOut).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) %>
             </div>
-            <div class="small text-muted"><%= booking.nights %> <%= booking.nights === 1 ? 'night' : 'nights' %></div>
+            <div class="small text-muted"><%= booking.nights %> <%= booking.nights === 1 ? t('booking.night') : t('booking.nights') %></div>
           </div>
           <div class="col-sm-6">
-            <span class="text-muted small d-block">Guests</span>
-            <div class="fw-semibold"><%= booking.guests %> <%= booking.guests === 1 ? 'guest' : 'guests' %></div>
+            <span class="text-muted small d-block"><%= t('search.guests') %></span>
+            <div class="fw-semibold"><%= booking.guests %> <%= booking.guests === 1 ? t('search.guest') : t('search.guests') %></div>
           </div>
         </div>
 
         <div class="py-3">
-          <span class="text-muted small d-block mb-1">Primary Traveler</span>
+          <span class="text-muted small d-block mb-1"><%= t('booking.primaryTraveler') %></span>
           <div class="fw-semibold"><%= (currUser && currUser.fullName) ? currUser.fullName : (currUser ? currUser.username : 'Traveler') %></div>
           <div class="small text-muted"><%= (currUser && currUser.email) ? currUser.email : '' %></div>
         </div>
@@ -71,7 +71,7 @@
       <!-- Payment Section -->
       <div class="glass-card rounded-4 p-4 mb-4">
         <div class="d-flex justify-content-between align-items-center mb-3">
-          <h5 class="fw-bold mb-0">Pay with Razorpay</h5>
+          <h5 class="fw-bold mb-0"><%= t('booking.payWithRazorpay') %></h5>
           <span class="badge bg-success-subtle text-success rounded-pill px-3 py-1">
             <i class="fa-solid fa-shield-halved me-1"></i> 256-Bit SSL
           </span>
@@ -96,8 +96,14 @@
         </div>
 
         <!-- Main Pay Button -->
+        <% const checkoutPriceDisplay = (typeof getPriceDisplay === 'function') ? getPriceDisplay(booking.totalPrice) : { formattedTarget: `₹${Number(booking.totalPrice).toLocaleString('en-IN')}`, isConverted: false, formattedBase: `₹${Number(booking.totalPrice).toLocaleString('en-IN')}` }; %>
+        <% if (checkoutPriceDisplay.isConverted) { %>
+          <div class="mb-2 text-center text-muted small" style="font-size: 0.8rem;">
+            <span><i class="fa-solid fa-coins text-success me-1"></i>Payable in INR: <strong><%= checkoutPriceDisplay.formattedBase %></strong> (<%= t('currency.approx') %> <%= checkoutPriceDisplay.formattedTarget %> <%= currentCurrency %>)</span>
+          </div>
+        <% } %>
         <button id="rzp-pay-btn" type="button" class="btn btn-primary btn-lg w-100 rounded-3 mb-2 py-3 fw-bold shadow-sm">
-          <i class="fa-solid fa-lock me-2"></i> Pay &#8377; <%= Number(booking.totalPrice).toLocaleString("en-IN") %>
+          <i class="fa-solid fa-lock me-2"></i> <%= t('booking.pay') %> &#8377; <%= Number(booking.totalPrice).toLocaleString("en-IN") %>
         </button>
 
         <div class="text-center mt-3">
@@ -110,7 +116,7 @@
 
       <!-- Cancellation Policy Card -->
       <div class="p-3 bg-body-tertiary rounded-4 small text-muted border border-theme">
-        <div class="fw-bold text-body mb-1"><i class="fa-solid fa-circle-info text-primary me-1"></i> Cancellation Policy</div>
+        <div class="fw-bold text-body mb-1"><i class="fa-solid fa-circle-info text-primary me-1"></i> <%= t('booking.cancellationPolicy') %></div>
         Full refund available if cancelled up to 48 hours prior to check-in. The reservation dates are immediately protected upon successful payment.
       </div>
     </div>
@@ -118,40 +124,164 @@
     <!-- Right Column: Sticky Price Summary Card -->
     <div class="col-lg-5">
       <div class="booking-widget-card sticky-top" style="top: 90px; z-index: 10;">
-        <h5 class="fw-bold mb-3">Price Summary</h5>
+        <h5 class="fw-bold mb-3"><%= t('booking.priceSummary') %></h5>
+
+        <% const pb = booking.priceBreakdown; %>
+        <% if (pb && pb.isDynamicPricingActive) { %>
+          <% if (pb.weekdayNights > 0) { %>
+            <div class="booking-breakdown-row">
+              <span>&#8377; <%= pb.weekdayRate.toLocaleString("en-IN") %> &times; <%= pb.weekdayNights %> weekday <%= pb.weekdayNights === 1 ? t('booking.night') : t('booking.nights') %></span>
+              <span>&#8377; <%= pb.weekdayTotal.toLocaleString("en-IN") %></span>
+            </div>
+          <% } %>
+          <% if (pb.weekendNights > 0) { %>
+            <div class="booking-breakdown-row text-warning-emphasis">
+              <span><i class="fa-solid fa-champagne-glasses me-1"></i>&#8377; <%= pb.weekendRate.toLocaleString("en-IN") %> &times; <%= pb.weekendNights %> weekend <%= pb.weekendNights === 1 ? t('booking.night') : t('booking.nights') %></span>
+              <span>&#8377; <%= pb.weekendTotal.toLocaleString("en-IN") %></span>
+            </div>
+          <% } %>
+          <% if (pb.seasonalNights > 0) { %>
+            <div class="booking-breakdown-row text-primary">
+              <span><i class="fa-solid fa-cloud-sun me-1"></i><%= pb.seasonalName || 'Seasonal' %>: &#8377; <%= pb.seasonalRate.toLocaleString("en-IN") %> &times; <%= pb.seasonalNights %> <%= pb.seasonalNights === 1 ? t('booking.night') : t('booking.nights') %></span>
+              <span>&#8377; <%= pb.seasonalTotal.toLocaleString("en-IN") %></span>
+            </div>
+          <% } %>
+          <% if (pb.holidayNights > 0) { %>
+            <div class="booking-breakdown-row text-danger">
+              <span><i class="fa-solid fa-holly-berry me-1"></i><%= pb.holidayName || 'Holiday' %>: &#8377; <%= pb.holidayRate.toLocaleString("en-IN") %> &times; <%= pb.holidayNights %> <%= pb.holidayNights === 1 ? t('booking.night') : t('booking.nights') %></span>
+              <span>&#8377; <%= pb.holidayTotal.toLocaleString("en-IN") %></span>
+            </div>
+          <% } %>
+          <% if (pb.extraGuestTotal > 0) { %>
+            <div class="booking-breakdown-row text-success">
+              <span><i class="fa-solid fa-user-plus me-1"></i><%= pb.extraGuests %> extra <%= pb.extraGuests === 1 ? t('search.guest') : t('search.guests') %> &times; <%= booking.nights %> nts (@&#8377;<%= pb.extraGuestFeePerNight %>/nt)</span>
+              <span>&#8377; <%= pb.extraGuestTotal.toLocaleString("en-IN") %></span>
+            </div>
+          <% } %>
+        <% } else { %>
+          <div class="booking-breakdown-row">
+            <span>&#8377; <%= Number(listing.price).toLocaleString("en-IN") %> &times; <%= booking.nights %> <%= booking.nights === 1 ? t('booking.night') : t('booking.nights') %></span>
+            <span>&#8377; <%= (booking.nights * Number(listing.price)).toLocaleString("en-IN") %></span>
+          </div>
+        <% } %>
 
         <div class="booking-breakdown-row">
-          <span>&#8377; <%= Number(listing.price).toLocaleString("en-IN") %> &times; <%= booking.nights %> <%= booking.nights === 1 ? 'night' : 'nights' %></span>
-          <span>&#8377; <%= (booking.nights * Number(listing.price)).toLocaleString("en-IN") %></span>
-        </div>
-
-        <div class="booking-breakdown-row">
-          <span>Cleaning fee</span>
+          <span><%= t('booking.cleaningFee') %></span>
           <span>&#8377; 500</span>
         </div>
 
         <div class="booking-breakdown-row">
-          <span>WanderStay service fee</span>
+          <span><%= t('booking.serviceFee') %></span>
           <span>&#8377; 750</span>
         </div>
 
-        <div class="booking-breakdown-total mt-3 pt-3 border-top">
-          <div>
-            <div class="fw-bold">Total Due</div>
-            <div class="small text-muted fw-normal">Includes all taxes and fees</div>
+        <!-- Coupon / Promo Code Input Section -->
+        <div class="my-3 pt-3 border-top" id="coupon-section">
+          <label for="coupon-input" class="small fw-bold text-muted d-block mb-1.5">
+            <i class="fa-solid fa-ticket text-primary me-1"></i> <%= t('booking.havePromoCode') %>
+          </label>
+
+          <% const hasCoupon = booking.coupon && booking.coupon.code && booking.discountAmount > 0; %>
+          
+          <div id="coupon-input-group" class="<%= hasCoupon ? 'd-none' : 'd-flex' %> gap-2">
+            <input 
+              type="text" 
+              id="coupon-input" 
+              class="form-control form-control-sm text-uppercase fw-bold rounded-3" 
+              placeholder="e.g. WELCOME10"
+              autocomplete="off"
+            />
+            <button type="button" id="apply-coupon-btn" class="btn btn-outline-primary btn-sm rounded-3 px-3 fw-semibold text-nowrap">
+              <%= t('buttons.apply') %>
+            </button>
           </div>
-          <span class="fs-4 fw-bold text-primary">&#8377; <%= Number(booking.totalPrice).toLocaleString("en-IN") %></span>
+
+          <div id="coupon-applied-box" class="<%= hasCoupon ? 'd-flex' : 'd-none' %> justify-content-between align-items-center p-2 rounded-3 bg-success-subtle border border-success-subtle">
+            <div class="d-flex align-items-center gap-2">
+              <span class="badge bg-success rounded-pill px-2.5 py-1 fw-bold" id="applied-coupon-code">
+                <i class="fa-solid fa-tag me-1"></i><%= hasCoupon ? booking.coupon.code : '' %>
+              </span>
+              <span class="small text-success fw-semibold" id="applied-coupon-desc">Promo Applied!</span>
+            </div>
+            <button type="button" id="remove-coupon-btn" class="btn btn-sm btn-link text-danger text-decoration-none p-0 fw-semibold">
+              <i class="fa-solid fa-xmark me-1"></i><%= t('buttons.remove') %>
+            </button>
+          </div>
+
+          <div id="coupon-feedback" class="small mt-1.5 d-none"></div>
         </div>
+
+        <!-- Original Price & Discount Display (Visible when coupon is applied) -->
+        <div id="discount-breakdown-row" class="booking-breakdown-row text-success fw-semibold <%= hasCoupon ? '' : 'd-none' %>">
+          <span>
+            <i class="fa-solid fa-tags me-1"></i> <%= t('booking.promoDiscount') %>
+          </span>
+          <span id="discount-amount-display">-&#8377; <%= Number(booking.discountAmount || 0).toLocaleString("en-IN") %></span>
+        </div>
+
+        <% if (checkoutPriceDisplay.isConverted) { %>
+          <!-- Converted Display Total -->
+          <div class="booking-breakdown-total mt-3 pt-3 border-top">
+            <div>
+              <div class="small text-muted fw-bold text-uppercase" style="font-size: 0.72rem; letter-spacing: 0.05em;">
+                <i class="fa-solid fa-eye text-primary me-1"></i><%= t('currency.convertedPrice') || 'Displayed Converted Price' %>
+              </div>
+              <div class="small text-muted fw-normal" id="original-price-note">
+                <% if (hasCoupon && booking.originalPrice) { %>
+                  <span class="text-decoration-line-through text-muted me-1">&#8377; <%= Number(booking.originalPrice).toLocaleString("en-IN") %></span>
+                <% } %>
+                <%= t('currency.approx') %> (<%= currentCurrency %>)
+              </div>
+            </div>
+            <span class="fs-4 fw-bold text-primary" id="converted-total-display"><%= checkoutPriceDisplay.formattedTarget %></span>
+          </div>
+
+          <!-- Actual Payable Amount (Base INR) -->
+          <div class="p-3 my-2 rounded-3 bg-body-tertiary border border-theme d-flex justify-content-between align-items-center">
+            <div>
+              <div class="fw-bold text-body small d-flex align-items-center gap-1.5">
+                <i class="fa-solid fa-lock text-success"></i>
+                <span><%= t('currency.actualPayable') || 'Actual Payable Amount' %></span>
+              </div>
+              <div class="text-muted" style="font-size: 0.7rem;"><%= t('currency.baseCurrency') || 'Base Currency' %>: INR (₹)</div>
+            </div>
+            <span class="fs-5 fw-bold text-success" id="total-price-display">&#8377; <%= Number(booking.totalPrice).toLocaleString("en-IN") %></span>
+          </div>
+
+          <!-- Currency Conversion Clarity Notice -->
+          <div class="p-2.5 bg-info-subtle text-info-emphasis rounded-3 border border-info-subtle small my-3" style="font-size: 0.74rem;">
+            <div class="fw-semibold mb-1 d-flex align-items-center gap-1">
+              <i class="fa-solid fa-shield-halved text-primary"></i>
+              <span>Payment & Currency Transparency</span>
+            </div>
+            <div>
+              <%= t('currency.chargedInINR') %> Your card will be debited <strong><%= checkoutPriceDisplay.formattedBase %> INR</strong>. Converted prices in <strong><%= currentCurrency %></strong> are indicative estimates based on current exchange rates.
+            </div>
+          </div>
+        <% } else { %>
+          <div class="booking-breakdown-total mt-3 pt-3 border-top">
+            <div>
+              <div class="fw-bold"><%= t('booking.totalDue') %></div>
+              <div class="small text-muted fw-normal" id="original-price-note">
+                <% if (hasCoupon && booking.originalPrice) { %>
+                  <span class="text-decoration-line-through text-muted me-1">&#8377; <%= Number(booking.originalPrice).toLocaleString("en-IN") %></span>
+                <% } %>
+                <%= t('booking.includesAllTaxes') %>
+              </div>
+            </div>
+            <span class="fs-4 fw-bold text-primary" id="total-price-display">&#8377; <%= Number(booking.totalPrice).toLocaleString("en-IN") %></span>
+          </div>
+        <% } %>
 
         <hr class="my-4" />
 
         <div class="small text-muted">
           <div class="d-flex align-items-center gap-2 mb-2 text-body fw-semibold">
             <i class="fa-solid fa-award text-warning"></i>
-            WanderStay Booking Guarantee
+            <%= t('booking.bookingGuarantee') %>
           </div>
           <p class="mb-0">
-            Every booking includes comprehensive protection against host cancellations, listing inaccuracies, and check-in issues.
+            <%= t('booking.guaranteeDesc') %>
           </p>
         </div>
       </div>
@@ -168,8 +298,145 @@
     const alertBox = document.getElementById('payment-alert');
     const bookingId = "<%= booking._id %>";
     const razorpayKeyId = "<%= razorpayKeyId %>";
-    const orderId = "<%= booking.razorpayOrderId %>";
-    const amountInPaise = <%= Math.round(booking.totalPrice * 100) %>;
+    let orderId = "<%= booking.razorpayOrderId %>";
+    let amountInPaise = <%= Math.round(booking.totalPrice * 100) %>;
+    const currRate = <%= (typeof getExchangeRate === 'function' && typeof currentCurrency !== 'undefined') ? getExchangeRate(currentCurrency) : 1 %>;
+    const currSymbol = "<%= (typeof currentCurrencyConfig !== 'undefined' && currentCurrencyConfig.symbol) ? currentCurrencyConfig.symbol : '₹' %>";
+    const convertedTotalDisplay = document.getElementById('converted-total-display');
+
+    // Coupon DOM elements
+    const couponInput = document.getElementById('coupon-input');
+    const applyCouponBtn = document.getElementById('apply-coupon-btn');
+    const removeCouponBtn = document.getElementById('remove-coupon-btn');
+    const couponInputGroup = document.getElementById('coupon-input-group');
+    const couponAppliedBox = document.getElementById('coupon-applied-box');
+    const appliedCouponCode = document.getElementById('applied-coupon-code');
+    const discountBreakdownRow = document.getElementById('discount-breakdown-row');
+    const discountAmountDisplay = document.getElementById('discount-amount-display');
+    const originalPriceNote = document.getElementById('original-price-note');
+    const totalPriceDisplay = document.getElementById('total-price-display');
+    const couponFeedback = document.getElementById('coupon-feedback');
+
+    function setCouponFeedback(msg, isError = false) {
+      if (!couponFeedback) return;
+      if (!msg) {
+        couponFeedback.className = 'small mt-1.5 d-none';
+        couponFeedback.innerHTML = '';
+        return;
+      }
+      couponFeedback.className = `small mt-1.5 ${isError ? 'text-danger' : 'text-success'} fw-semibold`;
+      couponFeedback.innerHTML = `<i class="fa-solid fa-${isError ? 'circle-exclamation' : 'circle-check'} me-1"></i> ${msg}`;
+    }
+
+    // Apply Coupon Event
+    if (applyCouponBtn && couponInput) {
+      async function handleApplyCoupon() {
+        const code = couponInput.value.trim();
+        if (!code) {
+          setCouponFeedback('Please enter a coupon code.', true);
+          return;
+        }
+
+        applyCouponBtn.disabled = true;
+        applyCouponBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span>';
+        setCouponFeedback('');
+
+        try {
+          const res = await fetch(`/bookings/${bookingId}/coupon/apply`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+            body: JSON.stringify({ code })
+          });
+
+          const data = await res.json();
+          if (res.ok && data.success) {
+            // Update Razorpay state
+            amountInPaise = Math.round(data.totalPrice * 100);
+            if (data.razorpayOrderId) orderId = data.razorpayOrderId;
+
+            // Update UI elements
+            if (couponInputGroup) couponInputGroup.classList.replace('d-flex', 'd-none');
+            if (couponAppliedBox) couponAppliedBox.classList.replace('d-none', 'd-flex');
+            if (appliedCouponCode) appliedCouponCode.innerHTML = `<i class="fa-solid fa-tag me-1"></i>${data.coupon.code}`;
+            if (discountBreakdownRow) discountBreakdownRow.classList.remove('d-none');
+            if (discountAmountDisplay) discountAmountDisplay.textContent = `-₹ ${Number(data.discountAmount).toLocaleString('en-IN')}`;
+            if (totalPriceDisplay) totalPriceDisplay.textContent = `₹ ${Number(data.totalPrice).toLocaleString('en-IN')}`;
+            if (convertedTotalDisplay) {
+              const convVal = Number(data.totalPrice) * currRate;
+              convertedTotalDisplay.textContent = `${currSymbol}${convVal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+            }
+            if (originalPriceNote) {
+              originalPriceNote.innerHTML = `<span class="text-decoration-line-through text-muted me-1">₹ ${Number(data.originalPrice).toLocaleString('en-IN')}</span> Includes all taxes & fees`;
+            }
+            if (payBtn) {
+              payBtn.innerHTML = `<i class="fa-solid fa-lock me-2"></i> Pay ₹ ${Number(data.totalPrice).toLocaleString('en-IN')}`;
+            }
+
+            setCouponFeedback(data.message, false);
+          } else {
+            setCouponFeedback(data.message || 'Failed to apply coupon.', true);
+          }
+        } catch (err) {
+          console.error('Error applying coupon:', err);
+          setCouponFeedback('Network error. Please try again.', true);
+        } finally {
+          applyCouponBtn.disabled = false;
+          applyCouponBtn.textContent = 'Apply';
+        }
+      }
+
+      applyCouponBtn.addEventListener('click', handleApplyCoupon);
+      couponInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          handleApplyCoupon();
+        }
+      });
+    }
+
+    // Remove Coupon Event
+    if (removeCouponBtn) {
+      removeCouponBtn.addEventListener('click', async () => {
+        removeCouponBtn.disabled = true;
+        setCouponFeedback('');
+
+        try {
+          const res = await fetch(`/bookings/${bookingId}/coupon/remove`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' }
+          });
+
+          const data = await res.json();
+          if (res.ok && data.success) {
+            amountInPaise = Math.round(data.totalPrice * 100);
+            if (data.razorpayOrderId) orderId = data.razorpayOrderId;
+
+            if (couponAppliedBox) couponAppliedBox.classList.replace('d-flex', 'd-none');
+            if (couponInputGroup) couponInputGroup.classList.replace('d-none', 'd-flex');
+            if (couponInput) couponInput.value = '';
+            if (discountBreakdownRow) discountBreakdownRow.classList.add('d-none');
+            if (totalPriceDisplay) totalPriceDisplay.textContent = `₹ ${Number(data.totalPrice).toLocaleString('en-IN')}`;
+            if (convertedTotalDisplay) {
+              const convVal = Number(data.totalPrice) * currRate;
+              convertedTotalDisplay.textContent = `${currSymbol}${convVal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+            }
+            if (originalPriceNote) originalPriceNote.textContent = 'Includes all taxes & fees';
+            if (payBtn) {
+              payBtn.innerHTML = `<i class="fa-solid fa-lock me-2"></i> Pay ₹ ${Number(data.totalPrice).toLocaleString('en-IN')}`;
+            }
+
+            setCouponFeedback('Coupon removed.', false);
+          } else {
+            setCouponFeedback(data.message || 'Failed to remove coupon.', true);
+          }
+        } catch (err) {
+          console.error('Error removing coupon:', err);
+          setCouponFeedback('Network error. Please try again.', true);
+        } finally {
+          removeCouponBtn.disabled = false;
+        }
+      });
+    }
 
     function showAlert(message, type) {
       if (!alertBox) return;

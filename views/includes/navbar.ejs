@@ -14,13 +14,13 @@
         <input 
           type="search" 
           name="q" 
-          placeholder="Where to? (e.g. Bali, Paris, Manali)" 
+          placeholder="<%= t('search.whereTo') %>" 
           value="<%= typeof searchQuery !== 'undefined' ? searchQuery : '' %>"
           aria-label="Search stays by destination, title, or category"
           autocomplete="off"
         />
-        <button class="nav-search-btn" type="submit" aria-label="Search">
-          <span>Search</span>
+        <button class="nav-search-btn" type="submit" aria-label="<%= t('search.search') %>">
+          <span><%= t('search.search') %></span>
         </button>
       </div>
     </form>
@@ -30,34 +30,34 @@
       <!-- Desktop Navigation Links -->
       <div class="nav-links-wrapper d-none d-lg-flex align-items-center">
         <a class="nav-link-item" href="/listings">
-          <i class="fa-solid fa-compass me-1 text-primary"></i>Explore
+          <i class="fa-solid fa-compass me-1 text-primary"></i><%= t('nav.explore') %>
         </a>
         <a class="nav-link-item" href="/ai-planner">
-          <i class="fa-solid fa-wand-magic-sparkles me-1 text-warning"></i>AI Planner
+          <i class="fa-solid fa-wand-magic-sparkles me-1 text-warning"></i><%= t('nav.aiPlanner') %>
         </a>
         <a class="nav-link-item" href="/trips">
-          <i class="fa-solid fa-users-viewfinder me-1 text-info"></i>Trips
+          <i class="fa-solid fa-users-viewfinder me-1 text-info"></i><%= t('nav.trips') %>
         </a>
 
         <% if (user) { %>
           <a class="nav-link-item" href="/messages">
-            <i class="fa-regular fa-message me-1 text-primary"></i>Messages
+            <i class="fa-regular fa-message me-1 text-primary"></i><%= t('nav.messages') %>
           </a>
           <a class="nav-link-item" href="/wishlist">
-            <i class="fa-regular fa-heart me-1 text-danger"></i>Wishlist
+            <i class="fa-regular fa-heart me-1 text-danger"></i><%= t('nav.wishlist') %>
           </a>
 
           <% if (user.role === 'host') { %>
             <a class="nav-link-item nav-host-badge" href="/dashboard/host">
-              <i class="fa-solid fa-house-chimney me-1 text-success"></i>Host Panel
+              <i class="fa-solid fa-house-chimney me-1 text-success"></i><%= t('nav.hostPanel') %>
             </a>
           <% } else if (user.role === 'admin') { %>
             <a class="nav-link-item nav-host-badge" href="/admin">
-              <i class="fa-solid fa-shield-halved me-1 text-primary"></i>Admin Portal
+              <i class="fa-solid fa-shield-halved me-1 text-primary"></i><%= t('nav.adminPortal') %>
             </a>
           <% } else { %>
             <a class="nav-link-item" href="/become-host">
-              <i class="fa-solid fa-house-flag me-1 text-primary"></i>Become a Host
+              <i class="fa-solid fa-house-flag me-1 text-primary"></i><%= t('nav.becomeHost') %>
             </a>
           <% } %>
 
@@ -83,15 +83,15 @@
               <!-- Header -->
               <div class="notif-header">
                 <div class="notif-title-wrap">
-                  <h6 class="notif-title-text">Notifications</h6>
+                  <h6 class="notif-title-text"><%= t('nav.notifications') %></h6>
                   <% if (typeof unreadNotificationCount !== 'undefined' && unreadNotificationCount > 0) { %>
-                    <span class="notif-count-chip" id="dropdownUnreadChip"><%= unreadNotificationCount %> unread</span>
+                    <span class="notif-count-chip" id="dropdownUnreadChip"><%= unreadNotificationCount %> <%= t('nav.unread') %></span>
                   <% } %>
                 </div>
                 <% if (typeof unreadNotificationCount !== 'undefined' && unreadNotificationCount > 0) { %>
                   <form action="/notifications/read-all" method="POST" class="m-0" id="markAllReadForm">
-                    <button type="submit" class="notif-mark-all-btn" title="Mark all as read">
-                      <i class="fa-solid fa-check-double"></i> Mark all read
+                    <button type="submit" class="notif-mark-all-btn" title="<%= t('nav.markAllRead') %>">
+                      <i class="fa-solid fa-check-double"></i> <%= t('nav.markAllRead') %>
                     </button>
                   </form>
                 <% } %>
@@ -175,52 +175,164 @@
                   <div class="d-flex align-items-center justify-content-between">
                     <span class="fw-bold text-truncate"><%= user.fullName || user.username %></span>
                     <% if (user.role === 'host') { %>
-                      <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill">Host</span>
+                      <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill"><%= t('nav.host') %></span>
                     <% } else if (user.role === 'admin') { %>
-                      <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill">Admin</span>
+                      <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill"><%= t('nav.admin') %></span>
                     <% } else { %>
-                      <span class="badge bg-body-tertiary text-body border rounded-pill">Traveler</span>
+                      <span class="badge bg-body-tertiary text-body border rounded-pill"><%= t('nav.traveler') %></span>
                     <% } %>
                   </div>
                   <div class="small text-muted text-truncate"><%= user.email %></div>
                 </div>
               </li>
-              <li><a class="dropdown-item rounded-3 fw-semibold text-primary" href="/profile"><i class="fa-solid fa-circle-user me-2"></i>My Profile</a></li>
-              <li><a class="dropdown-item rounded-3" href="/dashboard"><i class="fa-solid fa-gauge me-2 text-muted"></i>Dashboard</a></li>
+              <li><a class="dropdown-item rounded-3 fw-semibold text-primary" href="/profile"><i class="fa-solid fa-circle-user me-2"></i><%= t('nav.myProfile') %></a></li>
+              <li><a class="dropdown-item rounded-3" href="/dashboard"><i class="fa-solid fa-gauge me-2 text-muted"></i><%= t('nav.dashboard') %></a></li>
               
               <% if (user.role === 'host') { %>
-                <li><a class="dropdown-item rounded-3" href="/dashboard/host"><i class="fa-solid fa-house-chimney-user me-2 text-success"></i>Host Dashboard</a></li>
-                <li><a class="dropdown-item rounded-3" href="/listings/new"><i class="fa-solid fa-circle-plus me-2 text-primary"></i>Add New Listing</a></li>
+                <li><a class="dropdown-item rounded-3" href="/dashboard/host"><i class="fa-solid fa-house-chimney-user me-2 text-success"></i><%= t('nav.hostDashboard') %></a></li>
+                <li><a class="dropdown-item rounded-3" href="/listings/new"><i class="fa-solid fa-circle-plus me-2 text-primary"></i><%= t('nav.addNewListing') %></a></li>
               <% } else if (user.role === 'admin') { %>
-                <li><a class="dropdown-item rounded-3" href="/admin"><i class="fa-solid fa-shield-halved me-2 text-primary"></i>Admin Portal</a></li>
+                <li><a class="dropdown-item rounded-3" href="/admin"><i class="fa-solid fa-shield-halved me-2 text-primary"></i><%= t('nav.adminPortal') %></a></li>
               <% } else { %>
-                <li><a class="dropdown-item rounded-3" href="/become-host"><i class="fa-solid fa-house-flag me-2 text-primary"></i>Become a Host</a></li>
+                <li><a class="dropdown-item rounded-3" href="/become-host"><i class="fa-solid fa-house-flag me-2 text-primary"></i><%= t('nav.becomeHost') %></a></li>
               <% } %>
               
-              <li><a class="dropdown-item rounded-3" href="/bookings/history"><i class="fa-solid fa-suitcase me-2 text-muted"></i>My Bookings</a></li>
+              <li><a class="dropdown-item rounded-3" href="/bookings/history"><i class="fa-solid fa-suitcase me-2 text-muted"></i><%= t('nav.myBookings') %></a></li>
               <li>
                 <a class="dropdown-item rounded-3 d-flex align-items-center justify-content-between" href="/notifications">
-                  <span><i class="fa-regular fa-bell me-2 text-warning"></i>Notifications</span>
+                  <span><i class="fa-regular fa-bell me-2 text-warning"></i><%= t('nav.notifications') %></span>
                   <% if (typeof unreadNotificationCount !== 'undefined' && unreadNotificationCount > 0) { %>
                     <span class="badge bg-danger rounded-pill"><%= unreadNotificationCount %></span>
                   <% } %>
                 </a>
               </li>
-              <li><a class="dropdown-item rounded-3" href="/messages"><i class="fa-regular fa-message me-2 text-primary"></i>Messages</a></li>
-              <li><a class="dropdown-item rounded-3" href="/wishlist"><i class="fa-regular fa-heart me-2 text-muted"></i>Wishlist</a></li>
-              <li><a class="dropdown-item rounded-3" href="/profile#security"><i class="fa-solid fa-gear me-2 text-muted"></i>Account Settings</a></li>
+              <li><a class="dropdown-item rounded-3" href="/messages"><i class="fa-regular fa-message me-2 text-primary"></i><%= t('nav.messages') %></a></li>
+              <li><a class="dropdown-item rounded-3" href="/wishlist"><i class="fa-regular fa-heart me-2 text-muted"></i><%= t('nav.wishlist') %></a></li>
+              <li><a class="dropdown-item rounded-3" href="/profile#security"><i class="fa-solid fa-gear me-2 text-muted"></i><%= t('nav.accountSettings') %></a></li>
               <li><hr class="dropdown-divider"></li>
-              <li><a class="dropdown-item rounded-3 text-danger" href="/logout"><i class="fa-solid fa-arrow-right-from-bracket me-2"></i>Log out</a></li>
+              <li><a class="dropdown-item rounded-3 text-danger" href="/logout"><i class="fa-solid fa-arrow-right-from-bracket me-2"></i><%= t('nav.logout') %></a></li>
             </ul>
           </div>
         <% } else { %>
-          <a class="nav-link-item d-none d-md-inline" href="/signup?role=host">Become a Host</a>
-          <a class="btn btn-outline-secondary btn-sm rounded-pill px-3 ms-2" href="/login">Log in</a>
-          <a class="btn btn-primary btn-sm rounded-pill px-3 ms-1" href="/signup">Sign up</a>
+          <a class="nav-link-item d-none d-md-inline" href="/signup?role=host"><%= t('nav.becomeHost') %></a>
+          <a class="btn btn-outline-secondary btn-sm rounded-pill px-3 ms-2" href="/login"><%= t('nav.login') %></a>
+          <a class="btn btn-primary btn-sm rounded-pill px-3 ms-1" href="/signup"><%= t('nav.signup') %></a>
         <% } %>
 
+        <!-- Language Selector Dropdown (Desktop) -->
+        <div class="dropdown lang-dropdown-wrapper ms-2">
+          <button 
+            class="btn btn-sm btn-outline-secondary rounded-pill d-flex align-items-center gap-1.5 px-2.5 py-1" 
+            type="button" 
+            id="langDropdownDesktop" 
+            data-bs-toggle="dropdown" 
+            aria-expanded="false"
+            aria-label="Language Selector: EN, हिंदी, मराठी"
+            title="<%= t('common.language') %>"
+          >
+            <i class="fa-solid fa-globe text-primary" style="font-size: 0.9rem;"></i>
+            <span class="fw-bold small" style="font-size: 0.76rem;">
+              <%= (typeof currentLang !== 'undefined' && currentLang === 'hi') ? 'हिंदी' : ((typeof currentLang !== 'undefined' && currentLang === 'mr') ? 'मराठी' : 'EN') %>
+            </span>
+          </button>
+          <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 rounded-4 p-2 mt-2 dropdown-menu-lux" aria-labelledby="langDropdownDesktop" style="min-width: 165px;">
+            <li>
+              <div class="px-3 py-1.5 small text-muted fw-bold text-uppercase" style="font-size: 0.68rem; letter-spacing: 0.05em;">
+                <i class="fa-solid fa-language me-1 text-primary"></i> <%= t('common.language') %>
+              </div>
+            </li>
+            <li><hr class="dropdown-divider my-1"></li>
+            <li>
+              <form action="/set-language" method="POST" class="m-0">
+                <input type="hidden" name="lang" value="en">
+                <button type="submit" class="dropdown-item rounded-3 d-flex align-items-center justify-content-between py-1.5 <%= (typeof currentLang === 'undefined' || currentLang === 'en') ? 'active fw-bold text-primary' : '' %>">
+                  <span>English (EN)</span>
+                  <% if (typeof currentLang === 'undefined' || currentLang === 'en') { %>
+                    <i class="fa-solid fa-check small text-primary"></i>
+                  <% } %>
+                </button>
+              </form>
+            </li>
+            <li>
+              <form action="/set-language" method="POST" class="m-0">
+                <input type="hidden" name="lang" value="hi">
+                <button type="submit" class="dropdown-item rounded-3 d-flex align-items-center justify-content-between py-1.5 <%= (typeof currentLang !== 'undefined' && currentLang === 'hi') ? 'active fw-bold text-primary' : '' %>">
+                  <span>हिंदी (Hindi)</span>
+                  <% if (typeof currentLang !== 'undefined' && currentLang === 'hi') { %>
+                    <i class="fa-solid fa-check small text-primary"></i>
+                  <% } %>
+                </button>
+              </form>
+            </li>
+            <li>
+              <form action="/set-language" method="POST" class="m-0">
+                <input type="hidden" name="lang" value="mr">
+                <button type="submit" class="dropdown-item rounded-3 d-flex align-items-center justify-content-between py-1.5 <%= (typeof currentLang !== 'undefined' && currentLang === 'mr') ? 'active fw-bold text-primary' : '' %>">
+                  <span>मराठी (Marathi)</span>
+                  <% if (typeof currentLang !== 'undefined' && currentLang === 'mr') { %>
+                    <i class="fa-solid fa-check small text-primary"></i>
+                  <% } %>
+                </button>
+              </form>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Currency Selector Dropdown (Desktop) -->
+        <div class="dropdown currency-dropdown-wrapper ms-2">
+          <button 
+            class="btn btn-sm btn-outline-secondary rounded-pill d-flex align-items-center gap-1.5 px-2.5 py-1" 
+            type="button" 
+            id="currencyDropdownDesktop" 
+            data-bs-toggle="dropdown" 
+            aria-expanded="false"
+            aria-label="Currency Selector: INR, USD, EUR, GBP"
+            title="<%= t('currency.currency') || 'Currency' %>"
+          >
+            <span class="fw-bold text-success" style="font-size: 0.85rem;"><%= (typeof currentCurrencyConfig !== 'undefined' && currentCurrencyConfig.symbol) ? currentCurrencyConfig.symbol : '₹' %></span>
+            <span class="fw-bold small" style="font-size: 0.76rem;">
+              <%= typeof currentCurrency !== 'undefined' ? currentCurrency : 'INR' %>
+            </span>
+          </button>
+          <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 rounded-4 p-2 mt-2 dropdown-menu-lux" aria-labelledby="currencyDropdownDesktop" style="min-width: 190px;">
+            <li>
+              <div class="px-3 py-1.5 small text-muted fw-bold text-uppercase d-flex align-items-center justify-content-between" style="font-size: 0.68rem; letter-spacing: 0.05em;">
+                <span><i class="fa-solid fa-coins me-1 text-success"></i> <%= t('currency.currency') || 'Currency' %></span>
+                <span class="badge bg-secondary-subtle text-secondary py-0.5 px-1.5" style="font-size: 0.62rem;">Base: INR</span>
+              </div>
+            </li>
+            <li><hr class="dropdown-divider my-1"></li>
+            <% 
+              const currenciesList = [
+                { code: 'INR', symbol: '₹', name: 'Indian Rupee', flag: '🇮🇳', isBase: true },
+                { code: 'USD', symbol: '$', name: 'US Dollar', flag: '🇺🇸', isBase: false },
+                { code: 'EUR', symbol: '€', name: 'Euro', flag: '🇪🇺', isBase: false },
+                { code: 'GBP', symbol: '£', name: 'British Pound', flag: '🇬🇧', isBase: false }
+              ];
+            %>
+            <% currenciesList.forEach(c => { 
+                 const isActive = (typeof currentCurrency === 'undefined' && c.code === 'INR') || (typeof currentCurrency !== 'undefined' && currentCurrency === c.code);
+            %>
+              <li>
+                <form action="/set-currency" method="POST" class="m-0">
+                  <input type="hidden" name="currency" value="<%= c.code %>">
+                  <button type="submit" class="dropdown-item rounded-3 d-flex align-items-center justify-content-between py-1.5 <%= isActive ? 'active fw-bold text-primary' : '' %>">
+                    <span class="d-flex align-items-center gap-2">
+                      <span><%= c.flag %></span>
+                      <span><%= c.code %> (<%= c.symbol %>)</span>
+                    </span>
+                    <% if (isActive) { %>
+                      <i class="fa-solid fa-check small text-primary"></i>
+                    <% } %>
+                  </button>
+                </form>
+              </li>
+            <% }); %>
+          </ul>
+        </div>
+
         <!-- Dark Mode Toggle Button -->
-        <button id="theme-toggle" class="theme-toggle-btn ms-2" title="Toggle dark / light theme" aria-label="Toggle theme">
+        <button id="theme-toggle" class="theme-toggle-btn ms-1" title="Toggle dark / light theme" aria-label="Toggle theme">
           <i class="fa-solid fa-moon theme-icon"></i>
         </button>
       </div>
@@ -404,10 +516,69 @@
       </nav>
     </div>
 
-    <!-- Mobile Drawer Footer -->
-    <div class="pt-4 border-top text-center text-muted small">
-      <div class="mb-1"><strong>WanderStay</strong> • Extraordinary Accommodations</div>
-      <div>&copy; <%= new Date().getFullYear() %> WanderStay, Inc.</div>
+      <!-- Mobile Language Switcher in Drawer -->
+      <div class="p-3 my-2 bg-body-tertiary rounded-4 border border-theme">
+        <div class="small fw-bold text-muted mb-2 d-flex align-items-center gap-1.5">
+          <i class="fa-solid fa-globe text-primary"></i>
+          <span><%= t('common.language') %>:</span>
+        </div>
+        <div class="d-flex gap-2">
+          <form action="/set-language" method="POST" class="flex-grow-1 m-0">
+            <input type="hidden" name="lang" value="en">
+            <button type="submit" class="btn btn-sm w-100 rounded-pill <%= (typeof currentLang === 'undefined' || currentLang === 'en') ? 'btn-primary fw-bold' : 'btn-outline-secondary' %>">
+              EN
+            </button>
+          </form>
+          <form action="/set-language" method="POST" class="flex-grow-1 m-0">
+            <input type="hidden" name="lang" value="hi">
+            <button type="submit" class="btn btn-sm w-100 rounded-pill <%= (typeof currentLang !== 'undefined' && currentLang === 'hi') ? 'btn-primary fw-bold' : 'btn-outline-secondary' %>">
+              हिंदी
+            </button>
+          </form>
+          <form action="/set-language" method="POST" class="flex-grow-1 m-0">
+            <input type="hidden" name="lang" value="mr">
+            <button type="submit" class="btn btn-sm w-100 rounded-pill <%= (typeof currentLang !== 'undefined' && currentLang === 'mr') ? 'btn-primary fw-bold' : 'btn-outline-secondary' %>">
+              मराठी
+            </button>
+          </form>
+        </div>
+      </div>
+
+      <!-- Mobile Currency Switcher in Drawer -->
+      <div class="p-3 my-2 bg-body-tertiary rounded-4 border border-theme">
+        <div class="small fw-bold text-muted mb-2 d-flex align-items-center justify-content-between">
+          <div class="d-flex align-items-center gap-1.5">
+            <i class="fa-solid fa-coins text-success"></i>
+            <span><%= t('currency.currency') || 'Currency' %>:</span>
+          </div>
+          <span class="badge bg-secondary-subtle text-secondary" style="font-size: 0.65rem;">Base: INR (₹)</span>
+        </div>
+        <div class="row g-2">
+          <% [
+            { code: 'INR', symbol: '₹', label: '₹ INR' },
+            { code: 'USD', symbol: '$', label: '$ USD' },
+            { code: 'EUR', symbol: '€', label: '€ EUR' },
+            { code: 'GBP', symbol: '£', label: '£ GBP' }
+          ].forEach(c => { 
+               const isSel = (typeof currentCurrency === 'undefined' && c.code === 'INR') || (typeof currentCurrency !== 'undefined' && currentCurrency === c.code);
+          %>
+            <div class="col-6">
+              <form action="/set-currency" method="POST" class="m-0">
+                <input type="hidden" name="currency" value="<%= c.code %>">
+                <button type="submit" class="btn btn-sm w-100 rounded-pill <%= isSel ? 'btn-success fw-bold text-white' : 'btn-outline-secondary' %>">
+                  <%= c.label %>
+                </button>
+              </form>
+            </div>
+          <% }); %>
+        </div>
+      </div>
+
+      <!-- Mobile Drawer Footer -->
+      <div class="pt-3 border-top text-center text-muted small">
+        <div class="mb-1"><strong>WanderStay</strong> • Extraordinary Accommodations</div>
+        <div>&copy; <%= new Date().getFullYear() %> WanderStay, Inc.</div>
+      </div>
     </div>
   </div>
 </div>

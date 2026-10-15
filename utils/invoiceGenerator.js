@@ -208,23 +208,76 @@ function generateBookingInvoice(booking, outputStream) {
       y += 22;
 
       // Pricing Calculations
+      const pb = booking.priceBreakdown;
+      const isDynamic = pb && pb.isDynamicPricingActive;
       const pricePerNight = (booking.listing && booking.listing.price)
         ? booking.listing.price
         : Math.round((booking.totalPrice - 1250) / (booking.nights || 1));
-      const subtotal = pricePerNight * (booking.nights || 1);
+      const subtotal = isDynamic ? ((pb.roomSubtotal || 0) + (pb.extraGuestTotal || 0)) : (pricePerNight * (booking.nights || 1));
       const cleaningFee = 500;
       const serviceFee = 750;
-      const discount = 0;
-      const totalAmount = booking.totalPrice || (subtotal + cleaningFee + serviceFee);
+      const discount = booking.discountAmount || 0;
+      const totalAmount = booking.totalPrice || (subtotal + cleaningFee + serviceFee - discount);
 
-      const tableRows = [
-        {
+      const tableRows = [];
+
+      if (isDynamic) {
+        if (pb.weekdayNights > 0) {
+          tableRows.push({
+            desc: `Weekday Accommodation (${booking.listing ? booking.listing.title : 'WanderStay'})`,
+            subDesc: `${pb.weekdayNights} weekday night(s) in ${booking.listing ? booking.listing.location : 'destination'}`,
+            rate: `₹${Number(pb.weekdayRate).toLocaleString('en-IN')}`,
+            qty: `${pb.weekdayNights} ${pb.weekdayNights === 1 ? 'night' : 'nights'}`,
+            amount: `₹${Number(pb.weekdayTotal).toLocaleString('en-IN')}`
+          });
+        }
+        if (pb.weekendNights > 0) {
+          tableRows.push({
+            desc: `Weekend Accommodation (Fri-Sat)`,
+            subDesc: `${pb.weekendNights} weekend night(s) @ special weekend rate`,
+            rate: `₹${Number(pb.weekendRate).toLocaleString('en-IN')}`,
+            qty: `${pb.weekendNights} ${pb.weekendNights === 1 ? 'night' : 'nights'}`,
+            amount: `₹${Number(pb.weekendTotal).toLocaleString('en-IN')}`
+          });
+        }
+        if (pb.seasonalNights > 0) {
+          tableRows.push({
+            desc: `Seasonal Accommodation (${pb.seasonalName || 'Seasonal'})`,
+            subDesc: `${pb.seasonalNights} seasonal night(s)`,
+            rate: `₹${Number(pb.seasonalRate).toLocaleString('en-IN')}`,
+            qty: `${pb.seasonalNights} ${pb.seasonalNights === 1 ? 'night' : 'nights'}`,
+            amount: `₹${Number(pb.seasonalTotal).toLocaleString('en-IN')}`
+          });
+        }
+        if (pb.holidayNights > 0) {
+          tableRows.push({
+            desc: `Holiday Accommodation (${pb.holidayName || 'Holiday'})`,
+            subDesc: `${pb.holidayNights} holiday night(s)`,
+            rate: `₹${Number(pb.holidayRate).toLocaleString('en-IN')}`,
+            qty: `${pb.holidayNights} ${pb.holidayNights === 1 ? 'night' : 'nights'}`,
+            amount: `₹${Number(pb.holidayTotal).toLocaleString('en-IN')}`
+          });
+        }
+        if (pb.extraGuestTotal > 0) {
+          tableRows.push({
+            desc: `Extra Guest Surcharge`,
+            subDesc: `${pb.extraGuests} extra guest(s) beyond base included capacity of ${pb.baseGuests}`,
+            rate: `₹${Number(pb.extraGuestFeePerNight).toLocaleString('en-IN')}/nt`,
+            qty: `${pb.nights} nts`,
+            amount: `₹${Number(pb.extraGuestTotal).toLocaleString('en-IN')}`
+          });
+        }
+      } else {
+        tableRows.push({
           desc: `Property Stay Accommodation (${booking.listing ? booking.listing.title : 'WanderStay'})`,
           subDesc: `${booking.nights} night stay in ${booking.listing ? booking.listing.location : 'destination'}`,
           rate: `₹${Number(pricePerNight).toLocaleString('en-IN')}`,
           qty: `${booking.nights} ${booking.nights === 1 ? 'night' : 'nights'}`,
           amount: `₹${Number(subtotal).toLocaleString('en-IN')}`
-        },
+        });
+      }
+
+      tableRows.push(
         {
           desc: 'Standard Cleaning & Sanitization Fee',
           subDesc: 'Professional turnover and hygiene preparation',
@@ -239,7 +292,7 @@ function generateBookingInvoice(booking, outputStream) {
           qty: '1 Stay',
           amount: `₹${Number(serviceFee).toLocaleString('en-IN')}`
         }
-      ];
+      );
 
       tableRows.forEach((row, idx) => {
         const rowHeight = 32;

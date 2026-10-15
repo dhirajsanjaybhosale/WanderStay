@@ -3,67 +3,615 @@
   <div class="container-max my-4">
     <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
       <div>
-        <h2 class="dashboard-title mb-1">Host Dashboard</h2>
-        <p class="text-muted mb-0">Overview of your listings, reservations, and overall earnings</p>
+        <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
+          <h2 class="dashboard-title mb-0"><%= t('dashboard.hostDashboard') %></h2>
+          <% const hostObj = (typeof currentHost !== 'undefined' && currentHost) ? currentHost : ((typeof currUser !== 'undefined' && currUser) ? currUser : null); %>
+          <% if (hostObj && hostObj.superhost && hostObj.superhost.isSuperhost) { %>
+            <span class="badge-superhost" data-bs-toggle="tooltip" data-bs-placement="top" title="<%= hostObj.superhost.badgeReason || '⭐ Superhost: Demonstrates extraordinary hospitality, stellar guest reviews, and reliability.' %>">
+              ⭐ <%= t('profile.superhost') %>
+            </span>
+          <% } %>
+          <% if (hostObj && hostObj.hostVerification && hostObj.hostVerification.status === 'verified') { %>
+            <span class="badge-verified-host" title="Identity Verified by WanderStay">
+              <i class="fa-solid fa-circle-check"></i> ✓ <%= t('profile.verifiedHost') %>
+            </span>
+          <% } else if (hostObj && hostObj.hostVerification && hostObj.hostVerification.status === 'pending') { %>
+            <span class="badge-pending-host" title="Under Administrative Review">
+              <i class="fa-solid fa-clock"></i> Verification In Review
+            </span>
+          <% } else if (hostObj && hostObj.hostVerification && hostObj.hostVerification.status === 'rejected') { %>
+            <a href="#verification-section" class="badge-rejected-host text-decoration-none">
+              <i class="fa-solid fa-triangle-exclamation"></i> Action Required
+            </a>
+          <% } else { %>
+            <a href="#verification-section" class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle rounded-pill text-decoration-none px-3 py-1 fw-bold" style="font-size: 0.74rem;">
+              <i class="fa-solid fa-shield-halved me-1"></i> Get Verified
+            </a>
+          <% } %>
+        </div>
+        <p class="text-muted mb-0"><%= t('dashboard.overview') %></p>
       </div>
       <div class="d-flex gap-2">
         <a href="/messages" class="btn btn-outline-primary rounded-pill px-4">
-          <i class="fa-regular fa-message me-1"></i> Guest Messages
+          <i class="fa-regular fa-message me-1"></i> <%= t('dashboard.guestMessages') %>
         </a>
         <a href="/listings/new" class="btn btn-primary rounded-pill px-4">
-          <i class="fa-solid fa-plus me-1"></i> Add New Listing
+          <i class="fa-solid fa-plus me-1"></i> <%= t('dashboard.addNewListing') %>
         </a>
       </div>
     </div>
 
-    <!-- Metric Cards Grid -->
-    <div class="row g-3 mb-4">
-      <div class="col-md-4">
-        <div class="stat-card-widget">
-          <div class="stat-icon-box">
-            <i class="fa-solid fa-house-chimney"></i>
+    <!-- Host Performance & Analytics Control Center -->
+    <div class="glass-card rounded-4 p-4 mb-4 border" id="analytics-section">
+      <div class="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center gap-3 mb-4 pb-3 border-bottom">
+        <div>
+          <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
+            <h4 class="fw-bold mb-0"><%= t('dashboard.performanceAnalytics') %></h4>
+            <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2.5 py-1" style="font-size: 0.72rem;">
+              <i class="fa-solid fa-database me-1"></i> Real Database Data
+            </span>
           </div>
-          <div>
-            <div class="stat-number">
-              <%= listings.length %>
-            </div>
-            <div class="stat-title">Total Listings</div>
+          <p class="text-muted small mb-0">
+            Real-time business intelligence calculated directly from your bookings, revenue records, listing views, and guest reviews.
+          </p>
+        </div>
+
+        <!-- Date Range Filter Selector -->
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+          <span class="small text-muted fw-semibold me-1"><i class="fa-regular fa-calendar me-1"></i>Period:</span>
+          <div class="d-inline-flex p-1 rounded-pill bg-body-tertiary border" id="analyticsRangeGroup" role="group" aria-label="Analytics Range">
+            <button type="button" class="btn btn-sm rounded-pill px-3 fw-semibold analytics-range-btn <%= (typeof selectedRange !== 'undefined' && selectedRange === '7d') ? 'btn-primary' : 'btn-ghost' %>" data-range="7d">7 Days</button>
+            <button type="button" class="btn btn-sm rounded-pill px-3 fw-semibold analytics-range-btn <%= (!selectedRange || selectedRange === '30d') ? 'btn-primary' : 'btn-ghost' %>" data-range="30d">30 Days</button>
+            <button type="button" class="btn btn-sm rounded-pill px-3 fw-semibold analytics-range-btn <%= (typeof selectedRange !== 'undefined' && selectedRange === '3m') ? 'btn-primary' : 'btn-ghost' %>" data-range="3m">3 Months</button>
+            <button type="button" class="btn btn-sm rounded-pill px-3 fw-semibold analytics-range-btn <%= (typeof selectedRange !== 'undefined' && selectedRange === '1y') ? 'btn-primary' : 'btn-ghost' %>" data-range="1y">1 Year</button>
+          </div>
+          <div id="analyticsLoadingSpinner" class="spinner-border spinner-border-sm text-primary d-none ms-1" role="status">
+            <span class="visually-hidden">Loading...</span>
           </div>
         </div>
       </div>
 
-      <div class="col-md-4">
-        <div class="stat-card-widget">
-          <div class="stat-icon-box">
-            <i class="fa-solid fa-calendar-check"></i>
-          </div>
-          <div>
-            <div class="stat-number">
-              <%= hostBookings.length %>
+      <!-- 7 KPI Analytics Cards Grid -->
+      <div class="row g-3 mb-4">
+        <!-- 1. Total Bookings -->
+        <div class="col-6 col-md-4 col-xl">
+          <div class="analytics-stat-card">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+              <span class="analytics-card-label"><%= t('dashboard.totalBookings') %></span>
+              <div class="analytics-icon-circle bg-primary-subtle text-primary">
+                <i class="fa-solid fa-calendar-check"></i>
+              </div>
             </div>
-            <div class="stat-title">Total Bookings</div>
+            <div class="analytics-card-val" id="kpiTotalBookings">
+              <%= (analytics && typeof analytics.totalBookings === 'number') ? analytics.totalBookings : hostBookings.length %>
+            </div>
+            <div class="analytics-card-sub" id="kpiRangeBookings">
+              <i class="fa-solid fa-clock-rotate-left me-1 text-primary"></i>
+              <%= (analytics && typeof analytics.rangeBookings === 'number') ? analytics.rangeBookings : hostBookings.length %> in selected period
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. Upcoming Bookings -->
+        <div class="col-6 col-md-4 col-xl">
+          <div class="analytics-stat-card">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+              <span class="analytics-card-label"><%= t('dashboard.upcomingBookings') %></span>
+              <div class="analytics-icon-circle bg-info-subtle text-info">
+                <i class="fa-solid fa-person-walking-luggage"></i>
+              </div>
+            </div>
+            <div class="analytics-card-val" id="kpiUpcomingBookings">
+              <%= (analytics && typeof analytics.upcomingBookings === 'number') ? analytics.upcomingBookings : 0 %>
+            </div>
+            <div class="analytics-card-sub text-info">
+              <i class="fa-solid fa-circle-check me-1"></i>Arriving travelers
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. Completed Stays -->
+        <div class="col-6 col-md-4 col-xl">
+          <div class="analytics-stat-card">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+              <span class="analytics-card-label"><%= t('dashboard.completedBookings') %></span>
+              <div class="analytics-icon-circle bg-success-subtle text-success">
+                <i class="fa-solid fa-flag-checkered"></i>
+              </div>
+            </div>
+            <div class="analytics-card-val" id="kpiCompletedBookings">
+              <%= (analytics && typeof analytics.completedBookings === 'number') ? analytics.completedBookings : 0 %>
+            </div>
+            <div class="analytics-card-sub text-success">
+              <i class="fa-solid fa-house-circle-check me-1"></i>Successful stays
+            </div>
+          </div>
+        </div>
+
+        <!-- 4. Revenue -->
+        <div class="col-6 col-md-6 col-xl">
+          <div class="analytics-stat-card">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+              <span class="analytics-card-label"><%= t('dashboard.totalRevenue') %></span>
+              <div class="analytics-icon-circle bg-success-subtle text-success" style="background: rgba(16, 185, 129, 0.15) !important;">
+                <i class="fa-solid fa-indian-rupee-sign"></i>
+              </div>
+            </div>
+            <div class="analytics-card-val text-success" id="kpiRevenue">
+              &#8377; <%= Number((analytics && analytics.totalRevenue) || totalEarnings || 0).toLocaleString("en-IN") %>
+            </div>
+            <div class="analytics-card-sub" id="kpiRangeRevenue">
+              &#8377; <%= Number((analytics && analytics.rangeRevenue) || 0).toLocaleString("en-IN") %> in selected period
+            </div>
+          </div>
+        </div>
+
+        <!-- 5. Average Rating -->
+        <div class="col-6 col-md-6 col-xl">
+          <div class="analytics-stat-card">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+              <span class="analytics-card-label"><%= t('dashboard.averageRating') %></span>
+              <div class="analytics-icon-circle bg-warning-subtle text-warning">
+                <i class="fa-solid fa-star"></i>
+              </div>
+            </div>
+            <div class="analytics-card-val" id="kpiAvgRating">
+              <%= (analytics && analytics.averageRating > 0) ? analytics.averageRating : '0.0' %>★
+            </div>
+            <div class="analytics-card-sub" id="kpiTotalReviews">
+              <i class="fa-regular fa-comment-dots me-1 text-warning"></i>
+              <%= (analytics && analytics.totalReviews) || 0 %> guest review(s)
+            </div>
+          </div>
+        </div>
+
+        <!-- 6. Listing Views (Tracking Exists) -->
+        <div class="col-6 col-md-6 col-xl">
+          <div class="analytics-stat-card">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+              <span class="analytics-card-label">Property Views</span>
+              <div class="analytics-icon-circle bg-secondary-subtle text-secondary">
+                <i class="fa-solid fa-eye"></i>
+              </div>
+            </div>
+            <div class="analytics-card-val" id="kpiTotalViews">
+              <%= (analytics && typeof analytics.totalViews === 'number') ? analytics.totalViews.toLocaleString("en-IN") : 0 %>
+            </div>
+            <div class="analytics-card-sub">
+              <i class="fa-solid fa-chart-line me-1 text-primary"></i>Tracked page views
+            </div>
+          </div>
+        </div>
+
+        <!-- 7. Occupancy Rate -->
+        <div class="col-6 col-md-6 col-xl">
+          <div class="analytics-stat-card">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+              <span class="analytics-card-label"><%= t('dashboard.occupancyRate') %></span>
+              <div class="analytics-icon-circle bg-primary-subtle text-primary">
+                <i class="fa-solid fa-bed"></i>
+              </div>
+            </div>
+            <div class="analytics-card-val" id="kpiOccupancy">
+              <%= (analytics && typeof analytics.occupancyRate === 'number') ? analytics.occupancyRate : 0 %>%
+            </div>
+            <div class="analytics-card-sub">
+              <div class="progress mt-1" style="height: 4px;">
+                <div class="progress-bar bg-primary" id="kpiOccupancyBar" role="progressbar" style="width: <%= (analytics && analytics.occupancyRate) || 0 %>%;" aria-valuenow="<%= (analytics && analytics.occupancyRate) || 0 %>" aria-valuemin="0" aria-valuemax="100"></div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
-      <div class="col-md-4">
-        <div class="stat-card-widget">
-          <div class="stat-icon-box" style="background: #DCFCE7; color: #166534;">
-            <i class="fa-solid fa-indian-rupee-sign"></i>
-          </div>
-          <div>
-            <div class="stat-number">&#8377; <%= Number(totalEarnings || 0).toLocaleString("en-IN") %>
+      <!-- Interactive Analytics Charts Grid -->
+      <div class="row g-4">
+        <!-- Chart 1: Revenue Over Time -->
+        <div class="col-lg-7">
+          <div class="chart-box-container p-3 p-md-4 rounded-4 bg-body-tertiary border h-100">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <div>
+                <h6 class="fw-bold mb-0 d-flex align-items-center gap-2">
+                  <i class="fa-solid fa-chart-area text-success"></i> Revenue Over Time
+                </h6>
+                <div class="text-muted small" id="revenueChartSubtitle">Net earnings trajectory for selected period</div>
+              </div>
+              <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2.5 py-1" style="font-size: 0.72rem;">
+                INR (&#8377;)
+              </span>
             </div>
-            <div class="stat-title">Total Earnings</div>
+            <div class="chart-canvas-wrapper" style="position: relative; height: 260px; width: 100%;">
+              <canvas id="revenueChart"></canvas>
+            </div>
           </div>
         </div>
+
+        <!-- Chart 2: Bookings Over Time -->
+        <div class="col-lg-5">
+          <div class="chart-box-container p-3 p-md-4 rounded-4 bg-body-tertiary border h-100">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <div>
+                <h6 class="fw-bold mb-0 d-flex align-items-center gap-2">
+                  <i class="fa-solid fa-chart-column text-primary"></i> Bookings Over Time
+                </h6>
+                <div class="text-muted small" id="bookingsChartSubtitle">Reservation volume in selected period</div>
+              </div>
+              <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-2.5 py-1" style="font-size: 0.72rem;">
+                Volume
+              </span>
+            </div>
+            <div class="chart-canvas-wrapper" style="position: relative; height: 260px; width: 100%;">
+              <canvas id="bookingsChart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Chart 3: Rating Trend -->
+        <div class="col-12">
+          <div class="chart-box-container p-3 p-md-4 rounded-4 bg-body-tertiary border">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <div>
+                <h6 class="fw-bold mb-0 d-flex align-items-center gap-2">
+                  <i class="fa-solid fa-star-half-stroke text-warning"></i> Guest Rating &amp; Review Quality Trend
+                </h6>
+                <div class="text-muted small">Continuous cumulative guest satisfaction benchmark (1.0 — 5.0 Stars)</div>
+              </div>
+              <span class="badge bg-warning-subtle text-warning border border-warning-subtle rounded-pill px-2.5 py-1" style="font-size: 0.72rem;">
+                Satisfaction Index
+              </span>
+            </div>
+            <div class="chart-canvas-wrapper" style="position: relative; height: 220px; width: 100%;">
+              <canvas id="ratingChart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Host Verification Section -->
+    <div id="verification-section">
+      <% if (hostObj && hostObj.hostVerification && hostObj.hostVerification.status === 'verified') { %>
+        <!-- Status: VERIFIED -->
+        <div class="glass-card rounded-4 p-4 mb-4 border border-success-subtle bg-success-subtle-10">
+          <div class="d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between gap-3">
+            <div class="d-flex align-items-center gap-3">
+              <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 54px; height: 54px; background: #DCFCE7; color: #059669; font-size: 1.5rem;">
+                <i class="fa-solid fa-shield-check"></i>
+              </div>
+              <div>
+                <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
+                  <h5 class="fw-bold mb-0">Identity Verified</h5>
+                  <span class="badge-verified-host"><i class="fa-solid fa-circle-check"></i> ✓ Verified Host</span>
+                </div>
+                <p class="text-muted small mb-0">
+                  Your identity is officially validated. The exclusive <strong>✓ Verified Host</strong> badge is live on all your properties and public host profile.
+                </p>
+              </div>
+            </div>
+            <div class="d-flex flex-column align-items-md-end text-muted small">
+              <div><i class="fa-regular fa-calendar-check me-1 text-success"></i>Verified on <%= hostObj.hostVerification.reviewedAt ? new Date(hostObj.hostVerification.reviewedAt).toLocaleDateString('en-IN', { year: 'numeric', month: 'short', day: 'numeric' }) : 'Active' %></div>
+              <div><i class="fa-solid fa-id-card me-1"></i><%= (hostObj.hostVerification.documentType || 'Government ID').toUpperCase() %> Verified</div>
+            </div>
+          </div>
+        </div>
+      <% } else if (hostObj && hostObj.hostVerification && hostObj.hostVerification.status === 'pending') { %>
+        <!-- Status: PENDING -->
+        <div class="glass-card rounded-4 p-4 mb-4 border border-warning-subtle">
+          <div class="d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between gap-3">
+            <div class="d-flex align-items-center gap-3">
+              <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 54px; height: 54px; background: #FEF3C7; color: #D97706; font-size: 1.4rem;">
+                <i class="fa-solid fa-hourglass-half"></i>
+              </div>
+              <div>
+                <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
+                  <h5 class="fw-bold mb-0">Verification Under Administrative Review</h5>
+                  <span class="badge-pending-host"><i class="fa-solid fa-clock"></i> Pending Review</span>
+                </div>
+                <p class="text-muted small mb-0">
+                  Your credentials (<%= (hostObj.hostVerification.documentType || 'government ID').replace('_', ' ') %>) were submitted on <%= hostObj.hostVerification.submittedAt ? new Date(hostObj.hostVerification.submittedAt).toLocaleDateString('en-IN', { year: 'numeric', month: 'short', day: 'numeric' }) : 'recently' %>. Our Trust & Safety team is reviewing your documents.
+                </p>
+              </div>
+            </div>
+            <div class="badge bg-warning-subtle text-warning border border-warning-subtle px-3 py-2 rounded-pill small">
+              Estimated turnaround: 24-48 hours
+            </div>
+          </div>
+        </div>
+      <% } else if (hostObj && hostObj.hostVerification && hostObj.hostVerification.status === 'rejected') { %>
+        <!-- Status: REJECTED -->
+        <div class="glass-card rounded-4 p-4 mb-4 border border-danger-subtle">
+          <div class="d-flex align-items-center gap-3 mb-3">
+            <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 54px; height: 54px; background: #FEE2E2; color: #DC2626; font-size: 1.4rem;">
+              <i class="fa-solid fa-triangle-exclamation"></i>
+            </div>
+            <div>
+              <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
+                <h5 class="fw-bold mb-0 text-danger">Verification Requires Attention</h5>
+                <span class="badge-rejected-host"><i class="fa-solid fa-ban"></i> Action Needed</span>
+              </div>
+              <p class="text-danger small mb-0">
+                <strong>Reason:</strong> <%= hostObj.hostVerification.rejectionReason || 'The submitted documents could not be verified. Please review and re-submit clearer documentation.' %>
+              </p>
+            </div>
+          </div>
+
+          <!-- Re-submission Form -->
+          <div class="bg-body-tertiary p-3 rounded-4">
+            <h6 class="fw-bold mb-3"><i class="fa-solid fa-rotate-right me-1 text-primary"></i>Re-submit Identity Verification</h6>
+            <form action="/dashboard/host/verify" method="POST" enctype="multipart/form-data">
+              <div class="row g-3">
+                <div class="col-md-4">
+                  <label class="form-label small fw-semibold">Legal Full Name</label>
+                  <input type="text" name="legalName" class="form-control form-control-sm rounded-3" value="<%= hostObj.hostVerification.legalName || hostObj.fullName || '' %>" required>
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label small fw-semibold">Document Type</label>
+                  <select name="documentType" class="form-select form-select-sm rounded-3" required>
+                    <option value="passport">Passport</option>
+                    <option value="national_id">National ID / Aadhaar / SSN</option>
+                    <option value="drivers_license">Driver's License</option>
+                    <option value="government_id" selected>Government Photo ID</option>
+                    <option value="business_license">Hospitality Business License</option>
+                  </select>
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label small fw-semibold">ID / Document Number</label>
+                  <input type="text" name="documentNumber" class="form-control form-control-sm rounded-3" value="<%= hostObj.hostVerification.documentNumber || '' %>" required>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label small fw-semibold">Upload ID Document (Image / PDF)</label>
+                  <input type="file" name="document" class="form-control form-control-sm rounded-3" accept="image/*,.pdf">
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label small fw-semibold">Or Document Link (Optional)</label>
+                  <input type="url" name="documentUrl" class="form-control form-control-sm rounded-3" placeholder="https://...">
+                </div>
+                <div class="col-12">
+                  <label class="form-label small fw-semibold">Notes for Reviewers</label>
+                  <textarea name="notes" class="form-control form-control-sm rounded-3" rows="2" placeholder="Additional details or context for your updated submission..."></textarea>
+                </div>
+                <div class="col-12">
+                  <button type="submit" class="btn btn-primary rounded-pill px-4 fw-semibold shadow-sm">
+                    <i class="fa-solid fa-paper-plane me-1"></i> Re-submit Verification Request
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      <% } else { %>
+        <!-- Status: UNVERIFIED -->
+        <div class="glass-card rounded-4 p-4 mb-4">
+          <div class="d-flex flex-column flex-lg-row align-items-start justify-content-between gap-4">
+            <div style="max-width: 480px;">
+              <div class="d-flex align-items-center gap-2 mb-2">
+                <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-3 py-1">
+                  <i class="fa-solid fa-shield-halved me-1"></i>Trust & Safety
+                </span>
+              </div>
+              <h4 class="fw-bold mb-2">Become a Verified Host</h4>
+              <p class="text-muted small mb-3">
+                Earn traveler confidence and increase your bookings by getting verified. Once approved, the exclusive <strong>✓ Verified Host</strong> badge will be permanently showcased on all your properties.
+              </p>
+              <ul class="list-unstyled text-muted small d-flex flex-column gap-2 mb-0">
+                <li><i class="fa-solid fa-circle-check text-success me-2"></i>Official <strong>✓ Verified Host</strong> badge displayed on listings</li>
+                <li><i class="fa-solid fa-circle-check text-success me-2"></i>Up to 3x higher booking conversions from travelers</li>
+                <li><i class="fa-solid fa-circle-check text-success me-2"></i>Priority placement in WanderStay search results</li>
+              </ul>
+            </div>
+
+            <!-- Verification Submission Form -->
+            <div class="flex-grow-1 w-100 p-3 p-md-4 rounded-4 bg-body-tertiary border" style="max-width: 620px;">
+              <h5 class="fw-bold mb-3 d-flex align-items-center gap-2">
+                <i class="fa-solid fa-id-card text-primary"></i>Submit Verification Credentials
+              </h5>
+              <form action="/dashboard/host/verify" method="POST" enctype="multipart/form-data">
+                <div class="row g-3">
+                  <div class="col-md-6">
+                    <label class="form-label small fw-semibold">Legal Full Name</label>
+                    <input type="text" name="legalName" class="form-control form-control-sm rounded-3" value="<%= hostObj ? (hostObj.fullName || '') : '' %>" required placeholder="As shown on government ID">
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label small fw-semibold">Document Type</label>
+                    <select name="documentType" class="form-select form-select-sm rounded-3" required>
+                      <option value="passport">Passport</option>
+                      <option value="national_id">National ID / Aadhaar / SSN</option>
+                      <option value="drivers_license">Driver's License</option>
+                      <option value="government_id" selected>Government Photo ID</option>
+                      <option value="business_license">Hospitality Business License</option>
+                    </select>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label small fw-semibold">ID / Document Number</label>
+                    <input type="text" name="documentNumber" class="form-control form-control-sm rounded-3" required placeholder="e.g. A12345678">
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label small fw-semibold">Upload ID Document Proof</label>
+                    <input type="file" name="document" class="form-control form-control-sm rounded-3" accept="image/*,.pdf">
+                  </div>
+                  <div class="col-12">
+                    <label class="form-label small fw-semibold">Document Link (Optional if not uploading file)</label>
+                    <input type="url" name="documentUrl" class="form-control form-control-sm rounded-3" placeholder="https://...">
+                  </div>
+                  <div class="col-12">
+                    <label class="form-label small fw-semibold">Notes for Reviewers (Optional)</label>
+                    <textarea name="notes" class="form-control form-control-sm rounded-3" rows="2" placeholder="Property management background, hospitality experience, or document notes..."></textarea>
+                  </div>
+                  <div class="col-12">
+                    <button type="submit" class="btn btn-primary rounded-pill px-4 fw-semibold shadow-sm w-100">
+                      <i class="fa-solid fa-paper-plane me-1"></i> Submit for Verification
+                    </button>
+                  </div>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      <% } %>
+    </div>
+
+    <!-- Data-Driven Superhost Section -->
+    <div id="superhost-section" class="mb-4">
+      <% const isSH = hostObj && hostObj.superhost && hostObj.superhost.isSuperhost; %>
+      <% const shData = (typeof superhostData !== 'undefined' && superhostData) ? superhostData : null; %>
+      
+      <div class="superhost-progress-card p-4">
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-3 pb-3 border-bottom border-warning-subtle">
+          <div class="d-flex align-items-center gap-3">
+            <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 52px; height: 52px; background: <%= isSH ? '#FEF3C7' : 'rgba(245, 158, 11, 0.12)' %>; color: #D97706; font-size: 1.6rem;">
+              <i class="fa-solid <%= isSH ? 'fa-star' : 'fa-award' %>"></i>
+            </div>
+            <div>
+              <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
+                <h5 class="fw-bold mb-0">Superhost Recognition Program</h5>
+                <% if (isSH) { %>
+                  <span class="badge-superhost badge-superhost-lg" data-bs-toggle="tooltip" data-bs-placement="top" title="<%= hostObj.superhost.badgeReason || '⭐ Superhost: All eligibility benchmarks met.' %>">
+                    ⭐ Superhost
+                  </span>
+                <% } else { %>
+                  <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle rounded-pill px-2.5 py-1 small">
+                    <i class="fa-solid fa-chart-line me-1"></i> In Progress
+                  </span>
+                <% } %>
+              </div>
+              <p class="text-muted small mb-0">
+                <% if (isSH) { %>
+                  Congratulations! You have met all performance benchmarks. The prestigious <strong>⭐ Superhost</strong> badge is displayed across your properties and public host profile.
+                <% } else { %>
+                  Superhost status is evaluated automatically from live database activity. Meet the benchmarks below to earn the official <strong>⭐ Superhost</strong> badge.
+                <% } %>
+              </p>
+            </div>
+          </div>
+
+          <% if (isSH && hostObj.superhost && hostObj.superhost.badgeReason) { %>
+            <div class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle p-2 px-3 rounded-pill small text-nowrap" data-bs-toggle="tooltip" data-bs-placement="top" title="Live status summary">
+              <i class="fa-solid fa-circle-check text-warning me-1"></i> Qualified Host
+            </div>
+          <% } %>
+        </div>
+
+        <% if (shData) { %>
+          <!-- Metrics Breakdown Grid -->
+          <div class="row g-3">
+            <!-- Metric 1: Completed Bookings -->
+            <div class="col-sm-6 col-lg-3">
+              <div class="superhost-metric-pill">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                  <span class="small text-muted fw-semibold">Completed Stays</span>
+                  <% if (shData.progress.meetsBookings) { %>
+                    <i class="fa-solid fa-circle-check text-success small" title="Criterion Met"></i>
+                  <% } else { %>
+                    <i class="fa-solid fa-clock text-warning small" title="In Progress"></i>
+                  <% } %>
+                </div>
+                <div class="d-flex align-items-baseline gap-1">
+                  <span class="fs-4 fw-bold"><%= shData.metrics.completedBookings %></span>
+                  <span class="small text-muted">/ min <%= shData.criteria.MIN_COMPLETED_BOOKINGS %></span>
+                </div>
+                <div class="progress mt-2" style="height: 5px;">
+                  <% const bookingPct = Math.min(100, Math.round((shData.metrics.completedBookings / shData.criteria.MIN_COMPLETED_BOOKINGS) * 100)); %>
+                  <div class="progress-bar <%= shData.progress.meetsBookings ? 'bg-success' : 'bg-warning' %>" role="progressbar" style="width: <%= bookingPct %>%;" aria-valuenow="<%= bookingPct %>" aria-valuemin="0" aria-valuemax="100"></div>
+                </div>
+                <div class="small mt-1 text-muted" style="font-size: 0.72rem;">
+                  <%= shData.progress.meetsBookings ? 'Target achieved' : `${shData.criteria.MIN_COMPLETED_BOOKINGS - shData.metrics.completedBookings} more stay(s) needed` %>
+                </div>
+              </div>
+            </div>
+
+            <!-- Metric 2: Average Rating -->
+            <div class="col-sm-6 col-lg-3">
+              <div class="superhost-metric-pill">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                  <span class="small text-muted fw-semibold">Average Rating</span>
+                  <% if (shData.progress.meetsRating) { %>
+                    <i class="fa-solid fa-circle-check text-success small" title="Criterion Met"></i>
+                  <% } else { %>
+                    <i class="fa-solid fa-clock text-warning small" title="In Progress"></i>
+                  <% } %>
+                </div>
+                <div class="d-flex align-items-baseline gap-1">
+                  <span class="fs-4 fw-bold"><%= shData.metrics.averageRating > 0 ? shData.metrics.averageRating : '—' %>★</span>
+                  <span class="small text-muted">/ min <%= shData.criteria.MIN_AVERAGE_RATING %>★</span>
+                </div>
+                <div class="progress mt-2" style="height: 5px;">
+                  <% const ratingPct = Math.min(100, Math.round(((shData.metrics.averageRating || 0) / 5) * 100)); %>
+                  <div class="progress-bar <%= shData.progress.meetsRating ? 'bg-success' : 'bg-warning' %>" role="progressbar" style="width: <%= ratingPct %>%;" aria-valuenow="<%= ratingPct %>" aria-valuemin="0" aria-valuemax="100"></div>
+                </div>
+                <div class="small mt-1 text-muted" style="font-size: 0.72rem;">
+                  <%= shData.metrics.totalReviews %> review(s) calculated
+                </div>
+              </div>
+            </div>
+
+            <!-- Metric 3: Cancellation Rate -->
+            <div class="col-sm-6 col-lg-3">
+              <div class="superhost-metric-pill">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                  <span class="small text-muted fw-semibold">Cancellation Rate</span>
+                  <% if (shData.progress.meetsCancellation) { %>
+                    <i class="fa-solid fa-circle-check text-success small" title="Criterion Met"></i>
+                  <% } else { %>
+                    <i class="fa-solid fa-triangle-exclamation text-danger small" title="Exceeds Maximum"></i>
+                  <% } %>
+                </div>
+                <div class="d-flex align-items-baseline gap-1">
+                  <span class="fs-4 fw-bold"><%= shData.metrics.cancellationRate %>%</span>
+                  <span class="small text-muted">/ max <%= shData.criteria.MAX_CANCELLATION_RATE %>%</span>
+                </div>
+                <div class="progress mt-2" style="height: 5px;">
+                  <% const cancelBar = Math.min(100, Math.round((shData.metrics.cancellationRate / 20) * 100)); %>
+                  <div class="progress-bar <%= shData.progress.meetsCancellation ? 'bg-success' : 'bg-danger' %>" role="progressbar" style="width: <%= cancelBar %>%;" aria-valuenow="<%= cancelBar %>" aria-valuemin="0" aria-valuemax="100"></div>
+                </div>
+                <div class="small mt-1 text-muted" style="font-size: 0.72rem;">
+                  <%= shData.progress.meetsCancellation ? 'Within allowable threshold' : 'Exceeds 10% maximum' %>
+                </div>
+              </div>
+            </div>
+
+            <!-- Metric 4: Response Rate -->
+            <div class="col-sm-6 col-lg-3">
+              <div class="superhost-metric-pill">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                  <span class="small text-muted fw-semibold">Inquiry Response Rate</span>
+                  <% if (shData.progress.meetsResponse) { %>
+                    <i class="fa-solid fa-circle-check text-success small" title="Criterion Met"></i>
+                  <% } else { %>
+                    <i class="fa-solid fa-clock text-warning small" title="In Progress"></i>
+                  <% } %>
+                </div>
+                <div class="d-flex align-items-baseline gap-1">
+                  <span class="fs-4 fw-bold"><%= shData.metrics.responseRate %>%</span>
+                  <span class="small text-muted">/ min <%= shData.criteria.MIN_RESPONSE_RATE %>%</span>
+                </div>
+                <div class="progress mt-2" style="height: 5px;">
+                  <div class="progress-bar <%= shData.progress.meetsResponse ? 'bg-success' : 'bg-warning' %>" role="progressbar" style="width: <%= shData.metrics.responseRate %>%;" aria-valuenow="<%= shData.metrics.responseRate %>" aria-valuemin="0" aria-valuemax="100"></div>
+                </div>
+                <div class="small mt-1 text-muted" style="font-size: 0.72rem;">
+                  <%= shData.metrics.totalInquiries > 0 ? `${shData.metrics.repliedInquiries}/${shData.metrics.totalInquiries} guest inquiries answered` : 'No inquiries received yet (100%)' %>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-3 pt-3 border-top border-warning-subtle d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-2 small text-muted">
+            <div>
+              <i class="fa-solid fa-database me-1 text-primary"></i> Data-driven evaluation updated automatically on every booking, review, and guest interaction.
+            </div>
+            <% if (hostObj && hostObj.superhost && hostObj.superhost.evaluatedAt) { %>
+              <div>
+                Last evaluated: <%= new Date(hostObj.superhost.evaluatedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) %>
+              </div>
+            <% } %>
+          </div>
+        <% } %>
       </div>
     </div>
 
     <!-- Listings Management Table -->
     <div class="glass-card rounded-4 p-4 mb-4">
       <div class="d-flex justify-content-between align-items-center mb-3">
-        <h4 class="fw-bold mb-0">Your Properties</h4>
+        <h4 class="fw-bold mb-0"><%= t('dashboard.myListings') %></h4>
         <span class="badge bg-body-tertiary text-body border px-3 py-2 rounded-pill">
           <%= listings.length %> Properties
         </span>
@@ -153,7 +701,7 @@
 
     <!-- Recent Bookings on Your Properties -->
     <div class="glass-card rounded-4 p-4">
-      <h4 class="fw-bold mb-3">Recent Reservations</h4>
+      <h4 class="fw-bold mb-3"><%= t('dashboard.recentBookings') %></h4>
       <% if (!hostBookings || hostBookings.length===0) { %>
         <p class="text-muted">No reservations received yet for your properties.</p>
         <% } else { %>
@@ -220,3 +768,377 @@
           <% } %>
     </div>
   </div>
+
+  <style>
+    .analytics-stat-card {
+      background: var(--surface, #ffffff);
+      border: 1px solid var(--border-theme, rgba(0,0,0,0.08));
+      border-radius: 1rem;
+      padding: 1.15rem 1rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      height: 100%;
+      transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    }
+    .analytics-stat-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05);
+      border-color: rgba(255, 56, 92, 0.3);
+    }
+    .analytics-card-label {
+      font-size: 0.74rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-secondary, #6B7280);
+    }
+    .analytics-card-val {
+      font-size: 1.65rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      line-height: 1.2;
+      margin-bottom: 0.25rem;
+    }
+    .analytics-card-sub {
+      font-size: 0.74rem;
+      color: var(--text-secondary, #6B7280);
+    }
+    .analytics-icon-circle {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.88rem;
+      flex-shrink: 0;
+    }
+    .analytics-range-btn.btn-ghost {
+      background: transparent;
+      color: var(--text-secondary, #6B7280);
+      border: none;
+    }
+    .analytics-range-btn.btn-ghost:hover {
+      color: var(--text-primary, #111827);
+      background: rgba(0, 0, 0, 0.05);
+    }
+    html.dark .analytics-range-btn.btn-ghost:hover {
+      color: #F3F4F6;
+      background: rgba(255, 255, 255, 0.08);
+    }
+    .chart-box-container {
+      background: var(--surface, #ffffff);
+      border: 1px solid var(--border-theme, rgba(0,0,0,0.08));
+      transition: border-color 0.2s ease;
+    }
+    .chart-box-container:hover {
+      border-color: rgba(0,0,0,0.14);
+    }
+    html.dark .chart-box-container:hover {
+      border-color: rgba(255,255,255,0.16);
+    }
+  </style>
+
+  <!-- Lightweight Chart.js Library -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      // 1. Initial Data Payload from Server
+      const initialAnalytics = <%- JSON.stringify(analytics || {}) %>;
+
+      // Theme-aware color configuration
+      const isDark = document.documentElement.classList.contains('dark') || document.body.classList.contains('dark');
+      const textColor = isDark ? '#9CA3AF' : '#6B7280';
+      const gridColor = isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.05)';
+
+      // 2. Initialize Revenue Chart (Line / Area)
+      const canvasRevenue = document.getElementById('revenueChart');
+      let chartRevenue = null;
+      if (canvasRevenue) {
+        const ctxRevenue = canvasRevenue.getContext('2d');
+        const gradientRevenue = ctxRevenue.createLinearGradient(0, 0, 0, 240);
+        gradientRevenue.addColorStop(0, 'rgba(16, 185, 129, 0.28)');
+        gradientRevenue.addColorStop(1, 'rgba(16, 185, 129, 0.01)');
+
+        chartRevenue = new Chart(ctxRevenue, {
+          type: 'line',
+          data: {
+            labels: initialAnalytics.labels || [],
+            datasets: [{
+              label: 'Net Revenue (₹)',
+              data: initialAnalytics.revenueSeries || [],
+              borderColor: '#10B981',
+              backgroundColor: gradientRevenue,
+              fill: true,
+              tension: 0.35,
+              borderWidth: 2.5,
+              pointBackgroundColor: '#10B981',
+              pointRadius: (initialAnalytics.labels && initialAnalytics.labels.length > 20) ? 2 : 3.5,
+              pointHoverRadius: 6
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                backgroundColor: isDark ? '#1F2937' : '#FFFFFF',
+                titleColor: isDark ? '#F9FAFB' : '#111827',
+                bodyColor: '#10B981',
+                borderColor: isDark ? '#374151' : '#E5E7EB',
+                borderWidth: 1,
+                padding: 10,
+                displayColors: false,
+                callbacks: {
+                  label: function (ctx) {
+                    return ` Revenue: ₹${Number(ctx.raw || 0).toLocaleString('en-IN')}`;
+                  }
+                }
+              }
+            },
+            scales: {
+              x: {
+                grid: { color: gridColor },
+                ticks: { color: textColor, font: { size: 11 }, maxRotation: 45 }
+              },
+              y: {
+                beginAtZero: true,
+                grid: { color: gridColor },
+                ticks: {
+                  color: textColor,
+                  font: { size: 11 },
+                  callback: function (val) {
+                    return '₹' + Number(val).toLocaleString('en-IN');
+                  }
+                }
+              }
+            }
+          }
+        });
+      }
+
+      // 3. Initialize Bookings Chart (Bar)
+      const canvasBookings = document.getElementById('bookingsChart');
+      let chartBookings = null;
+      if (canvasBookings) {
+        const ctxBookings = canvasBookings.getContext('2d');
+        chartBookings = new Chart(ctxBookings, {
+          type: 'bar',
+          data: {
+            labels: initialAnalytics.labels || [],
+            datasets: [{
+              label: 'Bookings Volume',
+              data: initialAnalytics.bookingsSeries || [],
+              backgroundColor: '#FF385C',
+              borderRadius: 6,
+              borderSkipped: false,
+              maxBarThickness: 24
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                backgroundColor: isDark ? '#1F2937' : '#FFFFFF',
+                titleColor: isDark ? '#F9FAFB' : '#111827',
+                bodyColor: '#FF385C',
+                borderColor: isDark ? '#374151' : '#E5E7EB',
+                borderWidth: 1,
+                padding: 10,
+                displayColors: false,
+                callbacks: {
+                  label: function (ctx) {
+                    return ` Bookings: ${ctx.raw} reservation(s)`;
+                  }
+                }
+              }
+            },
+            scales: {
+              x: {
+                grid: { display: false },
+                ticks: { color: textColor, font: { size: 11 }, maxRotation: 45 }
+              },
+              y: {
+                beginAtZero: true,
+                grid: { color: gridColor },
+                ticks: {
+                  color: textColor,
+                  font: { size: 11 },
+                  stepSize: 1,
+                  precision: 0
+                }
+              }
+            }
+          }
+        });
+      }
+
+      // 4. Initialize Rating Trend Chart (Line)
+      const canvasRating = document.getElementById('ratingChart');
+      let chartRating = null;
+      if (canvasRating) {
+        const ctxRating = canvasRating.getContext('2d');
+        chartRating = new Chart(ctxRating, {
+          type: 'line',
+          data: {
+            labels: initialAnalytics.labels || [],
+            datasets: [{
+              label: 'Rating Trend',
+              data: initialAnalytics.ratingSeries || [],
+              borderColor: '#F59E0B',
+              backgroundColor: 'rgba(245, 158, 11, 0.1)',
+              borderWidth: 2.5,
+              tension: 0.3,
+              pointBackgroundColor: '#F59E0B',
+              pointRadius: 4,
+              pointHoverRadius: 6,
+              spanGaps: true
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                backgroundColor: isDark ? '#1F2937' : '#FFFFFF',
+                titleColor: isDark ? '#F9FAFB' : '#111827',
+                bodyColor: '#D97706',
+                borderColor: isDark ? '#374151' : '#E5E7EB',
+                borderWidth: 1,
+                padding: 10,
+                displayColors: false,
+                callbacks: {
+                  label: function (ctx) {
+                    return ctx.raw !== null ? ` Average Rating: ${Number(ctx.raw).toFixed(2)} ★` : ' No reviews in interval';
+                  }
+                }
+              }
+            },
+            scales: {
+              x: {
+                grid: { color: gridColor },
+                ticks: { color: textColor, font: { size: 11 }, maxRotation: 45 }
+              },
+              y: {
+                min: 1,
+                max: 5,
+                grid: { color: gridColor },
+                ticks: {
+                  color: textColor,
+                  font: { size: 11 },
+                  stepSize: 1,
+                  callback: function (val) {
+                    return val + ' ★';
+                  }
+                }
+              }
+            }
+          }
+        });
+      }
+
+      // 5. Dynamic Date Range Switching via Fetch API
+      document.querySelectorAll('.analytics-range-btn').forEach(btn => {
+        btn.addEventListener('click', async function () {
+          const range = this.dataset.range;
+          if (this.classList.contains('btn-primary')) return;
+
+          // Toggle button styles
+          document.querySelectorAll('.analytics-range-btn').forEach(b => {
+            b.classList.remove('btn-primary');
+            b.classList.add('btn-ghost');
+          });
+          this.classList.remove('btn-ghost');
+          this.classList.add('btn-primary');
+
+          const spinner = document.getElementById('analyticsLoadingSpinner');
+          if (spinner) spinner.classList.remove('d-none');
+
+          try {
+            const res = await fetch(`/dashboard/host/analytics?range=${range}`);
+            const data = await res.json();
+
+            if (res.ok && data.success && data.analytics) {
+              const an = data.analytics;
+
+              // Update KPI numbers
+              const elTotalB = document.getElementById('kpiTotalBookings');
+              if (elTotalB) elTotalB.textContent = an.totalBookings;
+
+              const elRangeB = document.getElementById('kpiRangeBookings');
+              if (elRangeB) elRangeB.innerHTML = `<i class="fa-solid fa-clock-rotate-left me-1 text-primary"></i> ${an.rangeBookings} in selected period`;
+
+              const elUpB = document.getElementById('kpiUpcomingBookings');
+              if (elUpB) elUpB.textContent = an.upcomingBookings;
+
+              const elCompB = document.getElementById('kpiCompletedBookings');
+              if (elCompB) elCompB.textContent = an.completedBookings;
+
+              const elRev = document.getElementById('kpiRevenue');
+              if (elRev) elRev.innerHTML = `&#8377; ${Number(an.totalRevenue).toLocaleString('en-IN')}`;
+
+              const elRangeRev = document.getElementById('kpiRangeRevenue');
+              if (elRangeRev) elRangeRev.innerHTML = `&#8377; ${Number(an.rangeRevenue).toLocaleString('en-IN')} in selected period`;
+
+              const elRating = document.getElementById('kpiAvgRating');
+              if (elRating) elRating.textContent = `${an.averageRating > 0 ? an.averageRating : '0.0'}★`;
+
+              const elReviews = document.getElementById('kpiTotalReviews');
+              if (elReviews) elReviews.innerHTML = `<i class="fa-regular fa-comment-dots me-1 text-warning"></i> ${an.totalReviews} guest review(s)`;
+
+              const elViews = document.getElementById('kpiTotalViews');
+              if (elViews) elViews.textContent = Number(an.totalViews).toLocaleString('en-IN');
+
+              const elOcc = document.getElementById('kpiOccupancy');
+              if (elOcc) elOcc.textContent = `${an.occupancyRate}%`;
+
+              const elOccBar = document.getElementById('kpiOccupancyBar');
+              if (elOccBar) {
+                elOccBar.style.width = `${an.occupancyRate}%`;
+                elOccBar.setAttribute('aria-valuenow', an.occupancyRate);
+              }
+
+              // Update Chart subtitles
+              const subRev = document.getElementById('revenueChartSubtitle');
+              if (subRev) subRev.textContent = `Net earnings trajectory for ${an.rangeLabel.toLowerCase()}`;
+
+              const subBook = document.getElementById('bookingsChartSubtitle');
+              if (subBook) subBook.textContent = `Reservation volume in ${an.rangeLabel.toLowerCase()}`;
+
+              // Update Chart 1: Revenue
+              if (chartRevenue) {
+                chartRevenue.data.labels = an.labels || [];
+                chartRevenue.data.datasets[0].data = an.revenueSeries || [];
+                chartRevenue.data.datasets[0].pointRadius = (an.labels && an.labels.length > 20) ? 2 : 3.5;
+                chartRevenue.update();
+              }
+
+              // Update Chart 2: Bookings
+              if (chartBookings) {
+                chartBookings.data.labels = an.labels || [];
+                chartBookings.data.datasets[0].data = an.bookingsSeries || [];
+                chartBookings.update();
+              }
+
+              // Update Chart 3: Rating Trend
+              if (chartRating) {
+                chartRating.data.labels = an.labels || [];
+                chartRating.data.datasets[0].data = an.ratingSeries || [];
+                chartRating.update();
+              }
+            }
+          } catch (err) {
+            console.error('Error fetching analytics range update:', err);
+          } finally {
+            if (spinner) spinner.classList.add('d-none');
+          }
+        });
+      });
+    });
+  </script>

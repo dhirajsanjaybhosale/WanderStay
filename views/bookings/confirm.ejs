@@ -43,7 +43,14 @@
               </div>
               <div class="col-6 mt-2">
                 <div class="text-muted">Total Paid</div>
-                <div class="fw-bold text-primary fs-6">&#8377; <%= Number(booking.totalPrice).toLocaleString("en-IN") %></div>
+                <div class="fw-bold text-primary fs-6">
+                  &#8377; <%= Number(booking.totalPrice).toLocaleString("en-IN") %>
+                  <% if (booking.discountAmount > 0) { %>
+                    <span class="badge bg-success-subtle text-success small ms-1" title="Saved ₹<%= booking.discountAmount.toLocaleString('en-IN') %> with promo code <%= (booking.coupon && booking.coupon.code) ? booking.coupon.code : '' %>">
+                      <i class="fa-solid fa-tag me-1"></i>Saved &#8377;<%= Number(booking.discountAmount).toLocaleString("en-IN") %>
+                    </span>
+                  <% } %>
+                </div>
               </div>
               <% if (booking.razorpayPaymentId) { %>
                 <div class="col-12 mt-2 pt-2 border-top">

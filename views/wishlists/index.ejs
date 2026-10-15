@@ -31,6 +31,7 @@
                   src="<%= (listing.image && listing.image.url) ? listing.image.url : (listing.photos && listing.photos[0] && (listing.photos[0].url || listing.photos[0])) || 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80' %>" 
                   alt="<%= listing.title %>" 
                   loading="lazy"
+                  onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80';"
                 />
               </a>
 
@@ -57,8 +58,12 @@
 
               <div class="listing-card-footer">
                 <div>
-                  <span class="listing-price-tag">&#8377; <%= Number(listing.price).toLocaleString("en-IN") %></span>
+                  <% const priceDisplay = (typeof getPriceDisplay === 'function') ? getPriceDisplay(listing.price) : { formattedTarget: `₹${Number(listing.price).toLocaleString('en-IN')}`, isConverted: false, formattedBase: `₹${Number(listing.price).toLocaleString('en-IN')}` }; %>
+                  <span class="listing-price-tag"><%= priceDisplay.formattedTarget %></span>
                   <span class="listing-price-period">/ night</span>
+                  <% if (priceDisplay.isConverted) { %>
+                    <div class="text-muted" style="font-size: 0.68rem; line-height: 1;">(~<%= priceDisplay.formattedBase %>)</div>
+                  <% } %>
                 </div>
                 <span class="text-primary fw-semibold small">View property &rarr;</span>
               </div>

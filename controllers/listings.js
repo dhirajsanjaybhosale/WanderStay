@@ -3,10 +3,23 @@ const User = require("../models/user");
 const Booking = require("../models/booking");
 const mongoose = require('mongoose');
 const { createNotification } = require('../utils/notificationHelper');
+const {
+  getAllAmenities,
+  getAmenityDetails,
+  getCategorizedAmenities
+} = require('../utils/amenitiesHelper');
+const {
+  getCancellationPolicy,
+  CANCELLATION_POLICIES
+} = require('../utils/cancellationHelper');
+const {
+  calculateListingPricing,
+  sanitizePricing
+} = require('../utils/pricingHelper');
 
 const mbxGeocoding = require('@mapbox/mapbox-sdk/services/geocoding');
 const mapToken = process.env.MAP_TOKEN;
-const geocodingClient = mbxGeocoding({ accessToken: mapToken });
+const geocodingClient = (mapToken && mapToken.trim()) ? mbxGeocoding({ accessToken: mapToken }) : null;
 
 
 function escapeRegex(text) {
@@ -20,10 +33,41 @@ module.exports.index = async (req, res) => {
     'Ski', 'Desert', 'Cabin', 'Villa'
   ];
 
-  const { category, q, minPrice, maxPrice, sortBy } = req.query;
+  const allowedPropertyTypes = [
+    'Entire home', 'Villa', 'Apartment', 'Cabin', 'Cottage', 'Chalet', 'Resort', 'Private room', 'Unique stay'
+  ];
+
+  const {
+    category,
+    q,
+    destination,
+    minPrice,
+    maxPrice,
+    sortBy,
+    amenities,
+    guests,
+    bedrooms,
+    bathrooms,
+    propertyType,
+    minRating,
+    hostVerification,
+    instantBook,
+    page: pageQuery,
+    limit: limitQuery
+  } = req.query;
   let query = {};
   let currentCategory = null;
-  let searchQuery = q ? q.trim() : "";
+  let searchQuery = (q || destination || "").trim();
+
+  // Normalize selected amenities for filtering
+  let selectedAmenities = [];
+  if (Array.isArray(amenities)) {
+    selectedAmenities = amenities.filter(Boolean);
+  } else if (typeof amenities === 'string' && amenities.trim()) {
+    selectedAmenities = amenities.includes(',')
+      ? amenities.split(',').map(s => s.trim()).filter(Boolean)
+      : [amenities.trim()];
+  }
 
   if (category && allowedCategories.includes(category)) {
     query.category = category;
@@ -49,34 +93,135 @@ module.exports.index = async (req, res) => {
     }
   }
 
-  if (minPrice) {
-    query.price = { ...query.price, $gte: Number(minPrice) };
-  }
-  if (maxPrice) {
-    query.price = { ...query.price, $lte: Number(maxPrice) };
+  // Amenity-based database filtering ($all ensures listing has all selected amenities)
+  if (selectedAmenities.length > 0) {
+    query.amenities = { $all: selectedAmenities };
   }
 
-  let sort = { createdAt: -1 };
+  // Price range filtering
+  if (minPrice && !isNaN(minPrice) && Number(minPrice) > 0) {
+    query.price = { ...(query.price || {}), $gte: Number(minPrice) };
+  }
+  if (maxPrice && !isNaN(maxPrice) && Number(maxPrice) > 0) {
+    query.price = { ...(query.price || {}), $lte: Number(maxPrice) };
+  }
+
+  // Rating filter (minRating: e.g. 4.0, 4.5, 4.8)
+  if (minRating && !isNaN(minRating) && Number(minRating) > 0) {
+    query.averageRating = { $gte: Number(minRating) };
+  }
+
+  // Guests filter ($gte)
+  if (guests && !isNaN(guests) && Number(guests) > 0) {
+    query.guests = { $gte: Number(guests) };
+  }
+
+  // Bedrooms filter ($gte)
+  if (bedrooms && !isNaN(bedrooms) && Number(bedrooms) > 0) {
+    query.bedrooms = { $gte: Number(bedrooms) };
+  }
+
+  // Bathrooms filter ($gte)
+  if (bathrooms && !isNaN(bathrooms) && Number(bathrooms) > 0) {
+    query.bathrooms = { $gte: Number(bathrooms) };
+  }
+
+  // Property Type filter
+  if (propertyType && propertyType.trim()) {
+    query.propertyType = propertyType.trim();
+  }
+
+  // Instant booking filter
+  if (instantBook === 'true' || instantBook === '1' || instantBook === true) {
+    query.instantBook = true;
+  }
+
+  // Host verification filter (queries User collection)
+  if (hostVerification === 'verified') {
+    const verifiedUsers = await User.find({ 'hostVerification.status': 'verified' }).distinct('_id');
+    query.owner = { $in: verifiedUsers };
+  }
+
+  // Sorting
+  let sort = { averageRating: -1, createdAt: -1 }; // Recommended default
   if (sortBy === 'priceAsc') sort = { price: 1 };
-  if (sortBy === 'priceDesc') sort = { price: -1 };
-  if (sortBy === 'rating') sort = { averageRating: -1, createdAt: -1 };
+  else if (sortBy === 'priceDesc') sort = { price: -1 };
+  else if (sortBy === 'rating') sort = { averageRating: -1, price: 1 };
+  else if (sortBy === 'newest') sort = { createdAt: -1 };
+  else if (sortBy === 'recommended') sort = { averageRating: -1, createdAt: -1 };
 
-  const allListings = await Listing.find(query).sort(sort).populate("owner");
+  // Calculate active filter count for UI badge
+  let activeFilterCount = 0;
+  if (searchQuery) activeFilterCount++;
+  if (currentCategory) activeFilterCount++;
+  if (minPrice || maxPrice) activeFilterCount++;
+  if (minRating) activeFilterCount++;
+  if (selectedAmenities.length > 0) activeFilterCount += selectedAmenities.length;
+  if (guests && Number(guests) > 1) activeFilterCount++;
+  if (bedrooms && Number(bedrooms) > 0) activeFilterCount++;
+  if (bathrooms && Number(bathrooms) > 0) activeFilterCount++;
+  if (propertyType) activeFilterCount++;
+  if (hostVerification === 'verified') activeFilterCount++;
+  if (instantBook === 'true' || instantBook === '1' || instantBook === true) activeFilterCount++;
+
+  // Pagination
+  const page = Math.max(1, parseInt(pageQuery, 10) || 1);
+  const limit = Math.max(1, Math.min(50, parseInt(limitQuery, 10) || 12));
+  const totalListings = await Listing.countDocuments(query);
+  const totalPages = Math.ceil(totalListings / limit) || 1;
+  const currentPage = Math.min(page, totalPages);
+  const skip = (currentPage - 1) * limit;
+
+  const allListings = await Listing.find(query)
+    .sort(sort)
+    .skip(skip)
+    .limit(limit)
+    .populate("owner");
+
+  // Get price bounds across entire dataset for realistic price slider ranges
+  const priceStats = await Listing.aggregate([
+    { $group: { _id: null, min: { $min: "$price" }, max: { $max: "$price" } } }
+  ]);
+  const dbMinPrice = (priceStats[0] && priceStats[0].min) || 500;
+  const dbMaxPrice = (priceStats[0] && priceStats[0].max) || 25000;
 
   res.render("listings/index.ejs", {
     allListings,
+    totalListings,
+    currentPage,
+    totalPages,
+    limit,
     currentCategory,
     categories: allowedCategories,
+    propertyTypes: allowedPropertyTypes,
     searchQuery,
+    destination: destination || '',
     minPrice: minPrice || '',
     maxPrice: maxPrice || '',
-    sortBy: sortBy || ''
+    dbMinPrice,
+    dbMaxPrice,
+    minRating: minRating || '',
+    guests: guests || '',
+    bedrooms: bedrooms || '',
+    bathrooms: bathrooms || '',
+    propertyType: propertyType || '',
+    hostVerification: hostVerification || '',
+    instantBook: (instantBook === 'true' || instantBook === '1' || instantBook === true) ? 'true' : '',
+    sortBy: sortBy || 'recommended',
+    allAmenities: getAllAmenities(),
+    selectedAmenities,
+    activeFilterCount,
+    query: req.query
   });
 };
 
 // Render new form
 module.exports.renderNewForm = (req, res) => {
-  res.render("listings/new.ejs");
+  res.render("listings/new.ejs", {
+    allAmenities: getAllAmenities(),
+    categorizedAmenities: getCategorizedAmenities(),
+    cancellationPolicies: CANCELLATION_POLICIES
+  });
 };
 
 
@@ -102,6 +247,10 @@ module.exports.showListing = async (req, res) => {
     return res.redirect("/listings");
   }
 
+  // Real Analytics: Record property view asynchronously without blocking response
+  Listing.findByIdAndUpdate(id, { $inc: { views: 1 } })
+    .catch(err => console.error("Listing view tracking notice:", err.message));
+
   const isWishlisted = req.user && Array.isArray(req.user.wishlist)
     ? req.user.wishlist.some((item) => item.equals(listing._id))
     : false;
@@ -115,11 +264,20 @@ module.exports.showListing = async (req, res) => {
     checkOut: { $gte: today }
   }).select('checkIn checkOut nights guests status');
 
+  const { getListingGallery } = require('../utils/imageHelper');
+  const galleryPhotos = getListingGallery(listing);
+
+  const cancellationPolicy = getCancellationPolicy(listing.cancellationPolicy || 'Flexible');
+
   res.render("listings/show.ejs", {
     listing,
     isWishlisted,
     confirmedBookings: confirmedBookings || [],
-    blockedDates: listing.blockedDates || []
+    blockedDates: listing.blockedDates || [],
+    getAmenityDetails,
+    galleryPhotos,
+    cancellationPolicy,
+    allPolicies: CANCELLATION_POLICIES
   });
 };
 
@@ -171,7 +329,18 @@ module.exports.createListing = async (req, res) => {
     console.error("Mapbox Geocoding notice:", geoErr.message);
   }
 
-  const newListing = new Listing(req.body.listing);
+  // Normalize amenities input
+  const listingPayload = { ...req.body.listing };
+  if (listingPayload.amenities && !Array.isArray(listingPayload.amenities)) {
+    listingPayload.amenities = [listingPayload.amenities];
+  } else if (!listingPayload.amenities) {
+    listingPayload.amenities = [];
+  }
+
+  // Sanitize dynamic pricing configuration
+  listingPayload.pricing = sanitizePricing(listingPayload.pricing);
+
+  const newListing = new Listing(listingPayload);
   newListing.owner = req.user._id;
   newListing.geometry = geometry;
   newListing.location = resolvedLocation;
@@ -233,7 +402,13 @@ module.exports.renderEditForm = async (req, res) => {
     OrignalImageUrl = OrignalImageUrl.replace("/upload", "/upload/h_200,w_250");
   }
 
-  res.render("listings/edit.ejs", { listing, OrignalImageUrl });
+  res.render("listings/edit.ejs", {
+    listing,
+    OrignalImageUrl,
+    allAmenities: getAllAmenities(),
+    categorizedAmenities: getCategorizedAmenities(),
+    cancellationPolicies: CANCELLATION_POLICIES
+  });
 };
 
 
@@ -246,9 +421,19 @@ module.exports.updateListing = async (req, res) => {
     return res.redirect('/listings');
   }
 
+  const updateData = { ...req.body.listing };
+  if (!updateData.amenities) {
+    updateData.amenities = [];
+  } else if (!Array.isArray(updateData.amenities)) {
+    updateData.amenities = [updateData.amenities];
+  }
+
+  // Sanitize dynamic pricing configuration
+  updateData.pricing = sanitizePricing(updateData.pricing);
+
   let listing = await Listing.findByIdAndUpdate(
     id,
-    { ...req.body.listing },
+    updateData,
     { new: true }
   );
 
@@ -421,5 +606,52 @@ module.exports.unblockDates = async (req, res) => {
   await listing.save();
   req.flash("success", "Blocked dates removed and reopened for reservations.");
   res.redirect(`/listings/${id}#calendar-section`);
+};
+
+// Real-time Pricing Quote API for listing details page
+module.exports.getPricingQuote = async (req, res) => {
+  const { id } = req.params;
+  const { checkIn, checkOut, guests } = req.query;
+
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return res.status(400).json({ success: false, message: 'Invalid listing ID' });
+  }
+
+  const listing = await Listing.findById(id);
+  if (!listing) {
+    return res.status(404).json({ success: false, message: 'Listing not found' });
+  }
+
+  if (!checkIn || !checkOut) {
+    return res.status(400).json({ success: false, message: 'Please select both check-in and check-out dates' });
+  }
+
+  const checkInDate = new Date(checkIn);
+  const checkOutDate = new Date(checkOut);
+
+  if (isNaN(checkInDate.getTime()) || isNaN(checkOutDate.getTime())) {
+    return res.status(400).json({ success: false, message: 'Invalid date values' });
+  }
+
+  checkInDate.setHours(0, 0, 0, 0);
+  checkOutDate.setHours(0, 0, 0, 0);
+
+  if (checkOutDate <= checkInDate) {
+    return res.status(400).json({ success: false, message: 'Check-out date must be after check-in date' });
+  }
+
+  const numGuests = Math.max(1, parseInt(guests, 10) || 1);
+
+  const quote = calculateListingPricing({
+    listing,
+    checkIn: checkInDate,
+    checkOut: checkOutDate,
+    guests: numGuests
+  });
+
+  return res.json({
+    success: true,
+    pricing: quote
+  });
 };
 

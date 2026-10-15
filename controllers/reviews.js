@@ -1,6 +1,7 @@
 const Listing = require("../models/listing");
 const Review = require("../models/review");
 const { createNotification } = require('../utils/notificationHelper');
+const { syncHostSuperhostStatus } = require('../utils/superhostHelper');
 
 async function updateAverageRating(listingId) {
   const listing = await Listing.findById(listingId).populate('reviews');
@@ -33,6 +34,11 @@ const createReview = async (req, res) => {
 
   await updateAverageRating(listing._id);
 
+  // Recalculate Superhost metrics for property owner
+  if (listing.owner) {
+    syncHostSuperhostStatus(listing.owner).catch(err => console.error('Superhost sync error:', err.message));
+  }
+
   // Dispatch in-app notification to host if not self-review
   if (listing.owner && !listing.owner.equals(req.user._id)) {
     const commenterName = req.user.firstName || req.user.username || 'A traveler';
@@ -55,9 +61,16 @@ const createReview = async (req, res) => {
 
 const destroyReview = async (req, res) => {
   const { id, reviewId } = req.params;
+  const listing = await Listing.findById(id);
   await Listing.findByIdAndUpdate(id, { $pull: { reviews: reviewId } });
   await Review.findByIdAndDelete(reviewId);
   await updateAverageRating(id);
+
+  // Recalculate Superhost metrics for property owner
+  if (listing && listing.owner) {
+    syncHostSuperhostStatus(listing.owner).catch(err => console.error('Superhost sync error:', err.message));
+  }
+
   req.flash("success", "Review Deleted!");
   res.redirect(`/listings/${id}`);
 };

@@ -1,15 +1,18 @@
-<% if (success && success.length) { %>
+<% const successMsg = (typeof success !== 'undefined' && success) ? success : ''; %>
+<% const errorMsg = (typeof error !== 'undefined' && error) ? error : ''; %>
+
+<% if (successMsg && successMsg.length) { %>
   <div class="alert alert-success alert-dismissible fade show d-flex align-items-center shadow-sm rounded-4 border-0 mb-4" role="alert">
     <i class="fa-solid fa-circle-check fs-5 me-2 text-success"></i>
-    <div class="flex-grow-1 fw-semibold"><%= success %></div>
+    <div class="flex-grow-1 fw-semibold"><%= successMsg %></div>
     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
   </div>
 <% } %>
 
-<% if (error && error.length) { %>
+<% if (errorMsg && errorMsg.length) { %>
   <div class="alert alert-danger alert-dismissible fade show d-flex align-items-center shadow-sm rounded-4 border-0 mb-4" role="alert">
     <i class="fa-solid fa-circle-exclamation fs-5 me-2 text-danger"></i>
-    <div class="flex-grow-1 fw-semibold"><%= error %></div>
+    <div class="flex-grow-1 fw-semibold"><%= errorMsg %></div>
     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
   </div>
 <% } %>
