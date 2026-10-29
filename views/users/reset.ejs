@@ -13,29 +13,39 @@
     <form action="/reset-password/<%= token %>" method="POST" novalidate class="needs-validation">
       <div class="mb-3">
         <label for="password" class="form-label">New Password</label>
-        <input
-          name="password"
-          id="password"
-          type="password"
-          class="form-control"
-          placeholder="Min 6 characters"
-          minlength="6"
-          required
-        />
+        <div class="password-toggle-wrapper">
+          <input
+            name="password"
+            id="password"
+            type="password"
+            class="form-control"
+            placeholder="Min 6 characters"
+            minlength="6"
+            required
+          />
+          <button type="button" class="password-toggle-btn" aria-label="Toggle password visibility" data-target="password">
+            <i class="fa-regular fa-eye"></i>
+          </button>
+        </div>
         <div class="invalid-feedback">Password must be at least 6 characters.</div>
       </div>
 
       <div class="mb-4">
         <label for="confirmPassword" class="form-label">Confirm New Password</label>
-        <input
-          name="confirmPassword"
-          id="confirmPassword"
-          type="password"
-          class="form-control"
-          placeholder="Re-enter new password"
-          minlength="6"
-          required
-        />
+        <div class="password-toggle-wrapper">
+          <input
+            name="confirmPassword"
+            id="confirmPassword"
+            type="password"
+            class="form-control"
+            placeholder="Re-enter new password"
+            minlength="6"
+            required
+          />
+          <button type="button" class="password-toggle-btn" aria-label="Toggle password visibility" data-target="confirmPassword">
+            <i class="fa-regular fa-eye"></i>
+          </button>
+        </div>
         <div class="invalid-feedback">Please confirm your new password.</div>
       </div>
 

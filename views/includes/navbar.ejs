@@ -278,59 +278,6 @@
           </ul>
         </div>
 
-        <!-- Currency Selector Dropdown (Desktop) -->
-        <div class="dropdown currency-dropdown-wrapper ms-2">
-          <button 
-            class="btn btn-sm btn-outline-secondary rounded-pill d-flex align-items-center gap-1.5 px-2.5 py-1" 
-            type="button" 
-            id="currencyDropdownDesktop" 
-            data-bs-toggle="dropdown" 
-            aria-expanded="false"
-            aria-label="Currency Selector: INR, USD, EUR, GBP"
-            title="<%= t('currency.currency') || 'Currency' %>"
-          >
-            <span class="fw-bold text-success" style="font-size: 0.85rem;"><%= (typeof currentCurrencyConfig !== 'undefined' && currentCurrencyConfig.symbol) ? currentCurrencyConfig.symbol : '₹' %></span>
-            <span class="fw-bold small" style="font-size: 0.76rem;">
-              <%= typeof currentCurrency !== 'undefined' ? currentCurrency : 'INR' %>
-            </span>
-          </button>
-          <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 rounded-4 p-2 mt-2 dropdown-menu-lux" aria-labelledby="currencyDropdownDesktop" style="min-width: 190px;">
-            <li>
-              <div class="px-3 py-1.5 small text-muted fw-bold text-uppercase d-flex align-items-center justify-content-between" style="font-size: 0.68rem; letter-spacing: 0.05em;">
-                <span><i class="fa-solid fa-coins me-1 text-success"></i> <%= t('currency.currency') || 'Currency' %></span>
-                <span class="badge bg-secondary-subtle text-secondary py-0.5 px-1.5" style="font-size: 0.62rem;">Base: INR</span>
-              </div>
-            </li>
-            <li><hr class="dropdown-divider my-1"></li>
-            <% 
-              const currenciesList = [
-                { code: 'INR', symbol: '₹', name: 'Indian Rupee', flag: '🇮🇳', isBase: true },
-                { code: 'USD', symbol: '$', name: 'US Dollar', flag: '🇺🇸', isBase: false },
-                { code: 'EUR', symbol: '€', name: 'Euro', flag: '🇪🇺', isBase: false },
-                { code: 'GBP', symbol: '£', name: 'British Pound', flag: '🇬🇧', isBase: false }
-              ];
-            %>
-            <% currenciesList.forEach(c => { 
-                 const isActive = (typeof currentCurrency === 'undefined' && c.code === 'INR') || (typeof currentCurrency !== 'undefined' && currentCurrency === c.code);
-            %>
-              <li>
-                <form action="/set-currency" method="POST" class="m-0">
-                  <input type="hidden" name="currency" value="<%= c.code %>">
-                  <button type="submit" class="dropdown-item rounded-3 d-flex align-items-center justify-content-between py-1.5 <%= isActive ? 'active fw-bold text-primary' : '' %>">
-                    <span class="d-flex align-items-center gap-2">
-                      <span><%= c.flag %></span>
-                      <span><%= c.code %> (<%= c.symbol %>)</span>
-                    </span>
-                    <% if (isActive) { %>
-                      <i class="fa-solid fa-check small text-primary"></i>
-                    <% } %>
-                  </button>
-                </form>
-              </li>
-            <% }); %>
-          </ul>
-        </div>
-
         <!-- Dark Mode Toggle Button -->
         <button id="theme-toggle" class="theme-toggle-btn ms-1" title="Toggle dark / light theme" aria-label="Toggle theme">
           <i class="fa-solid fa-moon theme-icon"></i>
@@ -541,36 +488,6 @@
               मराठी
             </button>
           </form>
-        </div>
-      </div>
-
-      <!-- Mobile Currency Switcher in Drawer -->
-      <div class="p-3 my-2 bg-body-tertiary rounded-4 border border-theme">
-        <div class="small fw-bold text-muted mb-2 d-flex align-items-center justify-content-between">
-          <div class="d-flex align-items-center gap-1.5">
-            <i class="fa-solid fa-coins text-success"></i>
-            <span><%= t('currency.currency') || 'Currency' %>:</span>
-          </div>
-          <span class="badge bg-secondary-subtle text-secondary" style="font-size: 0.65rem;">Base: INR (₹)</span>
-        </div>
-        <div class="row g-2">
-          <% [
-            { code: 'INR', symbol: '₹', label: '₹ INR' },
-            { code: 'USD', symbol: '$', label: '$ USD' },
-            { code: 'EUR', symbol: '€', label: '€ EUR' },
-            { code: 'GBP', symbol: '£', label: '£ GBP' }
-          ].forEach(c => { 
-               const isSel = (typeof currentCurrency === 'undefined' && c.code === 'INR') || (typeof currentCurrency !== 'undefined' && currentCurrency === c.code);
-          %>
-            <div class="col-6">
-              <form action="/set-currency" method="POST" class="m-0">
-                <input type="hidden" name="currency" value="<%= c.code %>">
-                <button type="submit" class="btn btn-sm w-100 rounded-pill <%= isSel ? 'btn-success fw-bold text-white' : 'btn-outline-secondary' %>">
-                  <%= c.label %>
-                </button>
-              </form>
-            </div>
-          <% }); %>
         </div>
       </div>
 

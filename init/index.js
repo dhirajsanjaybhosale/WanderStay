@@ -3,7 +3,25 @@ const initData = require("./data.js");
 const Listing = require("../models/listing.js");
 const User = require("../models/user.js");
 
-const MONGO_URL = process.env.MONGO_URL || "mongodb://127.0.0.1:27017/wanderstays";
+if (process.env.NODE_ENV !== "production") {
+  require("dotenv").config({ path: require("path").resolve(__dirname, "../.env") });
+}
+
+const isProduction = process.env.NODE_ENV === "production";
+let mongoUrl = (process.env.MONGO_URL || "").trim();
+if ((mongoUrl.startsWith('"') && mongoUrl.endsWith('"')) || (mongoUrl.startsWith("'") && mongoUrl.endsWith("'"))) {
+  mongoUrl = mongoUrl.slice(1, -1).trim();
+}
+
+if (!mongoUrl) {
+  if (isProduction) {
+    console.error("❌ FATAL: MONGO_URL environment variable is required in production for database initialization.");
+    process.exit(1);
+  }
+  mongoUrl = "mongodb://127.0.0.1:27017/wanderstays";
+}
+
+const MONGO_URL = mongoUrl;
 
 async function main() {
   await mongoose.connect(MONGO_URL);
@@ -168,6 +186,7 @@ const initDB = async () => {
         { url, filename }
       ],
       owner: assignedHost._id,
+      baseCurrency: 'INR',
       averageRating: Number((4.6 + (index % 4) * 0.1).toFixed(1)),
       isAvailable: true,
       geometry: obj.geometry || {

@@ -33,8 +33,9 @@ const userSchema = new Schema({
     },
     preferredCurrency: {
       type: String,
-      enum: ['INR', 'USD', 'EUR', 'GBP'],
-      default: 'INR'
+      default: 'INR',
+      uppercase: true,
+      trim: true
     },
     isSuspended: {
       type: Boolean,
@@ -62,7 +63,13 @@ const userSchema = new Schema({
     },
     country: {
       type: String,
-      default: ''
+      default: 'India'
+    },
+    countryCode: {
+      type: String,
+      default: 'IN',
+      uppercase: true,
+      trim: true
     },
     city: {
       type: String,

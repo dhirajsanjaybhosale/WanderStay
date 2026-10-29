@@ -24,6 +24,12 @@ const bookingSchema = new Schema({
     type: Number,
     required: true,
   },
+  currency: {
+    type: String,
+    default: 'INR',
+    uppercase: true,
+    trim: true,
+  },
   priceBreakdown: {
     basePricePerNight: Number,
     averageNightlyRate: Number,

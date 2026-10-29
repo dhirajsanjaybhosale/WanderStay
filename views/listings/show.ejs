@@ -190,6 +190,68 @@
               <% } %>
             </div>
 
+            <!-- Property Key Facts Strip (Guests, Bedrooms, Beds, Bathrooms, Type) -->
+            <div class="property-specs-bar p-3 rounded-4 bg-body-tertiary border mb-4 d-flex flex-wrap align-items-center justify-content-between gap-3">
+              <div class="d-flex align-items-center gap-2">
+                <div class="spec-icon-box">
+                  <i class="fa-solid fa-users text-primary"></i>
+                </div>
+                <div>
+                  <span class="small text-muted d-block">Capacity</span>
+                  <strong class="text-body"><%= listing.guests || 2 %> <%= (listing.guests === 1) ? 'guest' : 'guests' %></strong>
+                </div>
+              </div>
+
+              <div class="vr opacity-25 d-none d-sm-block"></div>
+
+              <div class="d-flex align-items-center gap-2">
+                <div class="spec-icon-box">
+                  <i class="fa-solid fa-door-open text-primary"></i>
+                </div>
+                <div>
+                  <span class="small text-muted d-block">Bedrooms</span>
+                  <strong class="text-body"><%= listing.bedrooms || 1 %> <%= (listing.bedrooms === 1) ? 'bedroom' : 'bedrooms' %></strong>
+                </div>
+              </div>
+
+              <div class="vr opacity-25 d-none d-sm-block"></div>
+
+              <div class="d-flex align-items-center gap-2">
+                <div class="spec-icon-box">
+                  <i class="fa-solid fa-bed text-primary"></i>
+                </div>
+                <div>
+                  <span class="small text-muted d-block">Beds</span>
+                  <strong class="text-body"><%= listing.beds || listing.bedrooms || 1 %> <%= ((listing.beds || listing.bedrooms || 1) === 1) ? 'bed' : 'beds' %></strong>
+                </div>
+              </div>
+
+              <div class="vr opacity-25 d-none d-sm-block"></div>
+
+              <div class="d-flex align-items-center gap-2">
+                <div class="spec-icon-box">
+                  <i class="fa-solid fa-bath text-primary"></i>
+                </div>
+                <div>
+                  <span class="small text-muted d-block">Baths</span>
+                  <strong class="text-body"><%= listing.bathrooms || 1 %> <%= (listing.bathrooms === 1) ? 'bath' : 'baths' %></strong>
+                </div>
+              </div>
+
+              <% if (listing.propertyType) { %>
+                <div class="vr opacity-25 d-none d-md-block"></div>
+                <div class="d-flex align-items-center gap-2">
+                  <div class="spec-icon-box">
+                    <i class="fa-solid fa-hotel text-primary"></i>
+                  </div>
+                  <div>
+                    <span class="small text-muted d-block">Property Type</span>
+                    <strong class="text-body"><%= listing.propertyType %></strong>
+                  </div>
+                </div>
+              <% } %>
+            </div>
+
             <!-- Description -->
             <div class="mb-4">
               <h4 class="fw-bold mb-3">About this space</h4>
@@ -701,6 +763,85 @@
           </div>
         </div>
 
+        <!-- Similar Properties Section (Real database recommendations) -->
+        <% if (typeof similarListings !== 'undefined' && similarListings.length > 0) { %>
+          <div class="similar-listings-section mt-5 pt-5 border-top reveal-on-scroll">
+            <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-end gap-2 mb-4">
+              <div>
+                <div class="section-kicker">EXPLORE MORE</div>
+                <h3 class="fw-bold mb-1">Similar Stays You Might Like</h3>
+                <p class="text-muted small mb-0">Handpicked retreats in <%= listing.country %> and <%= listing.category %> categories.</p>
+              </div>
+              <a href="/listings?category=<%= encodeURIComponent(listing.category) %>" class="btn btn-outline-secondary rounded-pill btn-sm px-3 align-self-start align-self-sm-auto">
+                Explore all <%= listing.category %> stays &rarr;
+              </a>
+            </div>
+
+            <div class="row g-4">
+              <% similarListings.forEach(sim => { %>
+                <div class="col-md-4">
+                  <div class="listing-card-wrapper h-100">
+                    <div class="listing-card-media">
+                      <a href="/listings/<%= sim._id %>" aria-label="View <%= sim.title %>">
+                        <img 
+                          src="<%= (sim.image && sim.image.url) ? sim.image.url : (sim.photos && sim.photos[0] && (sim.photos[0].url || sim.photos[0])) || 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80' %>" 
+                          alt="<%= sim.title %>"
+                          loading="lazy"
+                          onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80';"
+                        />
+                      </a>
+                      <span class="listing-category-badge"><%= sim.category %></span>
+                    </div>
+
+                    <a href="/listings/<%= sim._id %>" class="text-decoration-none text-reset listing-card-body d-flex flex-column">
+                      <div class="listing-card-header">
+                        <div class="listing-card-location"><i class="fa-solid fa-location-dot text-primary me-1"></i><%= sim.location %>, <%= sim.country %></div>
+                        <div class="listing-rating-badge">
+                          <i class="fa-solid fa-star"></i>
+                          <span><%= sim.averageRating ? sim.averageRating.toFixed(1) : '4.9' %></span>
+                        </div>
+                      </div>
+                      <div class="listing-card-title text-truncate"><%= sim.title %></div>
+                      <div class="small text-muted mb-2"><%= sim.guests || 2 %> guests • <%= sim.bedrooms || 1 %> bed<%= (sim.bedrooms || 1) > 1 ? 's' : '' %></div>
+                      
+                      <div class="listing-card-footer mt-auto pt-2">
+                        <div>
+                          <% const simPrice = (typeof getPriceDisplay === 'function') ? getPriceDisplay(sim.price) : { formattedTarget: `₹${Number(sim.price).toLocaleString('en-IN')}`, isConverted: false, formattedBase: `₹${Number(sim.price).toLocaleString('en-IN')}` }; %>
+                          <span class="listing-price-tag"><%= simPrice.formattedTarget %></span>
+                          <span class="listing-price-period">/ night</span>
+                        </div>
+                        <span class="text-primary small fw-semibold">View stay &rarr;</span>
+                      </div>
+                    </a>
+                  </div>
+                </div>
+              <% }) %>
+            </div>
+          </div>
+        <% } %>
+
+        <!-- Mobile Bottom Sticky Booking Bar (Visible on mobile/tablet screens only) -->
+        <div class="mobile-booking-bar d-lg-none" id="mobileBookingBar">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <div class="d-flex align-items-baseline gap-1">
+                <span class="fw-bold fs-5 text-body"><%= widgetPrice.formattedTarget %></span>
+                <span class="text-muted small">/ <%= t('booking.night') %></span>
+              </div>
+              <div class="small text-muted" style="font-size: 0.75rem;">
+                <i class="fa-solid fa-star text-warning me-0.5"></i>
+                <strong class="text-body"><%= listing.averageRating ? listing.averageRating.toFixed(1) : 'New' %></strong>
+                <% if (widgetPrice.isConverted) { %>
+                  <span>• (~<%= widgetPrice.formattedBase %>)</span>
+                <% } %>
+              </div>
+            </div>
+            <a href="#booking-form" class="btn btn-primary rounded-pill px-4 py-2 fw-bold shadow-sm" onclick="document.getElementById('checkInDate') && document.getElementById('checkInDate').focus();">
+              <i class="fa-solid fa-bolt me-1"></i> Check dates
+            </a>
+          </div>
+        </div>
+
         <!-- Map & Listing Data Scripts -->
         <script>
           window.mapToken = "<%= mapToken %>";
@@ -747,6 +888,26 @@
               }
             }
 
+            const currRate = <%= (typeof getExchangeRate === 'function' && typeof currentCurrency !== 'undefined') ? getExchangeRate(currentCurrency) : 1 %>;
+            const currCode = "<%= typeof currentCurrency !== 'undefined' ? currentCurrency : 'INR' %>";
+            const currSymbol = "<%= (typeof currentCurrencyConfig !== 'undefined' && currentCurrencyConfig.symbol) ? currentCurrencyConfig.symbol : '₹' %>";
+
+            function formatPrice(amt) {
+              if (currCode === 'INR') {
+                return '₹ ' + Math.round(amt).toLocaleString('en-IN');
+              }
+              const converted = Math.round(amt * currRate);
+              return `${currSymbol}${converted.toLocaleString('en-US')} <small class="text-muted fw-normal" style="font-size:0.75rem;">(~₹${Math.round(amt).toLocaleString('en-IN')})</small>`;
+            }
+
+            function formatTotal(amt) {
+              if (currCode === 'INR') {
+                return '₹ ' + Math.round(amt).toLocaleString('en-IN');
+              }
+              const converted = Math.round(amt * currRate);
+              return `${currSymbol}${converted.toLocaleString('en-US')} <small class="text-muted fw-normal" style="font-size:0.8rem;">(~₹${Math.round(amt).toLocaleString('en-IN')} INR)</small>`;
+            }
+
             function renderBreakdown(p) {
               if (!breakdownContainer) return;
               let rowsHtml = '<div class="text-center text-muted small mb-2">You won\'t be charged yet</div>';
@@ -755,58 +916,58 @@
                 if (p.weekdayNights > 0) {
                   rowsHtml += `
                     <div class="booking-breakdown-row">
-                      <span>₹ ${p.weekdayRate.toLocaleString('en-IN')} &times; ${p.weekdayNights} weekday ${p.weekdayNights === 1 ? 'night' : 'nights'}</span>
-                      <span>₹ ${p.weekdayTotal.toLocaleString('en-IN')}</span>
+                      <span>${formatPrice(p.weekdayRate)} &times; ${p.weekdayNights} weekday ${p.weekdayNights === 1 ? 'night' : 'nights'}</span>
+                      <span>${formatPrice(p.weekdayTotal)}</span>
                     </div>`;
                 }
                 if (p.weekendNights > 0) {
                   rowsHtml += `
                     <div class="booking-breakdown-row text-warning-emphasis">
-                      <span><i class="fa-solid fa-champagne-glasses me-1"></i>₹ ${p.weekendRate.toLocaleString('en-IN')} &times; ${p.weekendNights} weekend ${p.weekendNights === 1 ? 'night' : 'nights'}</span>
-                      <span>₹ ${p.weekendTotal.toLocaleString('en-IN')}</span>
+                      <span><i class="fa-solid fa-champagne-glasses me-1"></i>${formatPrice(p.weekendRate)} &times; ${p.weekendNights} weekend ${p.weekendNights === 1 ? 'night' : 'nights'}</span>
+                      <span>${formatPrice(p.weekendTotal)}</span>
                     </div>`;
                 }
                 if (p.seasonalNights > 0) {
                   rowsHtml += `
                     <div class="booking-breakdown-row text-primary">
-                      <span><i class="fa-solid fa-cloud-sun me-1"></i>${p.seasonalName || 'Seasonal'}: ₹ ${p.seasonalRate.toLocaleString('en-IN')} &times; ${p.seasonalNights} ${p.seasonalNights === 1 ? 'night' : 'nights'}</span>
-                      <span>₹ ${p.seasonalTotal.toLocaleString('en-IN')}</span>
+                      <span><i class="fa-solid fa-cloud-sun me-1"></i>${p.seasonalName || 'Seasonal'}: ${formatPrice(p.seasonalRate)} &times; ${p.seasonalNights} ${p.seasonalNights === 1 ? 'night' : 'nights'}</span>
+                      <span>${formatPrice(p.seasonalTotal)}</span>
                     </div>`;
                 }
                 if (p.holidayNights > 0) {
                   rowsHtml += `
                     <div class="booking-breakdown-row text-danger">
-                      <span><i class="fa-solid fa-holly-berry me-1"></i>${p.holidayName || 'Holiday'}: ₹ ${p.holidayRate.toLocaleString('en-IN')} &times; ${p.holidayNights} ${p.holidayNights === 1 ? 'night' : 'nights'}</span>
-                      <span>₹ ${p.holidayTotal.toLocaleString('en-IN')}</span>
+                      <span><i class="fa-solid fa-holly-berry me-1"></i>${p.holidayName || 'Holiday'}: ${formatPrice(p.holidayRate)} &times; ${p.holidayNights} ${p.holidayNights === 1 ? 'night' : 'nights'}</span>
+                      <span>${formatPrice(p.holidayTotal)}</span>
                     </div>`;
                 }
                 if (p.extraGuestTotal > 0) {
                   rowsHtml += `
                     <div class="booking-breakdown-row text-success">
                       <span><i class="fa-solid fa-user-plus me-1"></i>${p.extraGuests} extra ${p.extraGuests === 1 ? 'guest' : 'guests'} &times; ${p.nights} nts (@₹${p.extraGuestFeePerNight}/nt)</span>
-                      <span>₹ ${p.extraGuestTotal.toLocaleString('en-IN')}</span>
+                      <span>${formatPrice(p.extraGuestTotal)}</span>
                     </div>`;
                 }
               } else {
                 rowsHtml += `
                   <div class="booking-breakdown-row">
-                    <span>₹ ${pricePerNight.toLocaleString('en-IN')} &times; ${p.nights} ${p.nights === 1 ? 'night' : 'nights'}</span>
-                    <span>₹ ${p.roomSubtotal.toLocaleString('en-IN')}</span>
+                    <span>${formatPrice(pricePerNight)} &times; ${p.nights} ${p.nights === 1 ? 'night' : 'nights'}</span>
+                    <span>${formatPrice(p.roomSubtotal)}</span>
                   </div>`;
               }
 
               rowsHtml += `
                 <div class="booking-breakdown-row">
                   <span>Cleaning fee</span>
-                  <span>₹ ${p.cleaningFee.toLocaleString('en-IN')}</span>
+                  <span>${formatPrice(p.cleaningFee)}</span>
                 </div>
                 <div class="booking-breakdown-row">
                   <span>WanderStay service fee</span>
-                  <span>₹ ${p.serviceFee.toLocaleString('en-IN')}</span>
+                  <span>${formatPrice(p.serviceFee)}</span>
                 </div>
                 <div class="booking-breakdown-total">
                   <span>Total before taxes</span>
-                  <span class="text-primary fw-bold">₹ ${p.totalPrice.toLocaleString('en-IN')}</span>
+                  <span class="text-primary fw-bold">${formatTotal(p.totalPrice)}</span>
                 </div>
               `;
 
@@ -820,20 +981,20 @@
               breakdownContainer.innerHTML = `
                 <div class="text-center text-muted small mb-2">You won't be charged yet</div>
                 <div class="booking-breakdown-row">
-                  <span>₹ ${pricePerNight.toLocaleString('en-IN')} &times; ${nights} ${nights === 1 ? 'night' : 'nights'}</span>
-                  <span>₹ ${base.toLocaleString('en-IN')}</span>
+                  <span>${formatPrice(pricePerNight)} &times; ${nights} ${nights === 1 ? 'night' : 'nights'}</span>
+                  <span>${formatPrice(base)}</span>
                 </div>
                 <div class="booking-breakdown-row">
                   <span>Cleaning fee</span>
-                  <span>₹ 500</span>
+                  <span>${formatPrice(500)}</span>
                 </div>
                 <div class="booking-breakdown-row">
                   <span>WanderStay service fee</span>
-                  <span>₹ 750</span>
+                  <span>${formatPrice(750)}</span>
                 </div>
                 <div class="booking-breakdown-total">
                   <span>Total before taxes</span>
-                  <span>₹ ${total.toLocaleString('en-IN')}</span>
+                  <span class="text-primary fw-bold">${formatTotal(total)}</span>
                 </div>
               `;
             }

@@ -2435,3 +2435,79 @@ html.dark .btn-check:checked + .btn-outline-secondary {
   color: #0F172A;
   border: 1px solid rgba(255, 255, 255, 0.5);
 }
+
+/* ==========================================================================
+   WANDERSTAY PROPERTY SHOW ENHANCEMENTS & MOBILE BOOKING BAR
+   ========================================================================== */
+.property-specs-bar {
+  background: var(--surface-card);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-xs);
+}
+
+.spec-icon-box {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: rgba(255, 90, 95, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.05rem;
+  flex-shrink: 0;
+}
+
+body.dark .spec-icon-box,
+html.dark .spec-icon-box {
+  background: rgba(255, 90, 95, 0.16);
+}
+
+/* Sticky Mobile Bottom Booking Action Bar */
+.mobile-booking-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  padding: 0.85rem 1.25rem;
+  z-index: 1040;
+  box-shadow: 0 -6px 20px rgba(17, 22, 34, 0.08);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+/* Password Visibility Toggle */
+.password-toggle-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.password-toggle-wrapper .form-control {
+  padding-right: 2.75rem;
+}
+
+.password-toggle-btn {
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  transition: color var(--transition-fast);
+}
+
+.password-toggle-btn:hover,
+.password-toggle-btn:focus-visible {
+  color: var(--primary);
+  outline: none;
+}

@@ -335,7 +335,7 @@
                   <span class="profile-field-label"><i class="fa-solid fa-coins me-1 text-muted"></i><%= t('currency.currency') || 'Currency' %></span>
                   <div class="profile-field-value">
                     <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3 py-1">
-                      <%= (user.preferredCurrency === 'USD' ? '$ USD - US Dollar' : (user.preferredCurrency === 'EUR' ? '€ EUR - Euro' : (user.preferredCurrency === 'GBP' ? '£ GBP - British Pound' : '₹ INR - Indian Rupee (Base)'))) %>
+                      <%= (typeof supportedCurrencies !== 'undefined' && user.preferredCurrency && supportedCurrencies[user.preferredCurrency]) ? `${supportedCurrencies[user.preferredCurrency].symbol} ${user.preferredCurrency} - ${supportedCurrencies[user.preferredCurrency].name}` : '₹ INR - Indian Rupee (Base)' %>
                     </span>
                   </div>
                 </div>
@@ -501,10 +501,18 @@
                 <div class="input-group">
                   <span class="input-group-text bg-body-tertiary border-end-0"><i class="fa-solid fa-money-bill-wave text-muted"></i></span>
                   <select class="form-select border-start-0" id="preferredCurrency" name="preferredCurrency">
-                    <option value="INR" <%= (user.preferredCurrency === 'INR' || !user.preferredCurrency) ? 'selected' : '' %>>₹ INR - Indian Rupee (Base)</option>
-                    <option value="USD" <%= user.preferredCurrency === 'USD' ? 'selected' : '' %>>$ USD - US Dollar</option>
-                    <option value="EUR" <%= user.preferredCurrency === 'EUR' ? 'selected' : '' %>>€ EUR - Euro</option>
-                    <option value="GBP" <%= user.preferredCurrency === 'GBP' ? 'selected' : '' %>>£ GBP - British Pound</option>
+                    <% if (typeof supportedCurrencies !== 'undefined') { %>
+                      <% Object.values(supportedCurrencies).forEach(c => { %>
+                        <option value="<%= c.code %>" <%= (user.preferredCurrency === c.code || (!user.preferredCurrency && c.code === 'INR')) ? 'selected' : '' %>>
+                          <%= c.symbol %> <%= c.code %> - <%= c.name %> <%= c.code === 'INR' ? '(Base)' : '' %>
+                        </option>
+                      <% }); %>
+                    <% } else { %>
+                      <option value="INR" selected>₹ INR - Indian Rupee (Base)</option>
+                      <option value="USD">$ USD - US Dollar</option>
+                      <option value="EUR">€ EUR - Euro</option>
+                      <option value="GBP">£ GBP - British Pound</option>
+                    <% } %>
                   </select>
                 </div>
                 <div class="form-text small text-muted">Prices are displayed in your chosen currency; bookings are charged in INR.</div>

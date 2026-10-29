@@ -73,24 +73,42 @@ function translate(lang, key, params = {}) {
 function i18nMiddleware(req, res, next) {
   let lang = DEFAULT_LANGUAGE;
 
-  // 1. Check query parameter ?lang=
+  // 1. Explicit query parameter override (?lang=)
   if (req.query && req.query.lang && SUPPORTED_LANGUAGES.some(l => l.code === req.query.lang)) {
     lang = req.query.lang;
-    // Persist to session and cookie
     if (req.session) req.session.lang = lang;
     res.cookie('wanderstay_lang', lang, { maxAge: 365 * 24 * 60 * 60 * 1000, path: '/' });
   }
-  // 2. Check session
+  // 2. Explicit language preference saved by the authenticated user
+  else if (req.user && req.user.preferredLanguage && SUPPORTED_LANGUAGES.some(l => l.code === req.user.preferredLanguage)) {
+    lang = req.user.preferredLanguage;
+  }
+  // 3. Language preference saved in session
   else if (req.session && req.session.lang && SUPPORTED_LANGUAGES.some(l => l.code === req.session.lang)) {
     lang = req.session.lang;
   }
-  // 3. Check persistent cookie
+  // 4. Language preference saved in persistent cookie
   else if (req.cookies && req.cookies.wanderstay_lang && SUPPORTED_LANGUAGES.some(l => l.code === req.cookies.wanderstay_lang)) {
     lang = req.cookies.wanderstay_lang;
   }
-  // 4. Check authenticated user's saved preference
-  else if (req.user && req.user.preferredLanguage && SUPPORTED_LANGUAGES.some(l => l.code === req.user.preferredLanguage)) {
-    lang = req.user.preferredLanguage;
+  // 5. Browser's Accept-Language header for anonymous visitors
+  else if (req.headers && req.headers['accept-language']) {
+    const acceptHeader = req.headers['accept-language'].toLowerCase();
+    if (/\b(hi|hin|hi-in)\b/.test(acceptHeader)) {
+      lang = 'hi';
+    } else if (/\b(mr|mar|mr-in)\b/.test(acceptHeader)) {
+      lang = 'mr';
+    } else {
+      lang = 'en';
+    }
+    if (req.session) {
+      req.session.lang = lang;
+    }
+  }
+
+  // Ensure resolved language is supported
+  if (!SUPPORTED_LANGUAGES.some(l => l.code === lang)) {
+    lang = DEFAULT_LANGUAGE;
   }
 
   // Attach to request

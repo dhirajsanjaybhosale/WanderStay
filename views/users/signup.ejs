@@ -93,22 +93,196 @@
 
       <div class="mb-4">
         <label for="password" class="form-label"><%= t('forms.password') %></label>
-        <input
-          name="password"
-          id="password"
-          type="password"
-          class="form-control"
-          placeholder="At least 6 characters"
-          minlength="6"
-          required
-        />
+        <div class="password-toggle-wrapper">
+          <input
+            name="password"
+            id="password"
+            type="password"
+            class="form-control"
+            placeholder="At least 6 characters"
+            minlength="6"
+            required
+          />
+          <button type="button" class="password-toggle-btn" aria-label="Toggle password visibility" data-target="password">
+            <i class="fa-regular fa-eye"></i>
+          </button>
+        </div>
         <div class="invalid-feedback">Password must be at least 6 characters.</div>
+      </div>
+
+      <!-- Country of Residence (Searchable) -->
+      <div class="mb-3">
+        <label for="countrySelect" class="form-label fw-semibold">
+          <i class="fa-solid fa-earth-americas text-primary me-1"></i> Country of Residence
+        </label>
+        
+        <!-- Search filter input -->
+        <div class="input-group input-group-sm mb-1.5">
+          <span class="input-group-text bg-body-tertiary border-end-0"><i class="fa-solid fa-magnifying-glass text-muted"></i></span>
+          <input 
+            type="text" 
+            id="countrySearchInput" 
+            class="form-control border-start-0" 
+            placeholder="Type to search country (e.g. India, USA, France, Japan)..."
+            autocomplete="off"
+          />
+        </div>
+
+        <select 
+          name="country" 
+          id="countrySelect" 
+          class="form-select" 
+          required
+          size="1"
+        >
+          <option value="" disabled>Select your country of residence</option>
+          <% (typeof countries !== 'undefined' ? countries : []).forEach(function(c) { %>
+            <option 
+              value="<%= c.name %>" 
+              data-code="<%= c.code %>" 
+              data-currency="<%= c.currency %>" 
+              data-lang="<%= c.defaultLang %>"
+              <%= c.code === 'IN' ? 'selected' : '' %>
+            >
+              <%= c.name %> (<%= c.code %>)
+            </option>
+          <% }); %>
+        </select>
+        <input type="hidden" name="countryCode" id="countryCode" value="IN">
+        <div class="form-text small text-muted">Used to automatically customize your local destination currency and regional preferences.</div>
+      </div>
+
+      <!-- Preferred Language & Currency Row -->
+      <div class="row g-2 mb-4">
+        <div class="col-sm-6">
+          <label for="preferredLanguage" class="form-label small fw-semibold text-muted text-uppercase">
+            <i class="fa-solid fa-language text-primary me-1"></i> Preferred Language
+          </label>
+          <select name="preferredLanguage" id="preferredLanguage" class="form-select form-select-sm rounded-3">
+            <option value="en" selected>English (EN)</option>
+            <option value="hi">हिंदी (Hindi)</option>
+            <option value="mr">मराठी (Marathi)</option>
+          </select>
+        </div>
+
+        <div class="col-sm-6">
+          <label for="preferredCurrency" class="form-label small fw-semibold text-muted text-uppercase">
+            <i class="fa-solid fa-coins text-success me-1"></i> Preferred Currency
+          </label>
+          <select name="preferredCurrency" id="preferredCurrency" class="form-select form-select-sm rounded-3">
+            <option value="INR" selected>₹ INR (Indian Rupee)</option>
+            <option value="USD">$ USD (US Dollar)</option>
+            <option value="EUR">€ EUR (Euro)</option>
+            <option value="GBP">£ GBP (British Pound)</option>
+            <option value="JPY">¥ JPY (Japanese Yen)</option>
+            <option value="AED">AED (UAE Dirham)</option>
+            <option value="CAD">CA$ CAD (Canadian Dollar)</option>
+            <option value="AUD">A$ AUD (Australian Dollar)</option>
+            <option value="CHF">CHF (Swiss Franc)</option>
+            <option value="IDR">Rp IDR (Indonesian Rupiah)</option>
+            <option value="THB">฿ THB (Thai Baht)</option>
+            <option value="MXN">MX$ MXN (Mexican Peso)</option>
+          </select>
+        </div>
+        <div class="col-12">
+          <div class="form-text small text-muted" style="font-size: 0.72rem;">
+            <i class="fa-solid fa-circle-info text-info me-1"></i> Prices adapt to destinations when exploring worldwide.
+          </div>
+        </div>
       </div>
 
       <button type="submit" class="btn btn-primary btn-lg w-100 rounded-pill mb-3">
         <i class="fa-solid fa-check me-1"></i> <%= t('forms.createAccount') %>
       </button>
     </form>
+
+    <script>
+      (function() {
+        const countrySelect = document.getElementById('countrySelect');
+        const countrySearch = document.getElementById('countrySearchInput');
+        const countryCodeInput = document.getElementById('countryCode');
+        const languageSelect = document.getElementById('preferredLanguage');
+        const currencySelect = document.getElementById('preferredCurrency');
+
+        if (!countrySelect) return;
+
+        // Store original options for filtering
+        const originalOptions = Array.from(countrySelect.options);
+
+        // Filter country list on input
+        if (countrySearch) {
+          countrySearch.addEventListener('input', function() {
+            const query = this.value.trim().toLowerCase();
+            const currentSelectedValue = countrySelect.value;
+            countrySelect.innerHTML = '';
+
+            const filtered = originalOptions.filter(opt => {
+              if (opt.disabled) return true;
+              const text = opt.textContent.toLowerCase();
+              const code = (opt.getAttribute('data-code') || '').toLowerCase();
+              return text.includes(query) || code.includes(query);
+            });
+
+            if (filtered.length === 0) {
+              const emptyOpt = document.createElement('option');
+              emptyOpt.disabled = true;
+              emptyOpt.textContent = 'No matching countries';
+              countrySelect.appendChild(emptyOpt);
+            } else {
+              filtered.forEach(opt => countrySelect.appendChild(opt));
+              // Restore selected value if still in list
+              if (filtered.some(o => o.value === currentSelectedValue)) {
+                countrySelect.value = currentSelectedValue;
+              } else if (filtered[0] && !filtered[0].disabled) {
+                countrySelect.value = filtered[0].value;
+                syncPreferences(filtered[0]);
+              }
+            }
+          });
+        }
+
+        function syncPreferences(selectedOption) {
+          if (!selectedOption || selectedOption.disabled) return;
+
+          const code = selectedOption.getAttribute('data-code') || 'IN';
+          const currency = selectedOption.getAttribute('data-currency') || 'INR';
+
+          if (countryCodeInput) countryCodeInput.value = code;
+
+          // Auto-infer currency preference
+          if (currencySelect) {
+            for (let i = 0; i < currencySelect.options.length; i++) {
+              if (currencySelect.options[i].value === currency) {
+                currencySelect.selectedIndex = i;
+                break;
+              }
+            }
+          }
+
+          // Suggest language
+          if (languageSelect) {
+            if (code === 'IN') {
+              // For India, default to English, with Hindi/Marathi easily accessible
+              if (!['en', 'hi', 'mr'].includes(languageSelect.value)) {
+                languageSelect.value = 'en';
+              }
+            } else {
+              languageSelect.value = 'en';
+            }
+          }
+        }
+
+        countrySelect.addEventListener('change', function() {
+          const selectedOption = this.options[this.selectedIndex];
+          syncPreferences(selectedOption);
+        });
+
+        // Initial sync on load
+        if (countrySelect.selectedIndex >= 0) {
+          syncPreferences(countrySelect.options[countrySelect.selectedIndex]);
+        }
+      })();
+    </script>
 
     <div class="text-center text-muted small mt-3">
       <%= t('forms.alreadyHaveAccount') %> <a href="/login" class="text-primary fw-bold text-decoration-none"><%= t('forms.login') %></a>

@@ -8,18 +8,20 @@ const {
   sendPasswordChangedEmail
 } = require("../utils/emailService");
 
+const { COUNTRIES_LIST, getCurrencyForCountry } = require("../utils/countries");
+const { SUPPORTED_CURRENCIES } = require("../utils/currency");
+
 // ================== RENDER SIGNUP ==================
 module.exports.renderSignup = (req, res) => {
   const selectedRole = req.query.role === 'host' ? 'host' : 'guest';
-  res.render("users/signup.ejs", { selectedRole });
+  res.render("users/signup.ejs", { selectedRole, countries: COUNTRIES_LIST });
 };
 
 
 // ================== SIGNUP ==================
 module.exports.signup = async (req, res, next) => {
   try {
-    console.log('SIGNUP REQUEST BODY:', req.body);
-    const { username, password, email, role, firstName, lastName } = req.body;
+    const { username, password, email, role, firstName, lastName, country, countryCode, preferredLanguage, preferredCurrency } = req.body;
 
     // Check if user already exists
     const existingUser = await User.findOne({ $or: [{ username }, { email }] });
@@ -29,19 +31,29 @@ module.exports.signup = async (req, res, next) => {
     }
 
     const assignedRole = (role === 'host') ? 'host' : 'guest';
+    const userCountry = (country || 'India').trim();
+    const userCountryCode = (countryCode || 'IN').trim().toUpperCase();
+    const userLang = (preferredLanguage && ['en', 'hi', 'mr'].includes(preferredLanguage)) ? preferredLanguage : 'en';
+    const inferredCurrency = getCurrencyForCountry(userCountryCode || userCountry);
+    const userCurr = (preferredCurrency && SUPPORTED_CURRENCIES[preferredCurrency.toUpperCase()]) 
+      ? preferredCurrency.toUpperCase() 
+      : inferredCurrency;
+
     const newUser = new User({
       email,
       username,
       firstName: firstName || '',
       lastName: lastName || '',
       role: assignedRole,
+      country: userCountry,
+      countryCode: userCountryCode,
+      preferredLanguage: userLang,
+      preferredCurrency: userCurr,
       avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80'
     });
     await newUser.setPassword(password);
 
-    console.log('CREATING USER:', { email, username, role: assignedRole });
     const savedUser = await newUser.save();
-    console.log('USER SAVED SUCCESSFULLY:', savedUser.username);
 
     if (typeof req.login !== "function") {
       throw new Error("Passport login is not configured.");
@@ -53,10 +65,19 @@ module.exports.signup = async (req, res, next) => {
           console.log('LOGIN ERROR:', err);
           return reject(err);
         }
-        console.log('USER LOGGED IN SUCCESSFULLY');
         resolve();
       });
     });
+
+    // Persist to session and cookies
+    if (req.session) {
+      req.session.lang = userLang;
+      req.session.currency = userCurr;
+      req.session.country = userCountry;
+      req.session.countryCode = userCountryCode;
+    }
+    res.cookie('wanderstay_lang', userLang, { maxAge: 365 * 24 * 60 * 60 * 1000, path: '/' });
+    res.cookie('wanderstay_currency', userCurr, { maxAge: 365 * 24 * 60 * 60 * 1000, path: '/' });
 
     // Trigger welcome email asynchronously (never blocks registration)
     sendWelcomeEmail(savedUser).catch(err => {
@@ -158,7 +179,7 @@ module.exports.renderProfile = async (req, res) => {
 // ================== UPDATE PROFILE DETAILS ==================
 module.exports.updateProfile = async (req, res) => {
   try {
-    const { firstName, lastName, phone, dateOfBirth, gender, country, city, bio, preferredLanguage, preferredCurrency } = req.body;
+    const { firstName, lastName, phone, dateOfBirth, gender, country, countryCode, city, bio, preferredLanguage, preferredCurrency } = req.body;
 
     const updateData = {
       firstName: typeof firstName === 'string' ? firstName.trim() : '',
@@ -169,6 +190,10 @@ module.exports.updateProfile = async (req, res) => {
       city: typeof city === 'string' ? city.trim() : '',
       bio: typeof bio === 'string' ? bio.trim() : ''
     };
+
+    if (countryCode && countryCode.trim()) {
+      updateData.countryCode = countryCode.trim().toUpperCase();
+    }
 
     if (preferredLanguage && ['en', 'hi', 'mr'].includes(preferredLanguage)) {
       updateData.preferredLanguage = preferredLanguage;
@@ -182,7 +207,7 @@ module.exports.updateProfile = async (req, res) => {
       });
     }
 
-    if (preferredCurrency && ['INR', 'USD', 'EUR', 'GBP'].includes(preferredCurrency.toUpperCase())) {
+    if (preferredCurrency && SUPPORTED_CURRENCIES[preferredCurrency.toUpperCase()]) {
       const normalizedCurr = preferredCurrency.toUpperCase();
       updateData.preferredCurrency = normalizedCurr;
       if (req.session) {

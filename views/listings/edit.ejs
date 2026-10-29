@@ -98,6 +98,31 @@
           </div>
         </div>
 
+        <!-- Property Type & Capacity Specs -->
+        <div class="row g-3 mb-4">
+          <div class="col-md-6">
+            <label for="propertyType" class="form-label">Property Type</label>
+            <select name="listing[propertyType]" id="propertyType" class="form-select">
+              <% const types = ['Entire home', 'Villa', 'Apartment', 'Cabin', 'Cottage', 'Chalet', 'Resort', 'Private room', 'Unique stay']; %>
+              <% types.forEach(t => { %>
+                <option value="<%= t %>" <%= (listing.propertyType === t) ? 'selected' : '' %>><%= t %></option>
+              <% }) %>
+            </select>
+          </div>
+          <div class="col-4 col-md-2">
+            <label for="guests" class="form-label">Guests</label>
+            <input name="listing[guests]" id="guests" type="number" min="1" value="<%= listing.guests || 2 %>" class="form-control" />
+          </div>
+          <div class="col-4 col-md-2">
+            <label for="bedrooms" class="form-label">Bedrooms</label>
+            <input name="listing[bedrooms]" id="bedrooms" type="number" min="0" value="<%= listing.bedrooms || 1 %>" class="form-control" />
+          </div>
+          <div class="col-4 col-md-2">
+            <label for="bathrooms" class="form-label">Baths</label>
+            <input name="listing[bathrooms]" id="bathrooms" type="number" min="0" value="<%= listing.bathrooms || 1 %>" class="form-control" />
+          </div>
+        </div>
+
         <!-- Host Dynamic Pricing Management Section -->
         <%- include("../includes/host-pricing-section.ejs") %>
 

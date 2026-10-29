@@ -269,8 +269,36 @@ module.exports.showListing = async (req, res) => {
 
   const cancellationPolicy = getCancellationPolicy(listing.cancellationPolicy || 'Flexible');
 
+  // Priority 1: Destination country currency for displaying local accommodation prices
+  const { getCurrencyForCountry } = require('../utils/countries');
+  const { SUPPORTED_CURRENCIES, getPriceDisplay, formatCurrency, convertFromINR } = require('../utils/currency');
+  if (listing.country) {
+    const destCurrency = getCurrencyForCountry(listing.country);
+    if (destCurrency && SUPPORTED_CURRENCIES[destCurrency]) {
+      res.locals.currentCurrency = destCurrency;
+      res.locals.currentCurrencyConfig = SUPPORTED_CURRENCIES[destCurrency];
+      res.locals.getPriceDisplay = (amt, custom) => getPriceDisplay(amt, custom || destCurrency);
+      res.locals.formatCurrency = (amt, custom) => formatCurrency(amt, custom || destCurrency);
+      res.locals.convertCurrency = (amt, custom) => convertFromINR(amt, custom || destCurrency);
+    }
+  }
+
+  // Fetch real similar listings from database (same category or country, excluding current listing)
+  const similarListings = await Listing.find({
+    _id: { $ne: listing._id },
+    $or: [
+      { category: listing.category },
+      { country: listing.country }
+    ],
+    isAvailable: true
+  })
+    .sort({ averageRating: -1 })
+    .limit(3)
+    .populate('owner');
+
   res.render("listings/show.ejs", {
     listing,
+    similarListings: similarListings || [],
     isWishlisted,
     confirmedBookings: confirmedBookings || [],
     blockedDates: listing.blockedDates || [],

@@ -2,8 +2,26 @@ const mongoose = require('mongoose');
 const Listing = require('../models/listing');
 const User = require('../models/user');
 
+if (process.env.NODE_ENV !== "production") {
+  require("dotenv").config({ path: require("path").resolve(__dirname, "../.env") });
+}
+
+const isProduction = process.env.NODE_ENV === "production";
+let mongoUrl = (process.env.MONGO_URL || "").trim();
+if ((mongoUrl.startsWith('"') && mongoUrl.endsWith('"')) || (mongoUrl.startsWith("'") && mongoUrl.endsWith("'"))) {
+  mongoUrl = mongoUrl.slice(1, -1).trim();
+}
+
+if (!mongoUrl) {
+  if (isProduction) {
+    console.error("❌ FATAL: MONGO_URL environment variable is required in production for migration.");
+    process.exit(1);
+  }
+  mongoUrl = "mongodb://127.0.0.1:27017/wanderstays";
+}
+
 async function migrate() {
-  await mongoose.connect('mongodb://127.0.0.1:27017/wanderstays');
+  await mongoose.connect(mongoUrl);
   console.log('Connected to MongoDB for listing fields migration');
 
   // Find verified users
@@ -46,6 +64,7 @@ async function migrate() {
     if (item.bathrooms === undefined || item.bathrooms === null) item.bathrooms = def.bathrooms;
     if (!item.propertyType) item.propertyType = def.propertyType;
     if (item.instantBook === undefined || item.instantBook === null) item.instantBook = def.instantBook;
+    if (!item.baseCurrency) item.baseCurrency = 'INR';
 
     // Ensure roughly 40% of listings belong to a verified host for testable filtering
     if (i % 2 === 0 && verifiedUser) {

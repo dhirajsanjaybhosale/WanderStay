@@ -89,7 +89,7 @@
               </div>
               <div class="search-cell-content">
                 <label for="search-checkin" class="search-cell-label">Check-in</label>
-                <input id="search-checkin" type="date" />
+                <input id="search-checkin" name="checkIn" type="date" />
               </div>
             </div>
 
@@ -102,7 +102,7 @@
               </div>
               <div class="search-cell-content">
                 <label for="search-checkout" class="search-cell-label">Check-out</label>
-                <input id="search-checkout" type="date" />
+                <input id="search-checkout" name="checkOut" type="date" />
               </div>
             </div>
 
@@ -236,7 +236,7 @@
                 <div class="dest-card-meta">
                   <span><%= dest.count || '120+ stays' %></span>
                   <span>•</span>
-                  <span>Avg <%= dest.avgCost %></span>
+                  <span>Avg <%= (dest.avgCostBaseINR && typeof formatCurrency === 'function' && typeof getCurrencyForCountry === 'function') ? formatCurrency(dest.avgCostBaseINR, getCurrencyForCountry(dest.country)) : dest.avgCost %></span>
                 </div>
                 <span class="dest-card-explore-btn">
                   Explore <i class="fa-solid fa-arrow-right ms-1"></i>

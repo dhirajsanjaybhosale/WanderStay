@@ -1,14 +1,24 @@
 /**
  * WanderStay Currency & Exchange Rate System
  * 
- * Manages currency preferences, multi-currency display, and reliable exchange rate conversions.
+ * Manages automatic country-based currency determination, multi-currency display,
+ * and reliable exchange rate conversions.
  * - BASE CURRENCY is strictly INR (₹) across listings, bookings, coupons, and payments.
- * - Displays converted prices in USD ($), EUR (€), and GBP (£).
- * - Supported currencies can be configured and updated via environment variables or live API.
- * - Preserves exact stored database pricing and processes all actual payments in the supported payment currency (INR).
+ * - Payment gateway processes payments securely in the supported base currency (INR).
+ * - Automatic destination-aware display currency:
+ *   1. Destination search query -> local accommodation currency
+ *   2. User saved currency preference
+ *   3. User country of residence currency
+ *   4. Anonymous visitor locale/country signal -> default INR
  */
 
 const https = require('https');
+const {
+  resolveDestinationCountry,
+  getCurrencyForCountry,
+  detectVisitorCountryAndCurrency,
+  COUNTRIES_LIST
+} = require('./countries');
 
 const BASE_CURRENCY = 'INR';
 const BASE_SYMBOL = '₹';
@@ -45,21 +55,90 @@ const SUPPORTED_CURRENCIES = {
     flag: '🇬🇧',
     locale: 'en-GB',
     decimalPlaces: 2
+  },
+  JPY: {
+    code: 'JPY',
+    symbol: '¥',
+    name: 'Japanese Yen',
+    flag: '🇯🇵',
+    locale: 'ja-JP',
+    decimalPlaces: 0
+  },
+  AED: {
+    code: 'AED',
+    symbol: 'AED ',
+    name: 'UAE Dirham',
+    flag: '🇦🇪',
+    locale: 'en-AE',
+    decimalPlaces: 2
+  },
+  CAD: {
+    code: 'CAD',
+    symbol: 'CA$',
+    name: 'Canadian Dollar',
+    flag: '🇨🇦',
+    locale: 'en-CA',
+    decimalPlaces: 2
+  },
+  AUD: {
+    code: 'AUD',
+    symbol: 'A$',
+    name: 'Australian Dollar',
+    flag: '🇦🇺',
+    locale: 'en-AU',
+    decimalPlaces: 2
+  },
+  CHF: {
+    code: 'CHF',
+    symbol: 'CHF ',
+    name: 'Swiss Franc',
+    flag: '🇨🇭',
+    locale: 'de-CH',
+    decimalPlaces: 2
+  },
+  IDR: {
+    code: 'IDR',
+    symbol: 'Rp ',
+    name: 'Indonesian Rupiah',
+    flag: '🇮🇩',
+    locale: 'id-ID',
+    decimalPlaces: 0
+  },
+  THB: {
+    code: 'THB',
+    symbol: '฿',
+    name: 'Thai Baht',
+    flag: '🇹🇭',
+    locale: 'th-TH',
+    decimalPlaces: 0
+  },
+  MXN: {
+    code: 'MXN',
+    symbol: 'MX$',
+    name: 'Mexican Peso',
+    flag: '🇲🇽',
+    locale: 'es-MX',
+    decimalPlaces: 2
   }
 };
 
 /**
- * Default Exchange Rates (1 INR = X target currency)
- * Can be overridden via environment variables:
- * - EXCHANGE_RATES_JSON='{"USD":0.0116,"EUR":0.0108,"GBP":0.0092}'
- * - or individual: RATE_INR_TO_USD, RATE_INR_TO_EUR, RATE_INR_TO_GBP
+ * Default fallback exchange rates (1 INR = X target currency)
  */
 function getInitialConfiguredRates() {
   const defaults = {
     INR: 1.0,
-    USD: 0.0116, // ~86.20 INR per USD
-    EUR: 0.0108, // ~92.59 INR per EUR
-    GBP: 0.0092  // ~108.70 INR per GBP
+    USD: 0.0116,
+    EUR: 0.0108,
+    GBP: 0.0092,
+    JPY: 1.82,
+    AED: 0.0425,
+    CAD: 0.0162,
+    AUD: 0.0180,
+    CHF: 0.0105,
+    IDR: 188.5,
+    THB: 0.42,
+    MXN: 0.23
   };
 
   // 1. Check custom JSON in environment
@@ -76,6 +155,8 @@ function getInitialConfiguredRates() {
   if (process.env.RATE_INR_TO_USD) defaults.USD = parseFloat(process.env.RATE_INR_TO_USD);
   if (process.env.RATE_INR_TO_EUR) defaults.EUR = parseFloat(process.env.RATE_INR_TO_EUR);
   if (process.env.RATE_INR_TO_GBP) defaults.GBP = parseFloat(process.env.RATE_INR_TO_GBP);
+  if (process.env.RATE_INR_TO_JPY) defaults.JPY = parseFloat(process.env.RATE_INR_TO_JPY);
+  if (process.env.RATE_INR_TO_AED) defaults.AED = parseFloat(process.env.RATE_INR_TO_AED);
 
   return defaults;
 }
@@ -85,18 +166,18 @@ let currentExchangeRates = getInitialConfiguredRates();
 let lastRatesFetchTime = null;
 
 /**
- * Optionally refresh live rates from an exchange-rate provider if configured,
- * or from open public exchange rates. Falls back gracefully to configured rates.
+ * Refresh live rates in the background from a public exchange-rate API
+ * Falls back safely to configured rates on any network or parsing error.
  */
 function fetchLiveRatesIfAvailable() {
-  const apiUrl = process.env.EXCHANGE_RATE_API_URL || 'https://open.er-api.com/v6/latest/INR';
-  
   if (process.env.DISABLE_LIVE_EXCHANGE_RATES === 'true') {
     return;
   }
 
+  const apiUrl = process.env.EXCHANGE_RATE_API_URL || 'https://open.er-api.com/v6/latest/INR';
+
   try {
-    const req = https.get(apiUrl, { timeout: 3000 }, (res) => {
+    const req = https.get(apiUrl, { timeout: 3500 }, (res) => {
       if (res.statusCode !== 200) {
         res.resume();
         return;
@@ -109,20 +190,22 @@ function fetchLiveRatesIfAvailable() {
           const data = JSON.parse(rawData);
           const rates = data.rates || data.conversion_rates;
           if (rates) {
-            if (rates.USD) currentExchangeRates.USD = Number(rates.USD);
-            if (rates.EUR) currentExchangeRates.EUR = Number(rates.EUR);
-            if (rates.GBP) currentExchangeRates.GBP = Number(rates.GBP);
+            for (const code of Object.keys(SUPPORTED_CURRENCIES)) {
+              if (code !== 'INR' && rates[code]) {
+                currentExchangeRates[code] = Number(rates[code]);
+              }
+            }
             currentExchangeRates.INR = 1.0;
             lastRatesFetchTime = new Date();
           }
         } catch (err) {
-          // Keep configured fallback rates
+          // Keep cached/default rates
         }
       });
     });
 
     req.on('error', () => {
-      // Graceful fallback to configured rates
+      // Graceful fallback to cached rates
     });
     req.on('timeout', () => {
       req.destroy();
@@ -132,12 +215,12 @@ function fetchLiveRatesIfAvailable() {
   }
 }
 
-// Initial background attempt and periodic 6-hour refresh
+// Initial background refresh attempt and periodic 6-hour refresh
 fetchLiveRatesIfAvailable();
 setInterval(fetchLiveRatesIfAvailable, 6 * 60 * 60 * 1000);
 
 /**
- * Returns the exchange rate for a given currency code relative to base INR.
+ * Returns exchange rate relative to base INR
  */
 function getExchangeRate(targetCurrency = 'INR') {
   const code = (targetCurrency || 'INR').toUpperCase();
@@ -157,10 +240,6 @@ function convertFromINR(amountInINR, targetCurrency = 'INR') {
 
 /**
  * Formats a given INR amount into the target currency string.
- * Example:
- * formatCurrency(2500, 'INR') => "₹2,500"
- * formatCurrency(2500, 'USD') => "$29"
- * formatCurrency(2500, 'EUR') => "€27"
  */
 function formatCurrency(amountInINR, targetCurrency = 'INR', options = {}) {
   const code = (targetCurrency || 'INR').toUpperCase();
@@ -171,11 +250,16 @@ function formatCurrency(amountInINR, targetCurrency = 'INR', options = {}) {
     return `${config.symbol}${Math.round(converted).toLocaleString('en-IN')}`;
   }
 
-  // For foreign currencies, format nicely (if exact integer or show 2 decimals if requested)
+  // Integer currencies (JPY, IDR) format with 0 decimals
+  if (config.decimalPlaces === 0) {
+    return `${config.symbol}${Math.round(converted).toLocaleString(config.locale || 'en-US')}`;
+  }
+
+  // Decimal currencies
   const isFractional = converted % 1 !== 0;
   const formattedNum = isFractional
-    ? converted.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-    : Math.round(converted).toLocaleString('en-US');
+    ? converted.toLocaleString(config.locale || 'en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+    : Math.round(converted).toLocaleString(config.locale || 'en-US');
 
   return `${config.symbol}${formattedNum}`;
 }
@@ -212,69 +296,79 @@ function getPriceDisplay(amountInINR, targetCurrency = 'INR') {
 
 /**
  * Express Middleware:
- * Resolves user's currency preference (Query -> Cookie -> Session -> User profile -> Default INR).
- * Sets res.locals helpers for all EJS templates.
+ * Automatically resolves display currency based on 4-tier priority:
+ * 1. Destination in another country -> that destination's local currency
+ * 2. Signed-in user's saved currency preference
+ * 3. Default currency inferred from user's country of residence
+ * 4. Anonymous visitor locale/country signal -> default INR
  */
 function currencyMiddleware(req, res, next) {
-  let selected = null;
+  let resolvedCurrency = null;
+  let destinationCountry = null;
 
-  // 1. Query parameter override (?currency=USD or ?curr=USD)
-  const queryCurr = (req.query.currency || req.query.curr || '').toString().toUpperCase();
-  if (queryCurr && SUPPORTED_CURRENCIES[queryCurr]) {
-    selected = queryCurr;
-    // Persist to cookie and session
-    res.cookie('wanderstay_currency', selected, {
-      maxAge: 365 * 24 * 60 * 60 * 1000,
-      httpOnly: false,
-      sameSite: 'lax'
-    });
-    if (req.session) {
-      req.session.currency = selected;
+  // 1. Check if the current request is searching for a destination in another country
+  const searchDest = (req.query?.destination || req.query?.country || req.query?.location || req.query?.q || '').toString().trim();
+  if (searchDest) {
+    destinationCountry = resolveDestinationCountry(searchDest);
+    if (destinationCountry) {
+      resolvedCurrency = getCurrencyForCountry(destinationCountry);
     }
   }
 
-  // 2. Persistent Cookie
-  if (!selected && req.cookies && req.cookies.wanderstay_currency) {
-    const cookieCurr = req.cookies.wanderstay_currency.toUpperCase();
-    if (SUPPORTED_CURRENCIES[cookieCurr]) {
-      selected = cookieCurr;
+  // 2. If destination is unknown, check signed-in user's saved currency preference
+  if (!resolvedCurrency && req.user && req.user.preferredCurrency) {
+    const userPref = req.user.preferredCurrency.toUpperCase();
+    if (SUPPORTED_CURRENCIES[userPref]) {
+      resolvedCurrency = userPref;
     }
   }
 
-  // 3. Session
-  if (!selected && req.session && req.session.currency) {
-    const sessionCurr = req.session.currency.toUpperCase();
-    if (SUPPORTED_CURRENCIES[sessionCurr]) {
-      selected = sessionCurr;
+  // 3. Infer default currency from user's country of residence
+  if (!resolvedCurrency && req.user && (req.user.country || req.user.countryCode)) {
+    const countryToUse = req.user.countryCode || req.user.country;
+    resolvedCurrency = getCurrencyForCountry(countryToUse);
+  }
+
+  // 4. For anonymous visitors, use reliable locale/country signal
+  if (!resolvedCurrency) {
+    // Check cached session or cookie first to avoid repeated parsing
+    if (req.session && req.session.currency && SUPPORTED_CURRENCIES[req.session.currency]) {
+      resolvedCurrency = req.session.currency;
+    } else if (req.cookies && req.cookies.wanderstay_currency && SUPPORTED_CURRENCIES[req.cookies.wanderstay_currency.toUpperCase()]) {
+      resolvedCurrency = req.cookies.wanderstay_currency.toUpperCase();
+    } else {
+      const visitor = detectVisitorCountryAndCurrency(req);
+      resolvedCurrency = visitor.currency || BASE_CURRENCY;
+      if (req.session) {
+        req.session.currency = resolvedCurrency;
+        req.session.visitorCountry = visitor.country;
+        req.session.visitorCountryCode = visitor.countryCode;
+      }
     }
   }
 
-  // 4. Authenticated user profile preference
-  if (!selected && req.user && req.user.preferredCurrency) {
-    const userCurr = req.user.preferredCurrency.toUpperCase();
-    if (SUPPORTED_CURRENCIES[userCurr]) {
-      selected = userCurr;
-    }
-  }
-
-  // 5. Default fallback: INR
-  if (!selected) {
-    selected = BASE_CURRENCY;
+  // Fallback to INR if anything is invalid
+  if (!resolvedCurrency || !SUPPORTED_CURRENCIES[resolvedCurrency]) {
+    resolvedCurrency = BASE_CURRENCY;
   }
 
   // Attach to req & res.locals
-  req.currency = selected;
-  res.locals.currentCurrency = selected;
-  res.locals.currentCurrencyConfig = SUPPORTED_CURRENCIES[selected];
+  req.currency = resolvedCurrency;
+  req.destinationCountry = destinationCountry;
+
+  res.locals.currentCurrency = resolvedCurrency;
+  res.locals.currentCurrencyConfig = SUPPORTED_CURRENCIES[resolvedCurrency];
   res.locals.supportedCurrencies = SUPPORTED_CURRENCIES;
   res.locals.baseCurrency = BASE_CURRENCY;
   res.locals.baseSymbol = BASE_SYMBOL;
 
   // Template helper functions
-  res.locals.formatCurrency = (amt, customCurr) => formatCurrency(amt, customCurr || selected);
-  res.locals.convertCurrency = (amt, customCurr) => convertFromINR(amt, customCurr || selected);
-  res.locals.getPriceDisplay = (amt, customCurr) => getPriceDisplay(amt, customCurr || selected);
+  res.locals.formatCurrency = (amt, customCurr) => formatCurrency(amt, customCurr || resolvedCurrency);
+  res.locals.convertCurrency = (amt, customCurr) => convertFromINR(amt, customCurr || resolvedCurrency);
+  res.locals.getPriceDisplay = (amt, customCurr) => getPriceDisplay(amt, customCurr || resolvedCurrency);
   res.locals.exchangeRates = currentExchangeRates;
+  res.locals.getCurrencyForCountry = getCurrencyForCountry;
+  res.locals.resolveDestinationCountry = resolveDestinationCountry;
 
   next();
 }
@@ -286,7 +380,7 @@ async function setCurrencyHandler(req, res) {
   const chosenCurrency = (req.body?.currency || req.query?.currency || req.query?.curr || 'INR').toString().toUpperCase();
   const validCurrency = SUPPORTED_CURRENCIES[chosenCurrency] ? chosenCurrency : BASE_CURRENCY;
 
-  // Set 1-year persistent cookie
+  // Set persistent cookie
   res.cookie('wanderstay_currency', validCurrency, {
     maxAge: 365 * 24 * 60 * 60 * 1000,
     httpOnly: false,
@@ -311,7 +405,6 @@ async function setCurrencyHandler(req, res) {
 
   // Determine redirect URL safely
   const returnUrl = req.body?.returnUrl || req.query?.returnUrl || req.get('Referrer') || '/';
-  // Avoid open redirects
   const safeRedirect = returnUrl.startsWith('/') && !returnUrl.startsWith('//') ? returnUrl : '/';
   return res.redirect(safeRedirect);
 }
@@ -325,5 +418,7 @@ module.exports = {
   formatCurrency,
   getPriceDisplay,
   currencyMiddleware,
-  setCurrencyHandler
+  setCurrencyHandler,
+  resolveDestinationCountry,
+  getCurrencyForCountry
 };

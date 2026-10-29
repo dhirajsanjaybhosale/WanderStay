@@ -57,6 +57,12 @@ const listingSchema = new Schema({
     type: Number,
     required: true,
   },
+  baseCurrency: {
+    type: String,
+    default: 'INR',
+    uppercase: true,
+    trim: true,
+  },
 
   pricing: {
     weekendPrice: {

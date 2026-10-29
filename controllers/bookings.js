@@ -174,6 +174,19 @@ module.exports.renderCheckout = async (req, res) => {
 
   const razorpayKeyId = process.env.RAZORPAY_KEY_ID || 'rzp_test_wanderstay_mock';
 
+  const { getCurrencyForCountry } = require('../utils/countries');
+  const { SUPPORTED_CURRENCIES, getPriceDisplay, formatCurrency, convertFromINR } = require('../utils/currency');
+  if (booking.listing && booking.listing.country) {
+    const destCurrency = getCurrencyForCountry(booking.listing.country);
+    if (destCurrency && SUPPORTED_CURRENCIES[destCurrency]) {
+      res.locals.currentCurrency = destCurrency;
+      res.locals.currentCurrencyConfig = SUPPORTED_CURRENCIES[destCurrency];
+      res.locals.getPriceDisplay = (amt, custom) => getPriceDisplay(amt, custom || destCurrency);
+      res.locals.formatCurrency = (amt, custom) => formatCurrency(amt, custom || destCurrency);
+      res.locals.convertCurrency = (amt, custom) => convertFromINR(amt, custom || destCurrency);
+    }
+  }
+
   res.render('bookings/checkout.ejs', {
     booking,
     listing: booking.listing,

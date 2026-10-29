@@ -99,28 +99,6 @@
             </button>
           </form>
         </div>
-
-        <!-- Footer Currency Selector Pills -->
-        <div class="d-flex align-items-center gap-1.5 p-1 bg-dark bg-opacity-50 rounded-pill border border-secondary border-opacity-25">
-          <span class="text-muted px-2 py-0.5" style="font-size: 0.72rem;">
-            <i class="fa-solid fa-coins text-success me-1"></i><%= t('currency.currency') || 'Currency' %>:
-          </span>
-          <% [
-            { code: 'INR', label: '₹ INR' },
-            { code: 'USD', label: '$ USD' },
-            { code: 'EUR', label: '€ EUR' },
-            { code: 'GBP', label: '£ GBP' }
-          ].forEach(c => { 
-               const isSel = (typeof currentCurrency === 'undefined' && c.code === 'INR') || (typeof currentCurrency !== 'undefined' && currentCurrency === c.code);
-          %>
-            <form action="/set-currency" method="POST" class="d-inline m-0">
-              <input type="hidden" name="currency" value="<%= c.code %>">
-              <button type="submit" class="btn btn-sm py-0.5 px-2 rounded-pill <%= isSel ? 'btn-success fw-bold text-white' : 'btn-link text-secondary text-decoration-none' %>" style="font-size: 0.75rem;">
-                <%= c.label %>
-              </button>
-            </form>
-          <% }); %>
-        </div>
       </div>
 
       <div class="d-flex gap-3 footer-legal-links">
